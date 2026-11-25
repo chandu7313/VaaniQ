@@ -1,22 +1,254 @@
 @import "tailwindcss";
 
-@theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", "Noto Sans", "Noto Sans Devanagari", "Noto Sans Telugu", sans-serif;
-  --color-surface: #0b0f17;
-  --color-panel: #111723;
-  --color-panel-2: #161d2c;
-  --color-line: #232c3d;
+:root {
+  /* Warm editorial light surfaces */
+  --vq-canvas: #F7F7F2;
+  --vq-surface: #FFFFFF;
+  --vq-surface-2: #F0F1EA;
+  --vq-section: #EDEFE7;
+
+  /* Hairline borders */
+  --vq-line: #E2E4DC;
+  --vq-line-strong: #CFD3C7;
+
+  /* Ink hierarchy */
+  --vq-ink: #202922;
+  --vq-ink-2: #5A665D;
+  --vq-ink-muted: #7F887E;
+
+  /* Brand & editorial accents */
+  --vq-brand: #244D3C;
+  --vq-brand-deep: #193B30;
+  --vq-brand-soft: #DCE9DD;
+  --vq-brand-soft-border: #BDD4C0;
+  --vq-olive: #82966B;
+  --vq-terra: #C77B5B;
+  --vq-wordmark: #012A59;
+
+  /* Architectural dark contrast anchors (used in both light & dark modes) */
+  --vq-rail: #16221C;
+  --vq-rail-2: #1E2E26;
+  --vq-rail-border: #2B3D33;
+  --vq-rail-ink: #F2F5F1;
+  --vq-rail-muted: #98AA9F;
+  --vq-code-bg: #151F1A;
+  --vq-code-ink: #E7EEE8;
+
+  /* Semantic statuses */
+  --vq-success: #2C6E49;
+  --vq-success-soft: #E6F2EA;
+  --vq-success-border: #BBDAC6;
+
+  --vq-warning: #9A6216;
+  --vq-warning-soft: #FAF0DC;
+  --vq-warning-border: #E8D1A1;
+
+  --vq-danger: #A93B3B;
+  --vq-danger-soft: #FAE8E8;
+  --vq-danger-border: #E7BDBD;
+
+  --vq-info: #2E5D88;
+  --vq-info-soft: #E8F0F7;
+  --vq-info-border: #BFD3E6;
+
+  /* Shadows */
+  --shadow-card: 0 1px 2px rgba(22, 34, 28, 0.05);
+  --shadow-popover: 0 10px 26px rgba(22, 34, 28, 0.12), 0 1px 3px rgba(22, 34, 28, 0.06);
+  --shadow-drawer: -12px 0 32px rgba(22, 34, 28, 0.12);
 }
 
-html, body, #root { height: 100%; }
-body { @apply bg-surface text-slate-200 antialiased; }
-::selection { background: rgb(99 102 241 / 0.35); }
-.scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
-.scrollbar-thin::-webkit-scrollbar-thumb { background: #2a3447; border-radius: 3px; }
-@keyframes pulse-ring { 0% { box-shadow: 0 0 0 0 rgb(244 63 94 / 0.55); } 100% { box-shadow: 0 0 0 18px rgb(244 63 94 / 0); } }
-.listening { animation: pulse-ring 1.2s ease-out infinite; }
-/* Motion-only entrance: content is fully visible even if the animation never runs (background tabs, slow devices). */
-@keyframes vq-fade-in { from { transform: translateY(4px); } to { transform: none; } }
-.vq-fade-in { animation: vq-fade-in 180ms ease-out; }
-@media (prefers-reduced-motion: reduce) { .vq-fade-in, .listening { animation: none; } }
-:focus-visible { outline: 2px solid rgb(129 140 248); outline-offset: 2px; border-radius: 6px; }
+.dark {
+  --vq-canvas: #0E1511;
+  --vq-surface: #151F1A;
+  --vq-surface-2: #1B2721;
+  --vq-section: #213028;
+
+  --vq-line: #27382F;
+  --vq-line-strong: #354A3F;
+
+  --vq-ink: #EEF2ED;
+  --vq-ink-2: #A6B4AA;
+  --vq-ink-muted: #7C8B81;
+
+  --vq-brand: #327458;
+  --vq-brand-deep: #DCE9DD;
+  --vq-brand-soft: #1F392D;
+  --vq-brand-soft-border: #325947;
+  --vq-olive: #95AB7B;
+  --vq-terra: #D98C6C;
+  --vq-wordmark: #F1F5F9;
+
+  --vq-rail: #0B110E;
+  --vq-rail-2: #131D18;
+  --vq-rail-border: #22322A;
+  --vq-rail-ink: #F2F5F1;
+  --vq-rail-muted: #93A59A;
+  --vq-code-bg: #0B110E;
+  --vq-code-ink: #DCE6DE;
+
+  --vq-success: #70C28F;
+  --vq-success-soft: #162E20;
+  --vq-success-border: #27533A;
+
+  --vq-warning: #E5B05A;
+  --vq-warning-soft: #2E2414;
+  --vq-warning-border: #584320;
+
+  --vq-danger: #E88282;
+  --vq-danger-soft: #31191A;
+  --vq-danger-border: #5E2E30;
+
+  --vq-info: #7DB2E0;
+  --vq-info-soft: #162634;
+  --vq-info-border: #2B4861;
+
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.25);
+  --shadow-popover: 0 12px 28px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-drawer: -12px 0 36px rgba(0, 0, 0, 0.5);
+}
+
+@theme {
+  /* Typography */
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", "Noto Sans", "Noto Sans Devanagari", "Noto Sans Telugu", sans-serif;
+  --font-serif: "Newsreader", Georgia, Cambria, "Times New Roman", Times, serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Semantic Colors mapped to live CSS variables */
+  --color-canvas: var(--vq-canvas);
+  --color-surface: var(--vq-surface);
+  --color-surface-2: var(--vq-surface-2);
+  --color-section: var(--vq-section);
+  --color-panel: var(--vq-surface);
+  --color-panel-2: var(--vq-surface-2);
+
+  --color-line: var(--vq-line);
+  --color-line-strong: var(--vq-line-strong);
+
+  --color-ink: var(--vq-ink);
+  --color-ink-2: var(--vq-ink-2);
+  --color-ink-muted: var(--vq-ink-muted);
+
+  --color-brand: var(--vq-brand);
+  --color-brand-deep: var(--vq-brand-deep);
+  --color-brand-soft: var(--vq-brand-soft);
+  --color-brand-soft-border: var(--vq-brand-soft-border);
+  --color-olive: var(--vq-olive);
+  --color-terra: var(--vq-terra);
+
+  --color-rail: var(--vq-rail);
+  --color-rail-2: var(--vq-rail-2);
+  --color-rail-border: var(--vq-rail-border);
+  --color-rail-ink: var(--vq-rail-ink);
+  --color-rail-muted: var(--vq-rail-muted);
+  --color-code-bg: var(--vq-code-bg);
+  --color-code-ink: var(--vq-code-ink);
+
+  --color-success: var(--vq-success);
+  --color-success-soft: var(--vq-success-soft);
+  --color-success-border: var(--vq-success-border);
+
+  --color-warning: var(--vq-warning);
+  --color-warning-soft: var(--vq-warning-soft);
+  --color-warning-border: var(--vq-warning-border);
+
+  --color-danger: var(--vq-danger);
+  --color-danger-soft: var(--vq-danger-soft);
+  --color-danger-border: var(--vq-danger-border);
+
+  --color-info: var(--vq-info);
+  --color-info-soft: var(--vq-info-soft);
+  --color-info-border: var(--vq-info-border);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background-color: var(--vq-canvas);
+  color: var(--vq-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+::selection {
+  background: rgba(36, 77, 60, 0.22);
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: var(--vq-line-strong);
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: var(--vq-ink-muted);
+}
+
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgba(199, 123, 91, 0.55);
+  }
+  100% {
+    box-shadow: 0 0 0 14px rgba(199, 123, 91, 0);
+  }
+}
+
+.listening {
+  animation: pulse-ring 1.3s ease-out infinite;
+}
+
+@keyframes vq-wave {
+  0%, 100% {
+    transform: scaleY(0.35);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+.vq-wave-bar {
+  animation: vq-wave 900ms ease-in-out infinite;
+  transform-origin: center;
+}
+
+@keyframes vq-fade-in {
+  from {
+    transform: translateY(4px);
+    opacity: 0.92;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+.vq-fade-in {
+  animation: vq-fade-in 180ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vq-fade-in,
+  .listening,
+  .vq-wave-bar {
+    animation: none;
+  }
+}
+
+:focus-visible {
+  outline: 2px solid var(--vq-brand);
+  outline-offset: 2px;
+  border-radius: 6px;
+}

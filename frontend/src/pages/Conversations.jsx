@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Workflow } from 'lucide-react';
+import { Workflow, MessagesSquare } from 'lucide-react';
 import { api } from '../lib/api';
 import { useApi } from '../hooks/useApi';
 import { Async, Badge, Button, Card, DemoTag, EmptyState, ErrorState, PageHeader, STATUS_TONE, cx } from '../components/ui';
@@ -15,35 +15,96 @@ function Detail({ id, onChanged }) {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
   const { user } = useAuth();
+
   const remove = async () => {
-    if (!window.confirm('Permanently delete this conversation, its messages, summary and decision traces? This cannot be undone.')) return;
-    try { await api(`/conversations/${id}`, { method: 'DELETE' }); onChanged(); navigate('/conversations'); } catch (err) { setError(err); }
+    if (
+      !window.confirm(
+        'Permanently delete this conversation, its messages, summary and decision traces? This cannot be undone.',
+      )
+    )
+      return;
+    try {
+      await api(`/conversations/${id}`, { method: 'DELETE' });
+      onChanged();
+      navigate('/conversations');
+    } catch (err) {
+      setError(err);
+    }
   };
+
   const summarise = async () => {
-    setBusy(true); setError(null);
-    try { await api(`/conversations/${id}/end`, { method: 'POST' }); state.reload(); onChanged(); }
-    catch (err) { setError(err); } finally { setBusy(false); }
+    setBusy(true);
+    setError(null);
+    try {
+      await api(`/conversations/${id}/end`, { method: 'POST' });
+      state.reload();
+      onChanged();
+    } catch (err) {
+      setError(err);
+    } finally {
+      setBusy(false);
+    }
   };
+
   return (
     <Async state={state}>
       {(c) => (
-        <div className="space-y-4">
-          <Card title={c.lead?.full_name || 'Unnamed caller'} subtitle={`${LANG_LABEL[c.language]} · ${c.channel} · started ${fmtDateTime(c.started_at)}`}
-            action={(
+        <div className="space-y-6">
+          <Card
+            title={c.lead?.full_name || 'Unnamed caller'}
+            subtitle={`${LANG_LABEL[c.language]} · ${c.channel} · started ${fmtDateTime(c.started_at)}`}
+            padded={false}
+            action={
               <div className="flex flex-wrap items-center gap-2">
                 <Badge tone={STATUS_TONE[c.status]}>{c.status}</Badge>
-                <Link to={`/traces?conversationId=${c.id}`} className="inline-flex items-center gap-1 text-xs text-indigo-300 hover:text-indigo-200"><Workflow className="size-3.5" />Decision traces</Link>
-                {user?.role === 'admin' && <Button size="sm" variant="danger" onClick={remove}>Delete</Button>}
+                <Link
+                  to={`/traces?conversationId=${c.id}`}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-surface-2 px-3 py-1.5 text-[13px] font-medium text-brand hover:bg-brand-soft/50"
+                >
+                  <Workflow className="size-4" />
+                  Decision traces
+                </Link>
+                {user?.role === 'admin' && (
+                  <Button size="sm" variant="danger" onClick={remove}>
+                    Delete
+                  </Button>
+                )}
               </div>
-            )}>
-            {c.escalation_reason && <p className="mb-3 rounded-lg bg-rose-500/10 px-3 py-2 text-xs text-rose-200">Escalated: {c.escalation_reason}</p>}
-            <div className="-m-5 flex max-h-[520px] flex-col">
-              <ChatTranscript messages={c.messages.map((m) => ({ ...m, sentiment: m.sentiment ? { label: m.sentiment, confidence: m.sentiment_confidence, evidence: m.sentiment_evidence } : null }))} />
+            }
+          >
+            {c.escalation_reason && (
+              <div className="border-b border-danger-border bg-danger-soft px-6 py-3 text-[13px] font-medium text-danger">
+                Escalated: {c.escalation_reason}
+              </div>
+            )}
+            <div className="flex max-h-[580px] flex-col">
+              <ChatTranscript
+                messages={c.messages.map((m) => ({
+                  ...m,
+                  sentiment: m.sentiment
+                    ? { label: m.sentiment, confidence: m.sentiment_confidence, evidence: m.sentiment_evidence }
+                    : null,
+                }))}
+              />
             </div>
           </Card>
-          <Card title="Call summary" action={<Button size="sm" variant="secondary" loading={busy} onClick={summarise}>{c.summary ? 'Regenerate' : c.status === 'active' ? 'End & summarise' : 'Generate summary'}</Button>}>
+
+          <Card
+            title="Call summary"
+            action={
+              <Button size="sm" variant="secondary" loading={busy} onClick={summarise}>
+                {c.summary ? 'Regenerate' : c.status === 'active' ? 'End & summarise' : 'Generate summary'}
+              </Button>
+            }
+          >
             {error && <ErrorState error={error} />}
-            {c.summary ? <SummaryCard summary={c.summary.summary} /> : <p className="text-sm text-slate-500">No summary yet. Summaries are generated automatically when a call is ended.</p>}
+            {c.summary ? (
+              <SummaryCard summary={c.summary.summary} />
+            ) : (
+              <p className="text-sm text-ink-muted">
+                No summary yet. Summaries are generated automatically when a call ends.
+              </p>
+            )}
           </Card>
         </div>
       )}
@@ -54,24 +115,78 @@ function Detail({ id, onChanged }) {
 export default function Conversations() {
   const { id } = useParams();
   const list = useApi('/conversations');
+
   return (
     <div>
-      <PageHeader title="Conversation History" description="Every message is persisted with per-message sentiment, evidence and RAG source citations." />
-      <div className="grid gap-5 lg:grid-cols-[360px_minmax(0,1fr)]">
-        <Card>
+      <PageHeader
+        eyebrow="Interaction Archive"
+        title="Conversations"
+        description="Complete voice and text customer transcripts persisted with per-message sentiment analysis, evidence phrases, and RAG citations."
+      />
+
+      <div className="grid gap-6 lg:grid-cols-[380px_minmax(0,1fr)]">
+        <Card title="Conversation threads" padded={false} className="overflow-hidden">
           <Async state={list}>
-            {(rows) => (!rows.length ? <EmptyState title="No conversations yet" /> : (
-              <ul className="scrollbar-thin -m-5 max-h-[calc(100vh-200px)] divide-y divide-line overflow-y-auto">{rows.map((c) => (
-                <li key={c.id}><Link to={`/conversations/${c.id}`} className={cx('block px-4 py-3 hover:bg-panel-2', id === c.id && 'bg-indigo-500/10')}>
-                  <div className="flex items-center gap-2 text-sm font-medium text-slate-200">{c.full_name || 'Unnamed caller'}{c.is_demo && <DemoTag />}<Badge tone={STATUS_TONE[c.status]} className="ml-auto">{c.status}</Badge></div>
-                  <div className="mt-0.5 truncate text-xs text-slate-400">{c.first_message || 'No customer message'}</div>
-                  <div className="mt-1 flex gap-2 text-[11px] text-slate-500">{fmtDateTime(c.started_at)} · {c.message_count} msgs · {LANG_LABEL[c.language]}{c.score != null && ` · score ${c.score}`}{c.has_summary && ' · summary'}</div>
-                </Link></li>
-              ))}</ul>
-            ))}
+            {(rows) =>
+              !rows.length ? (
+                <div className="p-6">
+                  <EmptyState icon={MessagesSquare} title="No conversations yet" />
+                </div>
+              ) : (
+                <ul className="scrollbar-thin max-h-[calc(100vh-240px)] divide-y divide-line overflow-y-auto">
+                  {rows.map((c) => {
+                    const active = id === c.id;
+                    return (
+                      <li key={c.id}>
+                        <Link
+                          to={`/conversations/${c.id}`}
+                          className={cx(
+                            'block border-l-2 px-5 py-4 transition-colors hover:bg-canvas',
+                            active ? 'border-l-brand bg-brand-soft/30' : 'border-l-transparent',
+                          )}
+                        >
+                          <div className="flex items-center gap-2 text-[15px] font-medium text-ink">
+                            <span className="truncate">{c.full_name || 'Unnamed caller'}</span>
+                            {c.is_demo && <DemoTag />}
+                            <Badge tone={STATUS_TONE[c.status]} className="ml-auto">
+                              {c.status}
+                            </Badge>
+                          </div>
+                          <div className="mt-1 truncate text-[13px] text-ink-2">
+                            {c.first_message || 'No customer message'}
+                          </div>
+                          <div className="mt-2 flex flex-wrap gap-1.5 font-mono text-xs text-ink-muted">
+                            <span>{fmtDateTime(c.started_at)}</span>
+                            <span>·</span>
+                            <span>{c.message_count} msgs</span>
+                            <span>·</span>
+                            <span>{LANG_LABEL[c.language]}</span>
+                            {c.score != null && <span>· score {c.score}</span>}
+                            {c.has_summary && <span>· summary</span>}
+                          </div>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )
+            }
           </Async>
         </Card>
-        <div className="min-w-0">{id ? <Detail key={id} id={id} onChanged={list.reload} /> : <Card><EmptyState title="Select a conversation" hint="Pick one on the left to see the transcript, sentiment and summary." /></Card>}</div>
+
+        <div className="min-w-0">
+          {id ? (
+            <Detail key={id} id={id} onChanged={list.reload} />
+          ) : (
+            <Card>
+              <EmptyState
+                icon={MessagesSquare}
+                title="Select a conversation"
+                hint="Choose a thread from the inbox on the left to review the full transcript, sentiment evidence, and call summary."
+              />
+            </Card>
+          )}
+        </div>
       </div>
     </div>
   );

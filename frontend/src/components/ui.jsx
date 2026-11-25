@@ -2,34 +2,48 @@ import { AlertTriangle, Inbox, Loader2 } from 'lucide-react';
 
 export const cx = (...c) => c.filter(Boolean).join(' ');
 
-export function Card({ className, children, title, action, subtitle }) {
+export function Card({ className, bodyClassName, children, title, action, subtitle, padded = true }) {
   return (
-    <section className={cx('min-w-0 rounded-xl border border-line bg-panel', className)}>
+    <section
+      className={cx(
+        'min-w-0 rounded-xl border border-line bg-surface shadow-[var(--shadow-card)]',
+        className,
+      )}
+    >
       {(title || action) && (
-        <header className="flex items-start justify-between gap-3 border-b border-line px-5 py-3.5">
-          <div>
-            <h2 className="text-sm font-semibold text-slate-100">{title}</h2>
-            {subtitle && <p className="mt-0.5 text-xs text-slate-500">{subtitle}</p>}
+        <header className="flex flex-wrap items-start justify-between gap-3 border-b border-line px-6 py-4">
+          <div className="min-w-0">
+            <h2 className="text-base font-semibold tracking-tight text-ink">{title}</h2>
+            {subtitle && <p className="mt-1 text-[13px] leading-snug text-ink-2">{subtitle}</p>}
           </div>
-          {action}
+          {action && <div className="shrink-0">{action}</div>}
         </header>
       )}
-      <div className="p-5">{children}</div>
+      <div className={cx(padded && 'p-6', bodyClassName)}>{children}</div>
     </section>
   );
 }
 
 const BTN = {
-  primary: 'bg-indigo-500 text-white hover:bg-indigo-400 disabled:bg-indigo-500/40',
-  secondary: 'border border-line bg-panel-2 text-slate-200 hover:bg-slate-800 disabled:opacity-50',
-  danger: 'border border-rose-500/30 bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 disabled:opacity-50',
-  ghost: 'text-slate-400 hover:bg-slate-800 hover:text-slate-200 disabled:opacity-50',
+  primary:
+    'bg-rail text-rail-ink hover:bg-brand-deep dark:bg-brand dark:text-white dark:hover:opacity-90 disabled:opacity-45 shadow-[0_1px_2px_rgba(22,34,28,0.18)]',
+  secondary:
+    'border border-line-strong bg-surface text-ink hover:bg-surface-2 disabled:opacity-50',
+  danger:
+    'border border-danger-border bg-danger-soft text-danger hover:opacity-90 disabled:opacity-50',
+  ghost: 'text-ink-2 hover:bg-section hover:text-ink disabled:opacity-50',
 };
+
 export function Button({ variant = 'primary', size = 'md', loading, className, children, ...props }) {
   return (
     <button
       type="button"
-      className={cx('inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors disabled:cursor-not-allowed', size === 'sm' ? 'px-2.5 py-1.5 text-xs' : 'px-3.5 py-2 text-sm', BTN[variant], className)}
+      className={cx(
+        'inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg font-medium transition-colors disabled:cursor-not-allowed',
+        size === 'sm' ? 'px-3 py-1.5 text-[13px]' : 'px-4 py-2.5 text-sm',
+        BTN[variant],
+        className,
+      )}
       disabled={loading || props.disabled}
       {...props}
     >
@@ -40,55 +54,140 @@ export function Button({ variant = 'primary', size = 'md', loading, className, c
 }
 
 const TONES = {
-  slate: 'bg-slate-500/15 text-slate-300 ring-slate-500/25',
-  indigo: 'bg-indigo-500/15 text-indigo-300 ring-indigo-500/25',
-  green: 'bg-emerald-500/15 text-emerald-300 ring-emerald-500/25',
-  amber: 'bg-amber-500/15 text-amber-300 ring-amber-500/25',
-  red: 'bg-rose-500/15 text-rose-300 ring-rose-500/25',
-  sky: 'bg-sky-500/15 text-sky-300 ring-sky-500/25',
+  slate: 'bg-section text-ink-2 border-line',
+  indigo: 'bg-brand-soft text-brand-deep border-brand-soft-border',
+  brand: 'bg-brand-soft text-brand-deep border-brand-soft-border',
+  green: 'bg-success-soft text-success border-success-border',
+  amber: 'bg-warning-soft text-warning border-warning-border',
+  red: 'bg-danger-soft text-danger border-danger-border',
+  sky: 'bg-info-soft text-info border-info-border',
+  dark: 'bg-rail text-rail-ink border-rail-border',
 };
+
 export const Badge = ({ tone = 'slate', className, children, title }) => (
-  <span title={title} className={cx('inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium ring-1 ring-inset whitespace-nowrap', TONES[tone], className)}>{children}</span>
+  <span
+    title={title}
+    className={cx(
+      'inline-flex items-center gap-1.5 whitespace-nowrap rounded-md border px-2 py-0.5 text-xs font-medium leading-tight',
+      TONES[tone] || TONES.slate,
+      className,
+    )}
+  >
+    {children}
+  </span>
 );
 
-export const STATUS_TONE = { new: 'slate', contacted: 'sky', qualified: 'indigo', visit_scheduled: 'green', nurture: 'amber', lost: 'red', confirmed: 'green', cancelled: 'red', completed: 'indigo', no_show: 'amber', active: 'sky', ended: 'slate', escalated: 'red' };
+export const STATUS_TONE = {
+  new: 'slate',
+  contacted: 'sky',
+  qualified: 'brand',
+  visit_scheduled: 'green',
+  nurture: 'amber',
+  lost: 'red',
+  confirmed: 'green',
+  cancelled: 'red',
+  completed: 'brand',
+  no_show: 'amber',
+  active: 'sky',
+  ended: 'slate',
+  escalated: 'red',
+};
+
 export const SENTIMENT_TONE = { positive: 'green', neutral: 'slate', negative: 'red' };
 export const SCORE_TONE = { hot: 'red', warm: 'amber', cold: 'sky' };
 
-export const DemoTag = () => <Badge tone="amber" title="Fictional demonstration data">DEMO</Badge>;
+export const DemoTag = () => (
+  <Badge tone="amber" className="font-mono text-[11px] tracking-wider" title="Fictional demonstration data">
+    DEMO
+  </Badge>
+);
 
 export function Stat({ label, value, hint, icon: Icon }) {
   return (
-    <div className="rounded-xl border border-line bg-panel p-4">
-      <div className="flex items-center justify-between text-xs font-medium text-slate-400">
-        {label}
-        {Icon && <Icon className="size-4 text-slate-500" />}
+    <div className="rounded-xl border border-line bg-surface p-5 shadow-[var(--shadow-card)]">
+      <div className="flex items-center justify-between text-[13px] font-medium text-ink-2">
+        <span>{label}</span>
+        {Icon && <Icon className="size-4 text-ink-muted" />}
       </div>
-      <div className="mt-2 text-2xl font-semibold tracking-tight text-slate-50">{value}</div>
-      {hint && <div className="mt-1 text-xs text-slate-500">{hint}</div>}
+      <div className="mt-2.5 font-mono text-[28px] font-semibold leading-none tracking-tight text-ink tabular-nums">
+        {value}
+      </div>
+      {hint && <div className="mt-2 text-xs text-ink-muted">{hint}</div>}
+    </div>
+  );
+}
+
+/** Unified horizontal metric strip combining a dark anchor cell + crisp light cells. */
+export function KpiStrip({ items }) {
+  return (
+    <div className="grid grid-cols-2 divide-y divide-line overflow-hidden rounded-xl border border-line bg-surface shadow-[var(--shadow-card)] sm:grid-cols-3 lg:grid-cols-6 lg:divide-x lg:divide-y-0">
+      {items.map(({ label, value, hint, icon: Icon, accent, dark }) => (
+        <div
+          key={label}
+          className={cx(
+            'flex flex-col justify-between px-5 py-4.5 transition-colors',
+            dark ? 'bg-rail text-rail-ink' : 'hover:bg-canvas/60',
+          )}
+        >
+          <div
+            className={cx(
+              'flex items-center justify-between gap-2 text-[13px] font-medium',
+              dark ? 'text-rail-muted' : 'text-ink-2',
+            )}
+          >
+            <span className="truncate">{label}</span>
+            {Icon && (
+              <Icon className={cx('size-4 shrink-0', dark ? 'text-terra' : 'text-ink-muted')} />
+            )}
+          </div>
+          <div
+            className={cx(
+              'mt-3 font-mono text-[28px] font-semibold leading-none tracking-tight tabular-nums',
+              dark ? 'text-rail-ink' : accent || 'text-ink',
+            )}
+          >
+            {value}
+          </div>
+          {hint && (
+            <div className={cx('mt-2 truncate text-xs', dark ? 'text-rail-muted' : 'text-ink-muted')}>
+              {hint}
+            </div>
+          )}
+        </div>
+      ))}
     </div>
   );
 }
 
 export const Spinner = ({ label = 'Loading…' }) => (
-  <div className="flex items-center justify-center gap-2 py-10 text-sm text-slate-400"><Loader2 className="size-4 animate-spin" />{label}</div>
+  <div className="flex items-center justify-center gap-2.5 py-14 text-[15px] text-ink-2">
+    <Loader2 className="size-5 animate-spin text-brand" />
+    <span>{label}</span>
+  </div>
 );
 
 export function ErrorState({ error, onRetry }) {
   return (
-    <div className="flex flex-col items-center gap-3 rounded-lg border border-rose-500/20 bg-rose-500/5 px-4 py-8 text-center text-sm text-rose-200">
-      <AlertTriangle className="size-5 text-rose-400" />
-      <div>{error?.message || 'Something went wrong'}</div>
-      {onRetry && <Button variant="secondary" size="sm" onClick={onRetry}>Retry</Button>}
+    <div className="flex flex-col items-center gap-3 rounded-xl border border-danger-border bg-danger-soft px-5 py-8 text-center text-sm text-danger">
+      <AlertTriangle className="size-6 text-danger" />
+      <div className="max-w-md">{error?.message || 'Something went wrong'}</div>
+      {onRetry && (
+        <Button variant="secondary" size="sm" onClick={onRetry}>
+          Retry
+        </Button>
+      )}
     </div>
   );
 }
 
-export const EmptyState = ({ title, hint, icon: Icon = Inbox }) => (
-  <div className="flex flex-col items-center gap-2 py-10 text-center">
-    <Icon className="size-6 text-slate-600" />
-    <div className="text-sm font-medium text-slate-300">{title}</div>
-    {hint && <div className="max-w-sm text-xs text-slate-500">{hint}</div>}
+export const EmptyState = ({ title, hint, icon: Icon = Inbox, action }) => (
+  <div className="flex flex-col items-center gap-2.5 py-12 text-center">
+    <div className="grid size-12 place-items-center rounded-xl border border-line bg-surface-2 text-ink-muted">
+      <Icon className="size-6" />
+    </div>
+    <div className="mt-1 text-base font-medium text-ink">{title}</div>
+    {hint && <div className="max-w-md text-sm leading-relaxed text-ink-2">{hint}</div>}
+    {action && <div className="mt-2">{action}</div>}
   </div>
 );
 
@@ -100,31 +199,56 @@ export function Async({ state, empty, children }) {
   return children(state.data);
 }
 
-export const PageHeader = ({ title, description, actions }) => (
-  <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
-    <div>
-      <h1 className="text-xl font-semibold tracking-tight text-slate-50">{title}</h1>
-      {description && <p className="mt-1 text-sm text-slate-400">{description}</p>}
+export const PageHeader = ({ eyebrow, title, description, actions }) => (
+  <div className="mb-7 flex flex-wrap items-end justify-between gap-4 border-b border-line pb-5">
+    <div className="min-w-0 max-w-3xl">
+      {eyebrow && (
+        <div className="mb-1.5 font-mono text-xs font-semibold uppercase tracking-wider text-brand">
+          {eyebrow}
+        </div>
+      )}
+      <h1 className="font-serif text-[30px] font-medium leading-tight tracking-tight text-ink sm:text-[36px]">
+        {title}
+      </h1>
+      {description && <p className="mt-2 text-[15px] leading-relaxed text-ink-2">{description}</p>}
     </div>
-    {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
+    {actions && <div className="flex flex-wrap items-center gap-2.5">{actions}</div>}
   </div>
 );
 
 export const Field = ({ label, children, hint }) => (
   <label className="block">
-    <span className="mb-1.5 block text-xs font-medium text-slate-400">{label}</span>
+    <span className="mb-1.5 block text-[13px] font-medium text-ink-2">{label}</span>
     {children}
-    {hint && <span className="mt-1 block text-xs text-slate-500">{hint}</span>}
+    {hint && <span className="mt-1.5 block text-xs text-ink-muted">{hint}</span>}
   </label>
 );
-export const inputCls = 'w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-slate-100 placeholder:text-slate-600 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500';
+
+export const inputCls =
+  'w-full rounded-lg border border-line-strong bg-surface px-3.5 py-2.5 text-sm text-ink placeholder:text-ink-muted transition-colors focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand disabled:bg-surface-2 disabled:text-ink-muted';
 
 export function Toast({ toast, onClose }) {
   if (!toast) return null;
+  const isError = toast.type === 'error';
   return (
-    <div role="status" className={cx('fixed bottom-5 right-5 z-50 flex items-center gap-3 rounded-lg border px-4 py-3 text-sm shadow-xl', toast.type === 'error' ? 'border-rose-500/30 bg-rose-950 text-rose-100' : 'border-emerald-500/30 bg-emerald-950 text-emerald-100')}>
-      {toast.message}
-      <button type="button" onClick={onClose} className="text-xs opacity-70 hover:opacity-100">Dismiss</button>
+    <div
+      role="status"
+      className={cx(
+        'fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-xl border px-4 py-3.5 text-sm shadow-[var(--shadow-popover)]',
+        isError
+          ? 'border-danger-border bg-danger-soft text-danger'
+          : 'border-rail-border bg-rail text-rail-ink',
+      )}
+    >
+      <span className={cx('size-2.5 shrink-0 rounded-full', isError ? 'bg-danger' : 'bg-[#6ED499]')} />
+      <span>{toast.message}</span>
+      <button
+        type="button"
+        onClick={onClose}
+        className="ml-2 cursor-pointer text-[13px] font-medium opacity-80 underline-offset-2 hover:opacity-100 hover:underline"
+      >
+        Dismiss
+      </button>
     </div>
   );
 }

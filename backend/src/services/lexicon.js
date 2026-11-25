@@ -4,6 +4,7 @@
 
 /** Hindi/Telugu/Hinglish surface forms -> English retrieval keywords. */
 export const retrievalSynonyms = {
+  'ABC Heights project overview': ['greenhaven', 'green haven', 'residences'],
   'sq ft size': ['big', 'size', 'square feet', 'sqft', 'carpet area', 'बड़ा', 'साइज', 'साइज़', 'సైజు', 'ఎంత పెద్ద'],
   price: ['cost', 'how much', 'rate', 'कीमत', 'दाम', 'रेट', 'ధర', 'రేటు', 'kimat', 'daam', 'dhara'],
   amenities: ['सुविधा', 'सुविधाएं', 'सुविधाएँ', 'సౌకర్యాలు', 'సదుపాయాలు', 'suvidha'],

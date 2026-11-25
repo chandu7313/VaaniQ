@@ -14,6 +14,7 @@ import knowledgeRoutes from './routes/knowledge.js';
 import insightRoutes from './routes/insights.js';
 import customerRoutes from './routes/customers.js';
 import callSummaryRoutes from './routes/callSummaries.js';
+import publicRoutes from './routes/public.js';
 
 export function createApp() {
   const app = express();
@@ -35,6 +36,7 @@ export function createApp() {
     }
   });
   app.use('/api/auth', authRoutes);
+  app.use('/api/public', publicRoutes);
   app.use('/api/conversations', requireAuth, conversationRoutes);
   app.use('/api/leads', requireAuth, leadRoutes);
   app.use('/api/appointments', requireAuth, appointmentRoutes);

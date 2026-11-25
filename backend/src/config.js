@@ -19,6 +19,7 @@ const schema = z.object({
   RATE_LIMIT_MAX: z.coerce.number().default(300),
   AGENT_RATE_LIMIT_MAX: z.coerce.number().default(60),
   LOGIN_RATE_LIMIT_MAX: z.coerce.number().default(20),
+  PUBLIC_TENANT_SLUGS: z.string().default('abc-developers'),
 });
 
 const parsed = schema.safeParse(process.env);
@@ -50,4 +51,5 @@ export const config = {
   rateLimitMax: env.RATE_LIMIT_MAX,
   agentRateLimitMax: env.AGENT_RATE_LIMIT_MAX,
   loginRateLimitMax: env.LOGIN_RATE_LIMIT_MAX,
+  publicTenantSlugs: env.PUBLIC_TENANT_SLUGS.split(',').map((s) => s.trim()).filter(Boolean),
 };
