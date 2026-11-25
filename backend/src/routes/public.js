@@ -17,7 +17,7 @@ const lang = z.enum(['en', 'hi', 'te']);
 const availabilityQuery = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   daypart: z.enum(['morning', 'afternoon', 'evening']).optional(),
-  limit: z.coerce.number().int().min(1).max(24).default(12),
+  limit: z.coerce.number().int().min(1).max(60).default(48),
 });
 
 const knowledgeSearchBody = z.object({

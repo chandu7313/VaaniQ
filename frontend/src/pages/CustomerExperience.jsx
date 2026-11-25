@@ -1,14 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { MapPin, ShieldCheck } from 'lucide-react';
 import { BCP47 } from '../lib/format';
 import { publicApi, customerSessionStore } from '../lib/publicApi';
 import { useSpeechRecognition, useSpeechSynthesis, useMicPermission } from '../hooks/useSpeech';
-import { ProductBrand } from '../components/ProductBrand';
+import { ConversationHeader } from '../components/customer/BrandHeader';
 import WelcomeScreen from '../components/customer/WelcomeScreen';
 import CustomerVoiceConsole from '../components/customer/CustomerVoiceConsole';
-import ResidenceGuide from '../components/customer/ResidenceGuide';
-import VisitBookingPanel from '../components/customer/VisitBookingPanel';
 import CompletionCard from '../components/customer/CompletionCard';
 
 let localId = 0;
@@ -24,7 +21,7 @@ export default function CustomerExperience() {
   const [lang, setLang] = useState('en');
   const [autoSpeak, setAutoSpeak] = useState(true);
 
-  const [session, setSession] = useState(null); // { conversationId, sessionToken }
+  const [session, setSession] = useState(null);
   const [messages, setMessages] = useState([]);
   const [status, setStatus] = useState('active');
   const [sending, setSending] = useState(false);
@@ -38,10 +35,9 @@ export default function CustomerExperience() {
   const [needsContact, setNeedsContact] = useState(false);
   const [contactSaved, setContactSaved] = useState(false);
   const [appointment, setAppointment] = useState(null);
+  const [showCompletion, setShowCompletion] = useState(false);
 
   const [slots, setSlots] = useState([]);
-  const [loadingSlots, setLoadingSlots] = useState(false);
-  const [daypart, setDaypart] = useState('');
   const [selectingSlot, setSelectingSlot] = useState(null);
   const [savingContact, setSavingContact] = useState(false);
 
@@ -65,7 +61,15 @@ export default function CustomerExperience() {
     [autoSpeak, say],
   );
 
-  // Load verified project overview & initial slots + restore isolated session if active
+  const loadAvailability = useCallback(async () => {
+    try {
+      const data = await publicApi(slug, '/availability?limit=48');
+      setSlots(data || []);
+    } catch {
+      // Keep current slots if refresh fails transiently
+    }
+  }, [slug]);
+
   useEffect(() => {
     let cancelled = false;
     setOverviewLoading(true);
@@ -73,10 +77,13 @@ export default function CustomerExperience() {
 
     (async () => {
       try {
-        const data = await publicApi(slug, '/overview');
+        const [data, avail] = await Promise.all([
+          publicApi(slug, '/overview'),
+          publicApi(slug, '/availability?limit=48').catch(() => []),
+        ]);
         if (cancelled) return;
         setOverview(data);
-        setSlots(data.availableSlots || []);
+        setSlots(avail?.length ? avail : data.availableSlots || []);
 
         const saved = customerSessionStore.get(slug);
         if (saved?.conversationId && saved?.sessionToken) {
@@ -95,6 +102,9 @@ export default function CustomerExperience() {
             setContactSaved(Boolean(restored.contactSaved));
             setAppointment(restored.appointment || null);
             setRequirements(restored.collectedRequirements || null);
+            if (restored.appointment || restored.conversationStatus === 'ended') {
+              setShowCompletion(true);
+            }
           } catch {
             customerSessionStore.clear(slug);
           }
@@ -110,27 +120,6 @@ export default function CustomerExperience() {
       cancelled = true;
     };
   }, [slug]);
-
-  const loadAvailability = useCallback(
-    async (dp) => {
-      setLoadingSlots(true);
-      try {
-        const qs = new URLSearchParams({ limit: '12', ...(dp ? { daypart: dp } : {}) }).toString();
-        const data = await publicApi(slug, `/availability?${qs}`);
-        setSlots(data || []);
-      } catch {
-        // Keep current slots if refresh fails transiently
-      } finally {
-        setLoadingSlots(false);
-      }
-    },
-    [slug],
-  );
-
-  const handleChangeDaypart = (dp) => {
-    setDaypart(dp);
-    loadAvailability(dp);
-  };
 
   const startConversation = async () => {
     setStarting(true);
@@ -151,6 +140,7 @@ export default function CustomerExperience() {
       setNeedsContact(false);
       setContactSaved(false);
       setAppointment(null);
+      setShowCompletion(false);
       autoSay(data.greeting.content, lang, data.greeting.id);
     } catch (err) {
       setError(err.message);
@@ -180,12 +170,19 @@ export default function CustomerExperience() {
         setPendingConfirmation(r.pendingConfirmation || null);
         setNeedsContact(Boolean(r.needsContact));
         setContactSaved(Boolean(r.contactSaved));
-        if (r.appointment) {
-          setAppointment(r.appointment);
-          loadAvailability(daypart);
-        }
         if (r.collectedRequirements) setRequirements(r.collectedRequirements);
         setStatus(r.conversationStatus || 'active');
+
+        if (r.appointment) {
+          setAppointment(r.appointment);
+          setShowCompletion(true);
+          loadAvailability();
+          // Also finalize call summary in PostgreSQL when booking completes
+          publicApi(slug, `/conversations/${session.conversationId}/end`, {
+            method: 'POST',
+            sessionToken: session.sessionToken,
+          }).catch(() => {});
+        }
         autoSay(r.reply, r.language || lang, r.messageId);
       } catch (err) {
         setMessages((m) => m.map((x) => (x.id === tempId ? { ...x, failed: err.message } : x)));
@@ -194,7 +191,7 @@ export default function CustomerExperience() {
         setSending(false);
       }
     },
-    [session, sending, status, slug, lang, autoSay, daypart, loadAvailability],
+    [session, sending, status, slug, lang, autoSay, loadAvailability],
   );
 
   const speech = useSpeechRecognition({ lang: bcp47, onFinal: sendMessage });
@@ -212,7 +209,6 @@ export default function CustomerExperience() {
         sessionToken: session.sessionToken,
         body: { startsAt, language: lang },
       });
-      // Reload clean message history or append both turns cleanly
       const refreshed = await publicApi(slug, `/conversations/${session.conversationId}`, {
         sessionToken: session.sessionToken,
       });
@@ -220,11 +216,14 @@ export default function CustomerExperience() {
       setPendingConfirmation(r.pendingConfirmation || null);
       setNeedsContact(Boolean(r.needsContact));
       setContactSaved(Boolean(r.contactSaved));
-      if (r.appointment) setAppointment(r.appointment);
+      if (r.appointment) {
+        setAppointment(r.appointment);
+        setShowCompletion(true);
+      }
       autoSay(r.reply, lang, r.messageId);
     } catch (err) {
       setError(err.message);
-      loadAvailability(daypart);
+      loadAvailability();
     } finally {
       setSelectingSlot(null);
     }
@@ -261,6 +260,7 @@ export default function CustomerExperience() {
         sessionToken: session.sessionToken,
       });
       setStatus('ended');
+      setShowCompletion(true);
       tts.cancel();
       speech.stop();
     } catch (err) {
@@ -270,7 +270,7 @@ export default function CustomerExperience() {
     }
   };
 
-  const handleStartNew = () => {
+  const handleExploreMore = () => {
     tts.cancel();
     speech.stop();
     customerSessionStore.clear(slug);
@@ -283,8 +283,9 @@ export default function CustomerExperience() {
     setNeedsContact(false);
     setContactSaved(false);
     setAppointment(null);
+    setShowCompletion(false);
     setError(null);
-    loadAvailability(daypart);
+    loadAvailability();
   };
 
   const changeLang = (k) => {
@@ -293,121 +294,98 @@ export default function CustomerExperience() {
     tts.cancel();
   };
 
+  if (overviewLoading) {
+    return (
+      <div className="flex min-h-full items-center justify-center bg-[#F7F7F2] text-sm text-[#657168]">
+        Loading GreenHaven Residences…
+      </div>
+    );
+  }
+
+  if (overviewError) {
+    return (
+      <div className="flex min-h-full items-center justify-center bg-[#F7F7F2] p-6">
+        <div className="max-w-md rounded-2xl border border-[#E7BDBD] bg-[#FAE8E8] p-6 text-center text-sm text-[#A93B3B]">
+          <div className="font-semibold">Unable to load assistant</div>
+          <p className="mt-1">{overviewError}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Screen 1: Welcome / Hero Landing
+  if (!session) {
+    return (
+      <WelcomeScreen
+        overview={overview}
+        lang={lang}
+        onSelectLang={changeLang}
+        onStart={startConversation}
+        starting={starting}
+        sttSupported={speech.supported}
+        permission={permission}
+        error={error}
+      />
+    );
+  }
+
   const ended = status === 'ended';
   const voiceState = speech.listening ? 'listening' : sending ? 'thinking' : tts.speaking ? 'speaking' : 'idle';
   const tenant = overview?.tenant;
 
   return (
-    <div className="min-h-full bg-[#F7F7F2] text-[#202922]">
-      {/* Dedicated Customer Top Bar (Strictly Isolated from Admin Console) */}
-      <header className="border-b border-[#E2E4DC] bg-white">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-4 lg:px-8">
-          <div className="flex items-center gap-4">
-            <ProductBrand size="sm" surface="light" />
-            <div className="hidden h-6 w-px bg-[#E2E4DC] sm:block" />
-            <div className="hidden sm:block">
-              <div className="text-sm font-semibold text-[#202922]">
-                {tenant?.companyName || 'ABC Developers'} · {tenant?.projectName || 'GreenHaven Residences'}
-              </div>
-              <div className="flex items-center gap-1.5 text-xs text-[#657168]">
-                <MapPin className="size-3 text-[#244D3C]" />
-                <span>{tenant?.location || 'Gachibowli, Hyderabad'}</span>
-              </div>
-            </div>
-          </div>
+    <div className="flex min-h-screen flex-col bg-[#F7F7F2] text-[#202922]">
+      <ConversationHeader
+        companyName={tenant?.companyName}
+        lang={lang}
+        onChangeLang={changeLang}
+        onEnd={handleEndConversation}
+        ending={ending}
+        ended={ended || showCompletion}
+      />
 
-          <div className="flex items-center gap-2 text-xs text-[#657168]">
-            <ShieldCheck className="size-4 text-[#244D3C]" />
-            <span>Private guided session</span>
+      {error && (
+        <div className="mx-auto mt-3 w-full max-w-3xl px-4 sm:px-6">
+          <div role="alert" className="rounded-xl border border-[#E7BDBD] bg-[#FAE8E8] px-4 py-2.5 text-sm text-[#A93B3B]">
+            {error}
           </div>
         </div>
-      </header>
+      )}
 
-      <main className="mx-auto max-w-6xl px-5 py-6 lg:px-8 lg:py-8">
-        {overviewLoading ? (
-          <div className="flex items-center justify-center py-20 text-sm text-[#657168]">
-            Preparing residence details…
-          </div>
-        ) : overviewError ? (
-          <div className="mx-auto max-w-lg rounded-2xl border border-[#E7BDBD] bg-[#FAE8E8] p-6 text-center text-sm text-[#A93B3B]">
-            <div className="font-semibold">Unable to load assistant</div>
-            <p className="mt-1">{overviewError}</p>
-          </div>
-        ) : !session ? (
-          <WelcomeScreen
-            overview={overview}
-            lang={lang}
-            onSelectLang={changeLang}
-            onStart={startConversation}
-            starting={starting}
-            sttSupported={speech.supported}
-            permission={permission}
-            error={error}
-          />
-        ) : (
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_410px]">
-            <div className="min-w-0 space-y-4">
-              <CustomerVoiceConsole
-                lang={lang}
-                onChangeLang={changeLang}
-                messages={messages}
-                sending={sending}
-                ended={ended}
-                voiceState={voiceState}
-                speech={speech}
-                tts={tts}
-                autoSpeak={autoSpeak}
-                onToggleAutoSpeak={setAutoSpeak}
-                onReplay={(m) => say(m.content, lang, m.id)}
-                onSend={sendMessage}
-                onEnd={handleEndConversation}
-                ending={ending}
-                pendingConfirmation={pendingConfirmation}
-                offeredSlots={offeredSlots}
-                hasVoice={hasVoice}
-              />
-
-              {error && (
-                <div role="alert" className="rounded-xl border border-[#E7BDBD] bg-[#FAE8E8] px-4 py-3 text-sm text-[#A93B3B]">
-                  {error}
-                </div>
-              )}
-            </div>
-
-            <aside className="space-y-5">
-              {(appointment || ended) && (
-                <CompletionCard
-                  appointment={appointment}
-                  tenant={tenant}
-                  ended={ended}
-                  onStartNew={handleStartNew}
-                />
-              )}
-
-              {!ended && !appointment && (
-                <VisitBookingPanel
-                  slots={slots}
-                  loadingSlots={loadingSlots}
-                  daypart={daypart}
-                  onChangeDaypart={handleChangeDaypart}
-                  onSelectSlot={handleSelectSlot}
-                  selectingSlot={selectingSlot}
-                  pendingConfirmation={pendingConfirmation}
-                  onConfirmPending={() => sendMessage('Yes, please confirm')}
-                  onDeclinePending={() => sendMessage('No, a different time')}
-                  needsContact={needsContact}
-                  contactSaved={contactSaved}
-                  onSubmitContact={handleSubmitContact}
-                  savingContact={savingContact}
-                  sending={sending}
-                />
-              )}
-
-              <ResidenceGuide slug={slug} overview={overview} requirements={requirements} />
-            </aside>
-          </div>
-        )}
-      </main>
+      {showCompletion ? (
+        <CompletionCard
+          appointment={appointment}
+          tenant={tenant}
+          onExploreMore={handleExploreMore}
+          onViewTranscript={() => setShowCompletion(false)}
+        />
+      ) : (
+        <CustomerVoiceConsole
+          lang={lang}
+          messages={messages}
+          sending={sending}
+          ended={ended}
+          voiceState={voiceState}
+          speech={speech}
+          tts={tts}
+          autoSpeak={autoSpeak}
+          onToggleAutoSpeak={setAutoSpeak}
+          onReplay={(m) => say(m.content, lang, m.id)}
+          onSend={sendMessage}
+          overview={overview}
+          requirements={requirements}
+          slots={slots}
+          selectingSlot={selectingSlot}
+          onSelectSlot={handleSelectSlot}
+          pendingConfirmation={pendingConfirmation}
+          offeredSlots={offeredSlots}
+          needsContact={needsContact}
+          contactSaved={contactSaved}
+          onSubmitContact={handleSubmitContact}
+          savingContact={savingContact}
+          hasVoice={hasVoice}
+        />
+      )}
     </div>
   );
 }
