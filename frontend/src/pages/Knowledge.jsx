@@ -5,6 +5,7 @@ import { useApi } from '../hooks/useApi';
 import { useToast } from '../hooks/useToast';
 import { Async, Badge, Button, Card, DemoTag, EmptyState, Field, PageHeader, Toast, inputCls } from '../components/ui';
 import { fmtDateTime } from '../lib/format';
+import { useAuth } from '../context/AuthContext';
 
 function AddDocument({ onAdded, notify }) {
   const [title, setTitle] = useState('');
@@ -67,6 +68,7 @@ function RetrievalTester() {
 
 export default function Knowledge() {
   const docs = useApi('/knowledge');
+  const { user } = useAuth();
   const [viewing, setViewing] = useState(null);
   const { toast, notify, clear } = useToast();
   const view = async (id) => { try { setViewing(await api(`/knowledge/${id}`)); } catch (err) { notify(err.message, 'error'); } };
@@ -90,7 +92,7 @@ export default function Knowledge() {
                       <div className="text-xs text-slate-500">{d.chunk_count} chunks · {fmtDateTime(d.created_at)}</div>
                     </button>
                     {d.flagged_chunks > 0 && <Badge tone="red" title="Chunks that look like prompt-injection attempts are excluded from retrieval"><ShieldAlert className="size-3" />{d.flagged_chunks} flagged</Badge>}
-                    <Button size="sm" variant="ghost" onClick={() => remove(d)} aria-label={`Delete ${d.title}`}><Trash2 className="size-4" /></Button>
+                    {user?.role === 'admin' && <Button size="sm" variant="ghost" onClick={() => remove(d)} aria-label={`Delete ${d.title}`}><Trash2 className="size-4" /></Button>}
                   </li>
                 ))}</ul>
               ))}

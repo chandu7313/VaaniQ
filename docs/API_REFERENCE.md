@@ -1,6 +1,55 @@
-# VaaniQ REST API
+# VaaniQ API Reference
 
-Base path `/api`. JSON in, JSON out.
+Base path `/api`. JSON in, JSON out. Every route listed here exists in `backend/src/routes/*.js` and is covered by the automated tests unless marked otherwise.
+
+## Endpoint index (42)
+
+Legend: 🔓 public · 🔑 signed-in user · 🛡 admin role only. All 🔑/🛡 routes are tenant-scoped through the JWT.
+
+| Method | Path | Access | Purpose |
+|---|---|---|---|
+| GET | `/health` | 🔓 | Liveness + database check (`503 DB_UNAVAILABLE` when the DB is down) |
+| POST | `/auth/login` | 🔓 | Email + password → JWT (failed attempts rate-limited) |
+| GET | `/auth/me` | 🔑 | Current user and tenant |
+| GET | `/meta` | 🔑 | AI mode, tenant config (catalog, scoring, booking policy), tool registry |
+| GET | `/llm/health` | 🔑 | Live AI-provider check (`ok` / `demo_mode` / `503 LLM_UNAVAILABLE`) |
+| GET | `/analytics/overview` | 🔑 | Dashboard and Call Intelligence aggregates (live SQL) |
+| GET | `/traces` | 🔑 | Agent turn list (filter `conversationId`) |
+| GET | `/traces/:id` | 🔑 | One full decision trace |
+| GET | `/conversations` | 🔑 | Conversation list |
+| POST | `/conversations` | 🔑 | Start a call (creates lead via `saveLead`, stores greeting) |
+| GET | `/conversations/:id` | 🔑 | Transcript, sentiment, sources, lead, summary |
+| POST | `/conversations/:id/messages` | 🔑 | **One agent turn** (rate-limited, serialized per conversation) |
+| POST | `/conversations/:id/end` | 🔑 | End call + structured summary (`generateCallSummary`) |
+| GET | `/conversations/:id/traces` | 🔑 | All traces of one conversation |
+| DELETE | `/conversations/:id` | 🛡 | Delete conversation (cascades messages, summary, traces) |
+| GET | `/leads` | 🔑 | List (filters `status`, `search`) |
+| POST | `/leads` | 🔑 | Create via `saveLead` (deduplicated by phone, scored) |
+| GET | `/leads/:id` | 🔑 | Lead + conversations + appointments + summaries |
+| PATCH | `/leads/:id` | 🔑 | Status / name / email (computed fields rejected) |
+| DELETE | `/leads/:id` | 🛡 | Delete lead |
+| GET | `/customers` | 🔑 | Identified leads (name + phone) with counts and next visit |
+| POST | `/customers` | 🔑 | Create or return existing (same phone) |
+| GET | `/customers/:id` | 🔑 | One customer |
+| PATCH | `/customers/:id` | 🔑 | Update via `updateLead` |
+| DELETE | `/customers/:id` | 🛡 | Delete customer |
+| GET | `/appointments` | 🔑 | List (filters `from`, `status`) |
+| GET | `/appointments/availability` | 🔑 | Free slots from the live calendar |
+| POST | `/appointments` | 🔑 | Staff booking via `bookAppointment` |
+| GET | `/appointments/:id` | 🔑 | One appointment |
+| PATCH | `/appointments/:id/status` | 🔑 | confirmed / cancelled / completed / no_show |
+| PATCH | `/appointments/:id/reschedule` | 🔑 | Move to another free slot |
+| DELETE | `/appointments/:id` | 🛡 | Hard delete (normally use `cancelled`) |
+| GET | `/call-summaries` | 🔑 | List (filter `leadId`) |
+| POST | `/call-summaries` | 🔑 | Generate for a conversation |
+| GET | `/call-summaries/:id` | 🔑 | One summary |
+| PATCH | `/call-summaries/:id` | 🔑 | Staff notes / follow-up done only |
+| DELETE | `/call-summaries/:id` | 🛡 | Delete summary |
+| GET | `/knowledge` | 🔑 | Documents with chunk and flag counts |
+| POST | `/knowledge` | 🔑 | Ingest (chunk + index; injection-like chunks flagged) |
+| POST | `/knowledge/search` | 🔑 | BM25 retrieval tester (no threshold) |
+| GET | `/knowledge/:id` | 🔑 | Document + chunks |
+| DELETE | `/knowledge/:id` | 🛡 | Delete document |
 
 **Envelope.** Success: `{ "data": ... }`. Error: `{ "error": { "code", "message", "details?", "requestId" } }`.
 Every response carries an `x-request-id` header.

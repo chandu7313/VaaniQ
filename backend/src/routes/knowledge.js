@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import { requireRole } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import { ah } from '../middleware/error.js';
 import * as c from '../controllers/knowledge.controller.js';
@@ -13,6 +14,6 @@ r.get('/', ah(c.list));
 r.post('/', validate({ body: createBody }), ah(c.create));
 r.post('/search', validate({ body: searchBody }), ah(c.search));
 r.get('/:id', validate({ params: idParams }), ah(c.detail));
-r.delete('/:id', validate({ params: idParams }), ah(c.remove));
+r.delete('/:id', requireRole('admin'), validate({ params: idParams }), ah(c.remove));
 
 export default r;

@@ -2,7 +2,11 @@
 
 Read this top to bottom once and you can explain any part of the system. File references point to the real code.
 
+**Part A** (sections 1–13) explains how the system works as a whole: request flow, RAG, memory, tools, scoring, booking, data, security, scope. **Part B** is a module reference: one card per module with its purpose, input and output, dependencies, files, an example and how to debug it. Technical interview Q&A is in [TECHNICAL_QA.md](TECHNICAL_QA.md).
+
 ---
+
+# Part A: How the system works
 
 ## 1. The 30-second pitch
 
@@ -279,3 +283,142 @@ See [SCALABILITY_AND_SECURITY.md](SCALABILITY_AND_SECURITY.md). Key points: keys
 - **"Can a deleted user keep using their token?"** No. `requireAuth` verifies the signature *and* that the user still exists in that tenant on every request (tested).
 - **"How is it multi-tenant?"** `tenant_id` on every row; the tenant comes only from the signed JWT; every query filters by it; cross-tenant access returns 404 (tested).
 - **"What happens if two people book the same slot?"** Section 9: the unique partial index guarantees it at the DB level.
+
+---
+
+# Part B: Module reference
+
+One card per major module. **Debug** lines use real commands: run `psql` against your `DATABASE_URL`, call endpoints with a token from `POST /api/auth/login`, and run a single test from `backend/` with:
+
+```bash
+node --env-file-if-exists=../.env.test --test --test-concurrency=1 --test-name-pattern="<test name>" test/<file>.test.js
+```
+(`--test-concurrency=1` matters: test files share one test database and reset it, so they must not run in parallel. Appending the pattern to `npm test` does **not** filter, because npm places it after the file list.)
+
+### B1. Configuration and bootstrap
+- **What / why:** loads and validates environment variables so the server never starts half-configured.
+- **Input → output:** `process.env` (from `.env` via `node --env-file`) → a frozen `config` object, plus the decision "DEMO_MODE or a real LLM".
+- **Depends on:** Zod.
+- **Files:** `backend/src/config.js`, `backend/src/server.js`, `backend/src/db/{migrate,seed,reset,reindex}.js`.
+- **Example:** with `JWT_SECRET` shorter than 32 characters, the process exits with `Invalid environment configuration: JWT_SECRET: …`.
+- **Debug:** read the first log lines (`server_started` shows provider and `demoMode`; then `database_connected` or `database_unreachable` with a reason). `GET /api/health` returns `503` with the exact database problem.
+
+### B2. Authentication and multi-tenancy
+- **What / why:** proves who the caller is and which company (tenant) they belong to, so every query is scoped to that tenant.
+- **Input → output:** `Authorization: Bearer <JWT>` → `req.user = { id, tenantId, role }`, or 401.
+- **Depends on:** `jsonwebtoken` (HS256, algorithm pinned), scrypt (`lib/password.js`), `users` table.
+- **Files:** `middleware/auth.js`, `controllers/auth.controller.js`, `services/users.js`.
+- **Example:** a token whose user was deleted → `401 INVALID_TOKEN` on the very next request (live user check).
+- **Debug:** `GET /api/auth/me`; for 404s on existing ids, check the row's `tenant_id` matches the token's tenant (other tenants' rows deliberately return 404).
+
+### B3. Validation, errors and rate limits
+- **What / why:** rejects malformed input before business code runs, and returns one consistent error shape.
+- **Input → output:** request → `req.valid` (parsed) or `400 VALIDATION_ERROR { details[] }`; any thrown error → `{ error: { code, message, requestId } }`.
+- **Files:** `middleware/validate.js`, `middleware/error.js`, `middleware/rateLimit.js`, the Zod schemas at the top of each `routes/*.js`.
+- **Example:** `PATCH /api/leads/:id { "score": 100 }` → 400 (strict schema: computed fields are not writable). Database down → `503 SERVICE_UNAVAILABLE`.
+- **Debug:** the `requestId` in an error response appears in the server log line `unhandled_error` together with the stack (never sent to clients).
+
+### B4. LLM provider abstraction
+- **What / why:** one `chat({ system, messages, json })` interface for Groq, Gemini or DEMO_MODE, so the agent never depends on a vendor SDK.
+- **Input → output:** prompt → text (or a JSON string); errors become `LlmError` (HTTP status, or 504 on timeout).
+- **Depends on:** `fetch` with an `AbortController` timeout (`LLM_TIMEOUT_MS`).
+- **Files:** `services/llm/{index,groq,gemini,http}.js`.
+- **Example:** Groq returns 429 → `LlmError(429)` → the analyzer falls back to rules and records `trace.errors[]`.
+- **Debug:** **Settings → Test AI connection** or `GET /api/llm/health` (`ok` + latency / `demo_mode` / `503` with the reason). Keys are never logged.
+
+### B5. Intent and entity extraction (analyzer + NLU)
+- **What / why:** turns the customer's words into an intent and facts (BHK, budget, timeline, decision-maker, contact, visit time) without inventing anything.
+- **Input → output:** text + session state → `{ intent, secondary[], entities{}, entitySources{}, sentiment, searchQuery, source }`.
+- **Depends on:** `services/nlu.js` (rules, EN/HI/TE), `services/lexicon.js`, optional LLM (Zod-validated, additive only; consent is never taken from it).
+- **Files:** `services/agent/analyzer.js`, `services/nlu.js`.
+- **Example:** "around ₹90 lakhs, buy next month" → `budgetMax: 9000000, budgetApprox: true, timelineMonths: 1`. "I'm Meera Rao" → name; "I am looking…" → not a name.
+- **Debug:** Decision Trace → *Intent & entities* shows each entity with its source (`rules` or `llm`). Unit tests: `test/analysis.test.js`.
+
+### B6. Sentiment analysis
+- **What / why:** classifies each customer message so the team sees mood and the agent can escalate. Text only, not voice tone.
+- **Input → output:** text → `{ label, confidence, evidence[{phrase, polarity}], method, basis: "transcript_text" }`.
+- **Files:** `services/sentiment.js`, `services/lexicon.js` (LLM sentiment accepted only if its evidence quotes occur in the message).
+- **Example:** "not happy with the price" → negative (negation handled). Two negative messages in a row → `escalateToHuman`.
+- **Debug:** hover the sentiment badge in the transcript for its evidence; `SELECT sentiment, sentiment_evidence FROM messages WHERE conversation_id = '…'`.
+
+### B7. Conversation memory and follow-up context
+- **What / why:** keeps each customer's conversation coherent across turns and server restarts, and never mixes sessions.
+- **Input → output:** conversation id → last 12 messages + `conversations.state` (offered slots, desired slot, pending proposal, last topic) + lead profile.
+- **Files:** `services/memory.js`, `services/agent/context.js` (adds the previous topic only when the message refers back: "they", "it", "what about").
+- **Example:** "Tell me about the 3BHK" → "How big are they?" → the query gets "Apartment configurations 3BHK" added (`trace.retrieval.contextAdded`).
+- **Debug:** `SELECT state FROM conversations WHERE id = '…'`; Decision Trace event `memory`.
+
+### B8. Knowledge base and chunking
+- **What / why:** turns company documents into citeable chunks and keeps unsafe text out of retrieval.
+- **Input → output:** `{ title, content }` → document + chunks `{ section, content, flagged }` (heading-aware, ~110 words, injection-like text flagged and excluded).
+- **Files:** `services/rag/chunker.js`, `services/rag/knowledge.js`, `db/seedData.js` (10 fictional documents), `db/reindex.js`.
+- **Example:** a chunk containing "ignore all previous instructions" is stored with `flagged = true` and never retrieved.
+- **Debug:** Knowledge Base page → open a document to see its chunks; after changing chunking rules run `npm run kb:reindex`.
+
+### B9. RAG retrieval (BM25)
+- **What / why:** finds the most relevant verified chunks with explainable scores.
+- **Input → output:** query → top 3 `{ title, section, content, score, relevance (0..1) }`; relevance below 0.20 is dropped.
+- **Files:** `services/rag/bm25.js` (tokenizer, stemmer, BM25 k1 = 1.5, b = 0.75), `services/rag/knowledge.js#retrieve`, `expandQuery` (HI/TE keywords → English).
+- **Example:** "How much would a three bedroom flat cost?" → "3bhk" + "price" → *Pricing › Price list*. "Do you have a helipad?" → no hits → explicit fallback.
+- **Debug:** Knowledge Base → *Retrieval tester* or `POST /api/knowledge/search { "query": "…" }` (shows hits under the threshold too).
+
+### B10. Response generation and grounding guard
+- **What / why:** writes the answer from retrieved chunks only.
+- **Input → output:** question + hits (+ last 4 turns) → `{ text, method: llm_grounded | extractive | no_source }`.
+- **Files:** `services/agent/responder.js` (prompt rules, `ungroundedNumbers` guard, markdown/newline cleanup), `services/agent/templates.js` (EN/HI/TE fragments for all business statements).
+- **Example:** the model writes "Rs 86–113 lakh after discount" → 86 and 113 are not in the sources → the verbatim source sentence is used instead, with the reason in `trace.errors[]`.
+- **Debug:** Decision Trace → *Knowledge retrieval* shows `answerMethod`; *Errors & fallbacks* shows why an LLM answer was replaced.
+
+### B11. Agent orchestrator
+- **What / why:** runs one turn end to end and decides what happens next.
+- **Input → output:** `{ tenantId, conversationId, text, language }` → validated structured output `{ reply, intent, entities, sentiment, leadQualification, sources, suggestedAction, explanation, session, trace }`.
+- **Files:** `services/agent/orchestrator.js` (turns serialized per conversation), `services/agent/output.js` (Zod output schema, suggested action, explanation).
+- **Example:** "yes" while a proposal is pending → `bookAppointment` through the consent gate → `appointment_booked`.
+- **Debug:** Agent Decision Trace page (events with millisecond offsets); `SELECT turn_index, intent, outcome, trace->'events' FROM agent_execution_logs WHERE conversation_id = '…'`.
+
+### B12. Tool executor and registry
+- **What / why:** the only way anything changes business data; makes every action validated, authorized, consented and audited.
+- **Input → output:** `(ctx { tenantId, actor, conversationId?, leadId? }, toolName, args)` → `{ status: success | rejected | failed, validation.checks[], result | error }` + one `tool_audit_log` row.
+- **Files:** `services/tools/definitions.js`, `handlers.js`, `executor.js`; `controllers/toolContext.js` (staff actions use the same path).
+- **Example:** agent calls `bookAppointment` without a "yes" → `rejected CONFIRMATION_REQUIRED`; staff calls it from Appointments → allowed (the staff member is the confirming human).
+- **Debug:** `SELECT tool, actor, status, error_code, created_at FROM tool_audit_log ORDER BY created_at DESC LIMIT 20;` · Call Intelligence → *Tool execution reliability*.
+
+### B13. Lead qualification
+- **What / why:** a transparent, configurable 100-point score; unknown facts score 0.
+- **Input → output:** profile + booking state + tenant catalog/weights → `{ total, classification, factors[{ points, reason, evidence[] }], missing[], recommendedNextAction }`.
+- **Files:** `services/leadScoring.js`; invoked through the `qualifyLead` / `calculateLeadScore` tools.
+- **Example:** the assessment scenario → 25 + 17 + 20 + 0 + 12 = **74 (warm)**; after "I decide myself" and booking → **92 (hot)**.
+- **Debug:** Leads → open a lead → score card (hover a reason to see its evidence); `SELECT score, score_breakdown FROM leads WHERE id = '…'`.
+
+### B14. Appointment service
+- **What / why:** real availability and conflict-proof booking.
+- **Input → output:** policy + existing confirmed rows → free slots; `startsAt` → a confirmed appointment, or `SLOT_TAKEN` / `LEAD_ALREADY_BOOKED` / `SLOT_OUTSIDE_POLICY`.
+- **Files:** `services/appointments.js` (transaction with `FOR UPDATE` on the lead, partial unique index `appointments_slot_uq`), `lib/time.js` (IST).
+- **Example:** 5 concurrent bookings of one slot → exactly 1 succeeds (`test/booking.test.js`).
+- **Debug:** `GET /api/appointments/availability?date=YYYY-MM-DD`; `SELECT starts_at, status FROM appointments ORDER BY starts_at;`.
+
+### B15. CRM
+- **What / why:** persistent leads, customers (identified leads), conversations, appointments and call summaries with full CRUD.
+- **Files:** `services/crm.js`, `customers.js`, `callSummaries.js`, `memory.js`; controllers and routes of the same names.
+- **Example:** `POST /api/customers` with an existing phone returns the same person (`200`), never a duplicate.
+- **Debug:** Leads / Conversations pages; `test/crm.test.js` checks each operation against the actual rows.
+
+### B16. Call summarisation
+- **What / why:** a structured hand-off for the sales team when a call ends.
+- **Input → output:** conversation id → `{ customerProfile, requirements, budget, concerns[], buyingIntent, sentiment, leadScore, appointmentOutcome, recommendedNextActions[], narrative }`, upserted into `call_summaries`.
+- **Files:** `services/summary.js` (via the `generateCallSummary` tool).
+- **Example:** a call ending at "Shall I book…?" → `appointmentOutcome: "proposed_not_confirmed"` and no appointment row.
+- **Debug:** Call Intelligence → *Call summaries*; `SELECT summary FROM call_summaries WHERE conversation_id = '…'`.
+
+### B17. Decision trace, audit log and analytics
+- **What / why:** explainability and business reporting from real data.
+- **Files:** trace assembled in `orchestrator.js` (stored in `agent_execution_logs.trace`, PII-masked by `lib/privacy.js`); audit rows from `executor.js`; aggregates in `services/analytics.js` (IST day buckets).
+- **Example:** each trace stores analysis, retrieval hits with relevance, proposal, validated tool steps, score change, response, success flag and concise events. Hidden model reasoning is never stored.
+- **Debug:** Agent Decision Trace page; `test/crm.test.js` asserts the dashboard KPIs equal direct SQL counts.
+
+### B18. Voice (frontend)
+- **What / why:** hands-free conversations in the browser with graceful fallback.
+- **Input → output:** microphone → interim and final transcript (text only) → agent; reply text → speech in the chosen voice.
+- **Files:** `frontend/src/hooks/useSpeech.js` (feature detection, permission state, errors, retry, voice selection), `components/agent/{VoiceStatus,Composer,ChatTranscript}.jsx`, `pages/Settings.jsx`.
+- **Example:** microphone blocked → "Microphone permission was denied… press Retry, or type instead" + a Retry button; typing keeps working.
+- **Debug:** Settings & Language → *This browser's voice capabilities* (STT support, mic permission, voices per language) and the per-language **Test** buttons.

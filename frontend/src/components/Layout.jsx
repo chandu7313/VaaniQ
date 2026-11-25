@@ -24,7 +24,7 @@ export default function Layout() {
     <div className="flex h-full">
       <aside className={cx('fixed inset-y-0 left-0 z-40 flex w-60 flex-col border-r border-line bg-panel transition-transform lg:static lg:translate-x-0', open ? 'translate-x-0' : '-translate-x-full')}>
         <div className="flex items-center gap-2.5 px-5 py-5">
-          <img src="/favicon.svg" alt="" className="size-8" />
+          <img src="/logo.png" alt="VaaniQ" className="size-8 rounded-lg object-contain" />
           <div>
             <div className="text-[15px] font-semibold tracking-tight text-slate-50">VaaniQ</div>
             <div className="text-[11px] text-slate-500">Conversational Intelligence</div>

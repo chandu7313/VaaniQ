@@ -19,7 +19,7 @@ export default function Login() {
     <div className="flex min-h-full items-center justify-center p-4">
       <form onSubmit={submit} className="w-full max-w-sm rounded-2xl border border-line bg-panel p-8 shadow-2xl">
         <div className="mb-6 flex items-center gap-3">
-          <img src="/favicon.svg" alt="" className="size-10" />
+          <img src="/logo.png" alt="VaaniQ" className="size-10 rounded-lg object-contain" />
           <div>
             <h1 className="text-lg font-semibold text-slate-50">VaaniQ</h1>
             <p className="text-xs text-slate-400">Conversational Intelligence · Admin</p>

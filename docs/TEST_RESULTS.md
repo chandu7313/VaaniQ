@@ -135,7 +135,7 @@ Run date: 2026-11-26 · Node v26.0.0 · PostgreSQL 18.1 (local) · LLM: DEMO_MOD
 | `npm audit` backend (prod) / frontend | 0 vulnerabilities / 0 vulnerabilities |
 | `docker compose config` | valid |
 | Backend booted against the Supabase `DATABASE_URL` (probe on port 4100) | Direct host unreachable over IPv4: logs `database_unreachable`, `/api/health` → `503 DB_UNAVAILABLE` with the pooler hint |
-| Manual browser run (Chrome pane, 1440px and 375px) | Full scenario completed via UI; all 8 pages loaded with no console errors |
+| Manual browser run (Chrome pane, 1440px and 375px) | Full scenario completed via UI; all 9 pages (plus login) loaded with no console errors |
 | Manual API runs in EN, HI, TE (demo script lines) | Outcomes as documented in DEMO_SCRIPT.md |
 | Live run of the six AI situations through the Vite proxy | All six behaved as specified (pricing, fallback, budget change, follow-up, EN→HI→TE switch, incomplete info) |
 | Live acceptance run + direct `psql` verification | lead (Suresh Babu, 3BHK Gachibowli ₹90L approx, 1 month, self, visit_scheduled, 92), appointment confirmed 26 Nov 11:00 IST with reference E939081C = reply, 19 messages, 9 turns all `success`, audit rows per tool, summary (confirmed, high intent, 92), 0 raw phone occurrences in traces, 1 confirmed booking for the slot |

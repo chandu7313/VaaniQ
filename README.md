@@ -1,56 +1,70 @@
-# VaaniQ: Autonomous AI Sales Agent (MVP)
+# VaaniQ: Conversational Intelligence
 
-VaaniQ is a configurable B2B SaaS "digital sales employee". It talks to customers by voice or text in **English, Hindi and Telugu**. It answers from verified company documents (RAG), qualifies the lead with an explainable 100-point score, and books site visits through validated backend tools, only after the customer explicitly confirms. Everything is saved in PostgreSQL, and every decision is shown on an auditable **Agent Decision Trace**.
+**An autonomous AI sales agent (MVP).** VaaniQ talks to customers by voice or text in **English, Hindi and Telugu**. It answers only from verified company documents (RAG with citations), qualifies leads with an explainable 100-point score, and books site visits through validated backend tools, **only after the customer explicitly confirms**. Everything is saved in PostgreSQL, and every decision is shown on an auditable **Agent Decision Trace**.
 
-> **All business data is fictional.** "ABC Developers", the *ABC Heights* project in Gachibowli, Hyderabad, its prices, inventory, RERA number and every seeded customer are demonstration data. The UI labels them `DEMO`.
+> **All business data is fictional.** "ABC Developers", the *ABC Heights* project in Gachibowli, Hyderabad, its prices, inventory, RERA number and every seeded customer are demonstration data, labelled `DEMO` in the UI.
 
-## What works today (tested)
+**Docs:** [Project report](docs/PROJECT_REPORT.md) · [Architecture](docs/ARCHITECTURE.md) · [Explanation guide](docs/EXPLANATION_GUIDE.md) · [API reference](docs/API_REFERENCE.md) · [Technical Q&A](docs/TECHNICAL_QA.md) · [Demo script (5 min)](docs/DEMO_SCRIPT.md) · [Scalability & security](docs/SCALABILITY_AND_SECURITY.md) · [QA report](docs/QA_REPORT.md) · [Test results](docs/TEST_RESULTS.md)
 
-| Capability | Status |
-|---|---|
-| Voice in/out (browser Speech Recognition + Speech Synthesis), live listening state and interim transcript | ✅ feature-detected, text fallback |
-| EN / HI / TE conversations (templates, extraction, sentiment lexicon, STT/TTS language codes) | ✅ |
-| Contextual memory: persisted history, session state (offered slots, pending proposal), cross-turn lead profile, repeat-caller merge by phone | ✅ |
-| Lead qualification: requirement, budget fit, timeline, decision-maker, appointment intent → explainable score with reasons and missing info | ✅ |
-| Sentiment per message: label, confidence, evidence phrases, trajectory | ✅ |
-| RAG: ingestion, heading-aware chunking, BM25 top-K, relevance threshold, source + section citations, prompt-injection flagging | ✅ |
-| Agentic tools: intent → structured proposal → Zod validation → consent gate → execution → trace; human escalation | ✅ |
-| Appointments: real availability, conflict prevention (transaction + DB unique index), explicit confirmation, reschedule/cancel | ✅ |
-| CRM, call summaries, live analytics dashboard, 8 UI pages | ✅ |
-| LLM providers (Groq, Gemini) behind one abstraction | ✅ Groq verified live (`openai/gpt-oss-20b`: grounded EN/HI/TE answers, LLM entity and sentiment merge, prompt injection refused); Gemini covered by adapter tests only. The default config runs in DEMO_MODE |
+## Feature status
 
-## Quick start (local, no Docker)
+**Implemented** = built and covered by automated tests or live checks · **Partial** = works within stated limits · **Mocked/Demo** = deterministic stand-in, labelled in the UI · **Planned** = designed, not built.
 
-Requirements: Node.js ≥ 20 (developed on Node 26) and PostgreSQL ≥ 14. No local Postgres? `docker compose up -d db` starts one on `localhost:5432` that matches `.env.example`.
+| Area | Status | Notes |
+|---|---|---|
+| AI Voice Agent: live transcript, listening/thinking/speaking state, replay, mute, retry | Implemented | browser Web Speech API |
+| Speech-to-text / text-to-speech coverage | **Partial** | depends on the browser and installed voices (Telugu voices are often missing); feature-detected, text input always available |
+| English / Hindi / Telugu | Implemented · **Partial** in DEMO_MODE | DEMO_MODE understanding is keyword-based and quotes English documents |
+| LLM provider abstraction | Implemented | **Groq verified live**; Gemini adapter-tested only |
+| DEMO_MODE (no API key) | **Mocked/Demo** | rule-based NLU + verbatim extractive answers; shown in the header badge and every trace |
+| RAG: ingestion, chunking, BM25 top-3, threshold, citations, injection flagging | Implemented | embeddings / pgvector **Planned** |
+| Numeric grounding guard on LLM answers | Implemented | figures not in the sources trigger a verbatim fallback |
+| Conversation memory, follow-ups, session isolation | Implemented | turn serialization is per process (multi-instance lock **Planned**) |
+| Intent and entity extraction, sentiment (text-based) | Implemented | not acoustic emotion detection |
+| Explainable lead score (25/25/20/15/15) with evidence and next action | Implemented | weights configurable per tenant (no settings UI for weights yet) |
+| Tool executor: validate → authorize → consent → execute → audit (9 tools) | Implemented | |
+| Appointments: availability, proposal, consent, transaction, conflict prevention | Implemented | calendar sync **Planned** |
+| CRM CRUD: leads, customers, conversations, appointments, call summaries | Implemented | |
+| Call summaries, Executive Dashboard, Call Intelligence (live SQL) | Implemented | |
+| Decision Trace + tool audit log (PII-masked) | Implemented | OpenTelemetry **Planned** |
+| Auth (JWT + scrypt), multi-tenancy, admin-only deletes, rate limits | Implemented | refresh tokens / SSO **Planned** |
+| Docker Compose (db, API, nginx frontend) | **Partial** | config validated; images not built here (Docker daemon unavailable) |
+| Telephony, SMS/WhatsApp, tenant sign-up UI | **Planned** | |
+| Company, inventory and customer data | **Mocked/Demo** | fictional seed data |
+
+## Quick start (local)
+
+Requirements: **Node.js ≥ 20** (developed on Node 26) and **PostgreSQL ≥ 14**. No local Postgres? `docker compose up -d db` starts one on `localhost:5432` that matches `.env.example`.
 
 ```bash
 cp .env.example .env
 ```
-Edit `.env`: set `DATABASE_URL`, a 32+ character `JWT_SECRET`, and `SEED_ADMIN_PASSWORD`.
-
+Edit `.env`: set `DATABASE_URL`, a random `JWT_SECRET` of 32+ characters, and `SEED_ADMIN_PASSWORD`.
+```bash
+node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
+```
 ```bash
 cd backend && npm install && npm run setup
 ```
 ```bash
-npm run dev
+cd backend && npm run dev
 ```
-In a second terminal:
 ```bash
 cd frontend && npm install && npm run dev
 ```
-Open http://localhost:5173 and sign in as `admin@abcdevelopers.demo` with your `SEED_ADMIN_PASSWORD`. If you left it empty, `npm run setup` prints a generated password once.
+Open http://localhost:5173 and sign in as `admin@abcdevelopers.demo` with your `SEED_ADMIN_PASSWORD` (if you left it empty, `npm run setup` prints a generated one once).
 
-After changing chunking rules, re-chunk stored documents without touching CRM data:
-```bash
-cd backend && npm run kb:reindex
-```
+Useful scripts (from `backend/`):
 
-To get a clean demo database before presenting (dev only, deletes all data):
-```bash
-cd backend && npm run db:reset -- --yes
-```
+| Command | What it does |
+|---|---|
+| `npm run setup` | migrate + idempotent seed |
+| `npm run db:reset -- --yes` | **dev only, deletes all data**, then re-seeds the demo |
+| `npm run kb:reindex` | re-chunk stored documents (CRM data untouched) |
+| `npm test` | 96 tests (unit, PostgreSQL integration, HTTP end-to-end) |
+| `npm run lint` | syntax check of every source file |
 
-## Quick start (Docker Compose)
+## Docker Compose
 
 ```bash
 cp .env.example .env
@@ -59,81 +73,87 @@ Set `JWT_SECRET` (and optionally `SEED_ADMIN_PASSWORD`, `LLM_*`), then:
 ```bash
 docker compose up --build
 ```
-UI at http://localhost:8080. The backend container runs migrations and the idempotent seed on start. *Note: `docker compose config` was validated in this build, but the images were **not** built or run, because the Docker daemon was not running on the build machine.*
+UI at http://localhost:8080; the API container migrates and seeds on start. *Status: `docker compose config` is valid, but the images were not built or run during development.*
 
-## Using Supabase (or another hosted Postgres)
+## Hosted PostgreSQL (Supabase)
 
-In Supabase, open **Connect → Session pooler**, copy that URI into `DATABASE_URL`, and set `DATABASE_SSL=require`. Then:
-```bash
-cd backend && npm run setup
+Use **Connect → Session pooler** as `DATABASE_URL` with `DATABASE_SSL=require`, then run `npm run setup`. The direct host `db.<ref>.supabase.co` is IPv6-only and fails on most IPv4 networks (the backend logs `database_unreachable`, and `/api/health` returns `503`). Migration `002` enables deny-all row-level security, so Supabase's public anon key cannot read the tables.
+
+## Enabling a live LLM
+
+Put the key in **`.env`**, never in `.env.example` (that file is committed):
 ```
-- Do **not** use the direct host `db.<ref>.supabase.co`: it is IPv6-only, and on an IPv4 network the backend logs `database_unreachable` and `/api/health` returns `503 DB_UNAVAILABLE`.
-- Migration `002_enable_rls.sql` turns on row-level security for every table. Supabase's Data API exposes the `public` schema to anyone with the project's public anon key; with RLS on and no policies, that key sees nothing. The backend connects as the table owner and is unaffected.
-- Tests never touch Supabase: they use `.env.test`, and the helper refuses any database whose name lacks `_test`.
-
-## Enabling a real LLM
-
-Put the key in **`.env`** (never in `.env.example`, which is committed). Then **Settings & Language → Test AI connection** (or `GET /api/llm/health`) confirms connectivity and latency.
-
+LLM_PROVIDER=groq            # or gemini
+LLM_API_KEY=...              # stays on the server
+LLM_MODEL=openai/gpt-oss-20b # the Groq model used for live verification; check the provider's current list
 ```
-LLM_PROVIDER=groq        # or gemini
-LLM_API_KEY=...          # stays on the backend only
-LLM_MODEL=...            # check the provider's current model list
-```
-Without a key and model, the system runs in **DEMO_MODE**: rule-based NLU, deterministic templates and *extractive* answers quoted from retrieved documents. The header badge and every trace say which mode produced a reply.
+Then **Settings & Language → Test AI connection** (or `GET /api/llm/health`). Without a key the app runs in DEMO_MODE.
 
-## Tests and checks
+## Tests
 
 ```bash
-cd backend && npm test        # 96 tests: unit + PostgreSQL integration + HTTP end-to-end
-cd backend && npm run lint    # syntax check of all source files
+cd backend && npm test
+```
+```bash
 cd frontend && npm run lint && npm run build
 ```
-Tests need a database named in `.env.test` (it must contain `_test`; the helper refuses anything else). Latest results: [docs/TEST_RESULTS.md](docs/TEST_RESULTS.md).
+Tests use the database in `.env.test`, whose name must contain `_test`; the helper refuses anything else. Run a single test (from `backend/`):
+```bash
+node --env-file-if-exists=../.env.test --test --test-concurrency=1 --test-name-pattern="concurrent bookings" test/booking.test.js
+```
+Latest results: [docs/TEST_RESULTS.md](docs/TEST_RESULTS.md) (96/96 passing).
 
 ## Repository layout
 
 ```
-backend/
-  src/
-    app.js, server.js, config.js          Express app, security middleware, env validation
-    db/                                    pool (+TLS), migrations 001_init / 002_enable_rls / 003_tool_audit_log, migrate, seed (+ fictional seedData), reset, reindex
-    middleware/                            auth (JWT + live user check), validate (Zod), error envelope
-    routes/                                paths + middleware + Zod schemas (thin)
-    controllers/                           HTTP in/out: read req.valid, call a service, shape the response
-    services/
-      agent/orchestrator.js                one conversational turn, end to end
-      agent/analyzer.js                    rules NLU + optional validated LLM merge
-      agent/responder.js                   grounded answer (LLM) or query-aware extractive answer (demo)
-      agent/context.js                     follow-up context for retrieval (previous topic, stated BHK)
-      agent/output.js                      Zod schema for the structured turn output; suggested action; explanation
-      agent/templates.js                   EN/HI/TE reply fragments
-      tools/definitions.js, handlers.js, executor.js   9 tools: definitions | implementations | validate→authorize→consent→execute→audit
-      rag/chunker.js, bm25.js, knowledge.js
-      nlu.js, sentiment.js, lexicon.js, leadScoring.js
-      crm.js, customers.js, callSummaries.js, appointments.js, memory.js, summary.js, analytics.js, tenants.js, users.js, traces.js
-      llm/index.js, groq.js, gemini.js, http.js
-  test/                                    node:test suites
-frontend/src/
-  pages/        Dashboard, Agent, Leads, Appointments, Knowledge, Conversations, Analytics, Traces, Login
-  components/   ui kit, TraceView, ScoreBreakdown, SummaryCard, charts, agent/*
-  hooks/        useApi, useSpeech (STT/TTS), useToast
-docs/           architecture, API, report, explanation guide, demo script, scalability & security, test results
+backend/src
+  app.js, server.js, config.js     Express app, security middleware, env validation, graceful shutdown
+  db/                              pool (+TLS), migrations 001–003, migrate, seed (+ fictional seedData), reset, reindex
+  middleware/                      auth (JWT + live user check), validate (Zod), errors, rate limits
+  routes/ → controllers/           thin routes (paths, middleware, schemas) → HTTP controllers
+  services/agent/                  orchestrator, analyzer, responder (+ grounding guard), context, output schema, templates
+  services/tools/                  definitions | handlers | executor (9 tools)
+  services/rag/                    chunker, BM25, knowledge base
+  services/                        nlu, sentiment, lexicon, leadScoring, crm, customers, callSummaries, appointments,
+                                   memory, summary, analytics, traces, users, tenants, llm/{groq,gemini,http}
+backend/test                       11 node:test suites incl. acceptance, CRM, tools, QA/security
+frontend/src
+  pages/                           Dashboard, Agent, Leads, Appointments, Knowledge, Conversations,
+                                   CallIntelligence, Traces, Settings, Login
+  components/                      ui kit, TraceView, ScoreBreakdown, SummaryCard, charts, agent/*
+  hooks/ · context/                useSpeech (STT/TTS), useApi, useToast · Auth, Settings
+docs/                              see the links at the top
 ```
 
-## Documentation
+## GitHub setup
 
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): system diagram, request flow, data model
-- [docs/API.md](docs/API.md): REST contracts
-- [docs/EXPLANATION_GUIDE.md](docs/EXPLANATION_GUIDE.md): how every part works (interview prep)
-- [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md): a 7-minute live demo, step by step
-- [docs/SCALABILITY_AND_SECURITY.md](docs/SCALABILITY_AND_SECURITY.md)
-- [docs/PROJECT_REPORT.md](docs/PROJECT_REPORT.md): one-page report
-- [docs/QA_REPORT.md](docs/QA_REPORT.md): QA and security audit, defects found and fixed, feature status
+```bash
+git clone https://github.com/<your-account>/VaaniQ.git
+```
+```bash
+cd VaaniQ && cp .env.example .env
+```
+Then follow **Quick start**. Never commit `.env`, `.env.test` or `.pgdata/` (already in `.gitignore`). Before pushing, scan staged files for real keys:
+```bash
+git diff --cached | grep -nE "gsk_[A-Za-z0-9]{20,}|AIza[0-9A-Za-z_-]{30,}|sk-[A-Za-z0-9]{20,}" || echo "no secrets found"
+```
+
+## Submission checklist
+
+- [ ] `.env.example` contains placeholders only (no real keys or passwords)
+- [ ] `cd backend && npm test` → 96/96 passing
+- [ ] `cd backend && npm run lint` and `cd frontend && npm run lint && npm run build` clean
+- [ ] `npm run db:reset -- --yes` run on the demo database
+- [ ] App starts, `/api/health` returns `ok`, and you can log in
+- [ ] **Settings → Test AI connection** shows the intended mode (demo or live)
+- [ ] Full scenario run once in the browser ([demo script](docs/DEMO_SCRIPT.md))
+- [ ] Docs reviewed: [project report](docs/PROJECT_REPORT.md), [architecture](docs/ARCHITECTURE.md), [Q&A](docs/TECHNICAL_QA.md)
+- [ ] Repository pushed; GitHub renders the Mermaid diagrams in `docs/ARCHITECTURE.md`
+- [ ] Known limitations stated honestly ([QA report §4](docs/QA_REPORT.md))
 
 ## Assumptions
 
-- One tenant is seeded. Multi-tenancy is enforced in the schema and in every query (tenant id comes from the verified JWT), but there is no tenant sign-up UI.
-- Staff use the admin console. The "customer" on the Agent page is role-played by the operator. A public customer widget is future scope.
-- Site visits are 1-hour slots, Mon–Sat, 10:00–18:00 IST, capacity one visit per slot, at least 2 hours ahead, within 7 days (all in tenant settings).
-- No raw audio is stored. Browser speech recognition may be processed by the browser vendor's speech service (for example, Chrome); VaaniQ receives text only.
+- One tenant is seeded. Multi-tenancy is enforced in the schema and in every query, but there is no tenant sign-up UI.
+- Staff use the admin console; on the Agent page the operator role-plays the customer. A public customer widget is future scope.
+- Site visits are 1-hour slots, Mon–Sat, 10:00–18:00 IST, one visit per slot, at least 2 hours ahead and within 7 days (tenant settings).
+- No raw audio is stored. Browser speech recognition may be processed by the browser vendor's service (for example, Chrome); VaaniQ receives text only.

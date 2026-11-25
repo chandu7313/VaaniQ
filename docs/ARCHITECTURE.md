@@ -1,49 +1,126 @@
 # VaaniQ Architecture
 
+> Status legend used across the docs: **Implemented** (built and covered by tests) · **Partial** (works with stated limits) · **Mocked/Demo** (deterministic stand-in, clearly labelled in the UI) · **Planned** (designed, not built).
+
 ## 1. System overview
 
-A **modular monolith**: one Node.js/Express process with clearly separated service modules, one PostgreSQL database, and a React SPA. No microservices. Each module could be extracted later, but today the extra network hops and operational cost would buy nothing.
+A **modular monolith**: one Node.js/Express process with clearly separated service modules, one PostgreSQL database, and a React SPA. No microservices: each module could be extracted later, but today the extra network hops and operational cost would buy nothing.
 
 ```mermaid
-flowchart LR
-  subgraph Browser["Browser (React SPA)"]
-    UI[8 pages: Dashboard, Agent, Leads, Appointments,<br/>Knowledge, Conversations, Analytics, Trace]
-    STT[Web Speech API<br/>SpeechRecognition] --> UI
-    UI --> TTS[speechSynthesis]
+flowchart TB
+  %% ---------- Customer side ----------
+  subgraph CI["Customer interface · React SPA (browser)"]
+    direction LR
+    UI["AI Voice Agent screen<br/>transcript · sources · score · trace"]
+    ADMIN["Admin console<br/>Dashboard · Leads · Appointments · Knowledge<br/>Conversations · Call Intelligence · Trace · Settings"]
   end
 
-  UI -- "HTTPS /api (JWT bearer)" --> MW
-
-  subgraph API["Express API (Node.js, ES modules)"]
-    MW[helmet · CORS allow-list · rate limit<br/>JWT auth → tenantId · Zod validation]
-    MW --> R[Routes]
-    R --> ORCH[Agent Orchestrator]
-    ORCH --> AN[Analyzer<br/>rules NLU + optional LLM]
-    ORCH --> SENT[Sentiment]
-    ORCH --> REG[Tool Registry<br/>validate → consent gate → execute]
-    ORCH --> RESP[Responder<br/>grounded answer]
-    ORCH --> SCORE[Lead Scoring]
-    ORCH --> MEM[Conversation Memory]
-    REG --> RAG[RAG: BM25 retriever]
-    REG --> APPT[Appointment Service]
-    REG --> CRM[CRM Service]
-    AN --> LLM[LLM Provider abstraction<br/>groq · gemini · demo]
-    RESP --> LLM
-    R --> SUM[Call Summary]
-    R --> ANA[Analytics]
+  subgraph VP["Voice processing · in the browser"]
+    direction LR
+    STT["Speech-to-Text<br/>Web Speech API · en-IN / hi-IN / te-IN"]
+    TTS["Text-to-Speech<br/>speechSynthesis · per-language voice"]
   end
 
-  LLM -. "HTTPS (key stays server-side)" .-> EXT[(Groq / Gemini)]
-  RAG --> DB[(PostgreSQL)]
+  STT -->|"final transcript: text only, no audio stored"| UI
+  UI -->|reply text| TTS
+
+  %% ---------- Backend ----------
+  subgraph API["Backend API · Express (Node.js)"]
+    MW["Security middleware<br/>Helmet · CORS allow-list · rate limits<br/>JWT auth → tenantId · Zod validation"]
+    ROUTES["Routes → Controllers<br/>(42 REST endpoints)"]
+    MW --> ROUTES
+  end
+
+  UI -->|"HTTPS /api + JWT"| MW
+  ADMIN -->|"HTTPS /api + JWT"| MW
+
+  subgraph CORE["Agent core"]
+    ORCH["Agent Orchestrator<br/>one turn: analyse → retrieve → act → score → respond"]
+    NLU["Intent & entity extraction<br/>rules always · LLM additive (Zod-validated)"]
+    SENT["Sentiment analysis<br/>transcript text · confidence · evidence"]
+    MEM["Conversation memory<br/>last 12 messages · session state · lead profile"]
+    RESP["Response generation<br/>grounded LLM answer or extractive quote<br/>numeric grounding guard"]
+  end
+
+  ROUTES --> ORCH
+  ORCH --> NLU
+  ORCH --> SENT
+  ORCH --> MEM
+  ORCH --> RESP
+
+  subgraph AI["LLM provider abstraction"]
+    LLM["Groq · Gemini · DEMO_MODE (rules)<br/>timeouts · JSON mode · keys server-side"]
+  end
+  NLU -.->|optional| LLM
+  RESP -.->|optional| LLM
+  LLM -.->|HTTPS| EXT[("Groq / Gemini APIs")]
+
+  subgraph TOOLS["Tool execution · the only path to business actions"]
+    EXEC["Executor<br/>registered? → inputs valid? → actor authorized?<br/>→ resources in tenant? → consent gate → run → audit"]
+    T1["searchKnowledge"]
+    T2["qualifyLead · calculateLeadScore"]
+    T3["checkAvailability · bookAppointment"]
+    T4["saveLead · updateLead"]
+    T5["generateCallSummary · escalateToHuman"]
+    EXEC --> T1 & T2 & T3 & T4 & T5
+  end
+
+  ORCH --> EXEC
+  ROUTES -->|staff actions| EXEC
+
+  subgraph SVC["Domain services"]
+    RAG["RAG retrieval<br/>BM25 top-3 · relevance threshold · citations"]
+    KB["Knowledge base<br/>ingest · heading-aware chunking · injection flagging"]
+    LQ["Lead qualification<br/>5 weighted factors · evidence · next action"]
+    APPT["Appointment service<br/>policy slots · transaction · unique-slot index"]
+    CRM["CRM<br/>leads · customers · conversations · summaries"]
+    SUM["Call summarisation<br/>concerns · buying intent · outcome"]
+  end
+
+  T1 --> RAG
+  RAG --> KB
+  T2 --> LQ
+  T3 --> APPT
+  T4 --> CRM
+  T5 --> SUM
+
+  subgraph OBS["Analytics & execution tracing"]
+    TRACE["Agent decision trace<br/>per turn · PII-masked"]
+    AUDIT["Tool audit log<br/>every attempt · agent and staff"]
+    ANA["Analytics<br/>live SQL aggregates"]
+  end
+
+  ORCH --> TRACE
+  EXEC --> AUDIT
+
+  DB[("PostgreSQL<br/>11 tables · tenant_id on every row<br/>FKs · indexes · RLS deny-all")]
+  KB --> DB
   APPT --> DB
   CRM --> DB
-  MEM --> DB
   SUM --> DB
+  MEM --> DB
+  LQ --> DB
+  TRACE --> DB
+  AUDIT --> DB
   ANA --> DB
-  ORCH -- "agent_execution_logs" --> DB
+  ROUTES --> ANA
 ```
 
-**Hard rule:** the LLM never touches the database. Model output is *data* that is validated, merged with deterministic rules, and turned into tool calls by backend code. The tool registry is the only path to business-state changes.
+**Hard rule:** the LLM never touches the database or the tools. Model output is *data* that is validated, merged with deterministic rules, and turned into tool calls by backend code. Customer consent for a booking is recognised only by deterministic rules on the customer's own words.
+
+| Component | Status | Notes |
+|---|---|---|
+| Customer interface (8 + 1 pages), responsive | Implemented | 375 / 768 / 1440 px checked |
+| Voice processing (browser STT/TTS) | Partial | depends on browser support and installed voices; feature-detected with text fallback |
+| Backend API, auth, validation, rate limits | Implemented | 42 endpoints |
+| Agent orchestrator, memory, NLU, sentiment | Implemented | rule NLU is the always-on baseline |
+| LLM provider | Implemented (Groq live-verified) · Gemini adapter-tested only | DEMO_MODE when no key |
+| RAG (BM25) + knowledge base | Implemented | embeddings/pgvector **planned** |
+| Tool execution, audit | Implemented | 9 tools |
+| Lead qualification, appointments, CRM, summaries | Implemented | |
+| Analytics & tracing | Implemented | OpenTelemetry **planned** |
+| Telephony, calendar sync, SMS/WhatsApp | Planned | |
+| Company data and customers | Mocked/Demo | fictional "ABC Developers", labelled DEMO |
 
 ## 2. One agent turn (request flow)
 
@@ -59,9 +136,9 @@ sequenceDiagram
   C->>O: text (+language)
   O->>DB: load conversation state + last 12 messages + lead
   O->>A: analyze(text, state)
-  A-->>O: intent, entities, sentiment (rules; LLM additions validated)
+  A-->>O: intent, entities, sentiment (rules, LLM additions validated)
   O->>DB: save customer message + sentiment
-  O->>T: updateLead(new facts)  [Zod-validated]
+  O->>T: updateLead(new facts), validated + audited
   alt human request / sustained negative
     O->>T: escalateToHuman
   else customer said "yes" to a pending proposal
@@ -71,7 +148,7 @@ sequenceDiagram
     O->>T: searchKnowledge (BM25) → grounded answer + citations
     O->>T: checkAvailability → offer slots / ask contact / PROPOSE booking
   end
-  O->>O: scoreLead(profile) → saveScore
+  O->>T: qualifyLead → score from stored facts, persisted
   O->>DB: save agent message, state, decision trace
   O-->>C: reply, sources, score, trace, pendingConfirmation, offeredSlots
   C->>C: speak reply (TTS)
