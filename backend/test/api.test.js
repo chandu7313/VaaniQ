@@ -31,7 +31,7 @@ test('health check and authentication', async () => {
   token = ok.body.data.token;
   const meta = await api('GET', '/meta');
   assert.equal(meta.body.data.demoMode, true);
-  assert.ok(meta.body.data.tools.some((t) => t.name === 'book_appointment' && t.requiresConfirmation));
+  assert.ok(meta.body.data.tools.some((t) => t.name === 'bookAppointment' && t.requiresConfirmation));
 });
 
 test('request validation returns a consistent error envelope', async () => {
@@ -59,7 +59,7 @@ test('full scenario: qualify, RAG answer, offer slots, collect contact, confirm,
   assert.equal(t1.offeredSlots.length, 3);
   assert.equal(t1.score.total, 74);
   assert.equal(t1.pendingConfirmation, null);
-  assert.deepEqual(t1.trace.steps.map((s) => s.tool), ['update_lead', 'search_knowledge_base', 'check_availability']);
+  assert.deepEqual(t1.trace.steps.map((s) => s.tool), ['updateLead', 'searchKnowledge', 'checkAvailability', 'qualifyLead']);
   assert.ok(t1.trace.steps.every((s) => s.validation.ok));
 
   // Turn 2: choose slot + give contact -> proposal awaiting confirmation; nothing booked yet
@@ -73,7 +73,7 @@ test('full scenario: qualify, RAG answer, offer slots, collect contact, confirm,
   // Turn 3: explicit yes -> validated booking tool executes
   const t3 = (await api('POST', `/conversations/${id}/messages`, { text: 'Yes, please confirm' })).body.data;
   assert.equal(t3.outcome, 'appointment_booked');
-  const bookStep = t3.trace.steps.find((s) => s.tool === 'book_appointment');
+  const bookStep = t3.trace.steps.find((s) => s.tool === 'bookAppointment');
   assert.ok(bookStep.ok);
   assert.ok(bookStep.validation.checks.includes('customer confirmed this exact proposal'));
   const appt = (await query('SELECT * FROM appointments WHERE conversation_id=$1', [id])).rows;
@@ -106,7 +106,7 @@ test('full scenario: qualify, RAG answer, offer slots, collect contact, confirm,
   assert.equal(traces.length, 4);
   const overview = (await api('GET', '/analytics/overview')).body.data;
   assert.ok(overview.kpi.confirmed_visits >= 1);
-  assert.ok(overview.tools.some((t) => t.tool === 'book_appointment' && t.succeeded >= 1));
+  assert.ok(overview.tools.some((t) => t.tool === 'bookAppointment' && t.succeeded >= 1));
 });
 
 test('declining a proposal books nothing', async () => {

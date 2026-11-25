@@ -15,3 +15,8 @@ body { @apply bg-surface text-slate-200 antialiased; }
 .scrollbar-thin::-webkit-scrollbar-thumb { background: #2a3447; border-radius: 3px; }
 @keyframes pulse-ring { 0% { box-shadow: 0 0 0 0 rgb(244 63 94 / 0.55); } 100% { box-shadow: 0 0 0 18px rgb(244 63 94 / 0); } }
 .listening { animation: pulse-ring 1.2s ease-out infinite; }
+/* Motion-only entrance: content is fully visible even if the animation never runs (background tabs, slow devices). */
+@keyframes vq-fade-in { from { transform: translateY(4px); } to { transform: none; } }
+.vq-fade-in { animation: vq-fade-in 180ms ease-out; }
+@media (prefers-reduced-motion: reduce) { .vq-fade-in, .listening { animation: none; } }
+:focus-visible { outline: 2px solid rgb(129 140 248); outline-offset: 2px; border-radius: 6px; }

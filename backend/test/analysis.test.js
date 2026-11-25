@@ -107,3 +107,23 @@ test('"This is great!" is not a name, "This is Priya" is (regression)', () => {
   assert.equal(extractEntities('This is Priya Sharma calling').fullName, 'Priya Sharma');
   assert.equal(extractEntities('this is too expensive').fullName, undefined);
 });
+
+test('every factor lists its evidence; no evidence means no points; next action is recommended', () => {
+  const p = { ...extractEntities(SCENARIO, NOW), visitIntent: 'requested' };
+  const s = scoreLead(p, { catalog: demoTenantSettings.catalog, scoring: demoTenantSettings.scoring });
+  const by = Object.fromEntries(s.factors.map((f) => [f.key, f]));
+  assert.deepEqual(by.budget.evidence.map((e) => e.field), ['budgetMax', 'priceRangeLakh']);
+  assert.equal(by.budget.evidence[1].value, '3BHK 88-115');
+  assert.deepEqual(by.requirements.evidence.map((e) => e.field), ['bedrooms', 'location']);
+  assert.deepEqual(by.authority.evidence, []);
+  assert.equal(by.authority.points, 0);
+  for (const f of s.factors) assert.ok(f.points === 0 || f.evidence.length > 0, f.key);
+  assert.deepEqual(s.recommendedNextAction, { type: 'collect_information', field: 'decisionMaker', text: 'Ask for the decision-maker.' });
+  const booked = scoreLead(p, { catalog: demoTenantSettings.catalog, hasBooking: true });
+  assert.equal(booked.recommendedNextAction.type, 'prepare_visit');
+  assert.ok(booked.factors.find((f) => f.key === 'appointment').evidence.some((e) => e.field === 'confirmedVisit'));
+});
+
+test('sentiment declares it is transcript-text based, not voice emotion', () => {
+  assert.equal(analyzeSentiment('This is great').basis, 'transcript_text');
+});

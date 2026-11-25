@@ -8,6 +8,7 @@ const r = Router();
 const tracesQuery = z.object({ conversationId: z.string().uuid().optional(), limit: z.coerce.number().int().min(1).max(200).default(50) });
 
 r.get('/meta', ah(c.meta));
+r.get('/llm/health', ah(c.llmHealth));
 r.get('/analytics/overview', ah(c.analyticsOverview));
 r.get('/traces', validate({ query: tracesQuery }), ah(c.traces));
 r.get('/traces/:id', validate({ params: z.object({ id: z.string().uuid() }) }), ah(c.trace));

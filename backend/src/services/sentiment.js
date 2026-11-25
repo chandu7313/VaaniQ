@@ -24,6 +24,9 @@ function findTerms(text, list) {
   return { found, masked };
 }
 
+// SCOPE: this classifies the TRANSCRIPT TEXT only. It is not acoustic voice-emotion detection:
+// tone, pitch and pauses are never analysed (the browser sends text, and no audio is stored).
+
 /**
  * Lexicon sentiment with negation handling. Deterministic and auditable:
  * evidence is always a phrase that literally occurs in the customer's message.
@@ -43,5 +46,5 @@ export function analyzeSentiment(text) {
   }
   const label = score > 0 ? 'positive' : score < 0 ? 'negative' : 'neutral';
   const confidence = evidence.length === 0 ? 0.5 : Math.min(0.95, 0.6 + 0.15 * Math.abs(score));
-  return { label, confidence: Number(confidence.toFixed(2)), evidence: evidence.slice(0, 5), method: 'lexicon' };
+  return { label, confidence: Number(confidence.toFixed(2)), evidence: evidence.slice(0, 5), method: 'lexicon', basis: 'transcript_text' };
 }

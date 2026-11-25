@@ -17,7 +17,7 @@ VaaniQ is a configurable B2B SaaS "digital sales employee". It talks to customer
 | Agentic tools: intent → structured proposal → Zod validation → consent gate → execution → trace; human escalation | ✅ |
 | Appointments: real availability, conflict prevention (transaction + DB unique index), explicit confirmation, reschedule/cancel | ✅ |
 | CRM, call summaries, live analytics dashboard, 8 UI pages | ✅ |
-| LLM providers (Groq, Gemini) behind one abstraction | ⚠️ implemented and covered by mock-provider tests; **not exercised against a live key in this build** (no key was available). The app ran in DEMO_MODE |
+| LLM providers (Groq, Gemini) behind one abstraction | ✅ Groq verified live (`openai/gpt-oss-20b`: grounded EN/HI/TE answers, LLM entity and sentiment merge, prompt injection refused); Gemini covered by adapter tests only. The default config runs in DEMO_MODE |
 
 ## Quick start (local, no Docker)
 
@@ -73,6 +73,8 @@ cd backend && npm run setup
 
 ## Enabling a real LLM
 
+Put the key in **`.env`** (never in `.env.example`, which is committed). Then **Settings & Language → Test AI connection** (or `GET /api/llm/health`) confirms connectivity and latency.
+
 ```
 LLM_PROVIDER=groq        # or gemini
 LLM_API_KEY=...          # stays on the backend only
@@ -83,7 +85,7 @@ Without a key and model, the system runs in **DEMO_MODE**: rule-based NLU, deter
 ## Tests and checks
 
 ```bash
-cd backend && npm test        # 56 tests: unit + PostgreSQL integration + HTTP end-to-end
+cd backend && npm test        # 96 tests: unit + PostgreSQL integration + HTTP end-to-end
 cd backend && npm run lint    # syntax check of all source files
 cd frontend && npm run lint && npm run build
 ```
@@ -95,7 +97,7 @@ Tests need a database named in `.env.test` (it must contain `_test`; the helper 
 backend/
   src/
     app.js, server.js, config.js          Express app, security middleware, env validation
-    db/                                    pool (+TLS), migrations 001_init / 002_enable_rls, migrate, seed (+ fictional seedData), reset, reindex
+    db/                                    pool (+TLS), migrations 001_init / 002_enable_rls / 003_tool_audit_log, migrate, seed (+ fictional seedData), reset, reindex
     middleware/                            auth (JWT + live user check), validate (Zod), error envelope
     routes/                                paths + middleware + Zod schemas (thin)
     controllers/                           HTTP in/out: read req.valid, call a service, shape the response
@@ -106,10 +108,10 @@ backend/
       agent/context.js                     follow-up context for retrieval (previous topic, stated BHK)
       agent/output.js                      Zod schema for the structured turn output; suggested action; explanation
       agent/templates.js                   EN/HI/TE reply fragments
-      tools/registry.js, tools/index.js    tool registry, validation, consent gate; the 5 tools
+      tools/definitions.js, handlers.js, executor.js   9 tools: definitions | implementations | validate→authorize→consent→execute→audit
       rag/chunker.js, bm25.js, knowledge.js
       nlu.js, sentiment.js, lexicon.js, leadScoring.js
-      crm.js, appointments.js, memory.js, summary.js, analytics.js, tenants.js, users.js, traces.js
+      crm.js, customers.js, callSummaries.js, appointments.js, memory.js, summary.js, analytics.js, tenants.js, users.js, traces.js
       llm/index.js, groq.js, gemini.js, http.js
   test/                                    node:test suites
 frontend/src/
@@ -127,6 +129,7 @@ docs/           architecture, API, report, explanation guide, demo script, scala
 - [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md): a 7-minute live demo, step by step
 - [docs/SCALABILITY_AND_SECURITY.md](docs/SCALABILITY_AND_SECURITY.md)
 - [docs/PROJECT_REPORT.md](docs/PROJECT_REPORT.md): one-page report
+- [docs/QA_REPORT.md](docs/QA_REPORT.md): QA and security audit, defects found and fixed, feature status
 
 ## Assumptions
 

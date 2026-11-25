@@ -71,3 +71,11 @@ test('reindex replaces old chunks with the current chunker output', async () => 
   assert.equal(after, before, 'already-current chunks are reproduced exactly');
   assert.ok((await retrieve(tenantId, '3BHK price')).length > 0);
 });
+
+test('"three bedroom" and "3 bed room" retrieve the same documents as "3BHK" (regression)', async () => {
+  const { tokenize } = await import('../src/services/rag/bm25.js');
+  assert.ok(tokenize('three bedroom flat').includes('3bhk'));
+  assert.ok(tokenize('3 bed room').includes('3bhk'));
+  const hits = await retrieve(tenantId, 'How much would a three bedroom flat cost?');
+  assert.equal(hits[0].section, 'Price list');
+});

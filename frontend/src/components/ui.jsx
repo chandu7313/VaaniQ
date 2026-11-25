@@ -4,7 +4,7 @@ export const cx = (...c) => c.filter(Boolean).join(' ');
 
 export function Card({ className, children, title, action, subtitle }) {
   return (
-    <section className={cx('rounded-xl border border-line bg-panel', className)}>
+    <section className={cx('min-w-0 rounded-xl border border-line bg-panel', className)}>
       {(title || action) && (
         <header className="flex items-start justify-between gap-3 border-b border-line px-5 py-3.5">
           <div>

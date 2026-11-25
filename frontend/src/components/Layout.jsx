@@ -1,23 +1,25 @@
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { Suspense, useState } from 'react';
-import { LayoutDashboard, Mic, Users, CalendarDays, BookOpen, MessagesSquare, BarChart3, Workflow, LogOut, Menu, X, FlaskConical } from 'lucide-react';
+import { LayoutDashboard, Mic, Users, CalendarDays, BookOpen, MessagesSquare, BarChart3, Workflow, LogOut, Menu, X, FlaskConical, Settings } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { cx, Spinner } from './ui';
 
 const NAV = [
-  ['/', 'Dashboard', LayoutDashboard],
+  ['/', 'Executive Dashboard', LayoutDashboard],
   ['/agent', 'AI Voice Agent', Mic],
   ['/leads', 'Leads', Users],
   ['/appointments', 'Appointments', CalendarDays],
   ['/knowledge', 'Knowledge Base', BookOpen],
   ['/conversations', 'Conversations', MessagesSquare],
-  ['/analytics', 'Analytics', BarChart3],
-  ['/traces', 'Agent Trace', Workflow],
+  ['/intelligence', 'Call Intelligence', BarChart3],
+  ['/traces', 'Agent Decision Trace', Workflow],
+  ['/settings', 'Settings & Language', Settings],
 ];
 
 export default function Layout() {
   const { user, meta, logout } = useAuth();
   const [open, setOpen] = useState(false);
+  const location = useLocation();
   return (
     <div className="flex h-full">
       <aside className={cx('fixed inset-y-0 left-0 z-40 flex w-60 flex-col border-r border-line bg-panel transition-transform lg:static lg:translate-x-0', open ? 'translate-x-0' : '-translate-x-full')}>
@@ -25,7 +27,7 @@ export default function Layout() {
           <img src="/favicon.svg" alt="" className="size-8" />
           <div>
             <div className="text-[15px] font-semibold tracking-tight text-slate-50">VaaniQ</div>
-            <div className="text-[11px] text-slate-500">AI Sales Agent</div>
+            <div className="text-[11px] text-slate-500">Conversational Intelligence</div>
           </div>
           <button type="button" className="ml-auto text-slate-400 lg:hidden" onClick={() => setOpen(false)} aria-label="Close menu"><X className="size-5" /></button>
         </div>
@@ -57,7 +59,7 @@ export default function Layout() {
               : <span className="rounded-md bg-emerald-500/15 whitespace-nowrap px-2 py-1 text-[11px] font-medium text-emerald-300 ring-1 ring-emerald-500/30">LLM · {meta.provider}</span>)}
           </div>
         </header>
-        <main className="scrollbar-thin flex-1 overflow-y-auto px-4 py-6 lg:px-8"><Suspense fallback={<Spinner />}><Outlet /></Suspense></main>
+        <main className="scrollbar-thin flex-1 overflow-y-auto px-4 py-6 lg:px-8"><Suspense fallback={<Spinner />}><div key={location.pathname} className="vq-fade-in"><Outlet /></div></Suspense></main>
       </div>
     </div>
   );

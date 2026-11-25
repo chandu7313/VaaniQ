@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import { requireRole } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import { ah } from '../middleware/error.js';
 import * as c from '../controllers/appointments.controller.js';
@@ -19,6 +20,8 @@ const rescheduleBody = z.object({ startsAt: z.string().datetime() });
 r.get('/', validate({ query: listQuery }), ah(c.list));
 r.get('/availability', validate({ query: availabilityQuery }), ah(c.availability));
 r.post('/', validate({ body: createBody }), ah(c.create));
+r.get('/:id', validate({ params: idParams }), ah(c.detail));
+r.delete('/:id', requireRole('admin'), validate({ params: idParams }), ah(c.remove));
 r.patch('/:id/status', validate({ params: idParams, body: statusBody }), ah(c.setStatus));
 r.patch('/:id/reschedule', validate({ params: idParams, body: rescheduleBody }), ah(c.reschedule));
 

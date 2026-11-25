@@ -3,6 +3,7 @@ import { Activity, ArrowUpRight } from 'lucide-react';
 import { Badge, Card, DemoTag, SENTIMENT_TONE, STATUS_TONE } from '../ui';
 import ScoreBreakdown from '../ScoreBreakdown';
 import TraceView from '../TraceView';
+import AppointmentStatus from './AppointmentStatus';
 import { STATUS_LABEL, fmtRupees, humanize } from '../../lib/format';
 
 const PROFILE_FIELDS = [
@@ -27,10 +28,11 @@ export default function InsightsPanel({ result, sentiments, conversationId }) {
           </div>
         )}
       </Card>
+      <AppointmentStatus result={result} />
       <Card title="Lead qualification score" subtitle="Budget 25 · Requirements 25 · Timeline 20 · Authority 15 · Appointment 15">
         <ScoreBreakdown score={result?.score} />
       </Card>
-      <Card title="Sentiment across the conversation">
+      <Card title="Sentiment across the conversation" subtitle="Classified from the transcript text, not from voice tone or acoustic emotion">
         {!sentiments.length ? <p className="text-sm text-slate-500">No customer messages yet.</p> : (
           <div className="flex flex-wrap items-center gap-1.5">
             {sentiments.map((s, i) => <Badge key={i} tone={SENTIMENT_TONE[s.label]} title={s.evidence?.map((e) => e.phrase).join(', ') || 'no cues'}>T{i + 1} {s.label}</Badge>)}

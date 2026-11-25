@@ -134,3 +134,19 @@ export async function getUpcomingAppointment(tenantId, leadId, now = new Date())
   );
   return rows[0] ?? null;
 }
+
+export async function getAppointment(tenantId, id) {
+  const { rows } = await query(
+    `SELECT a.id, a.starts_at, a.ends_at, a.status, a.notes, a.created_at, a.conversation_id, l.id AS lead_id, l.full_name, l.phone, l.score, l.is_demo
+       FROM appointments a JOIN leads l ON l.id = a.lead_id WHERE a.tenant_id=$1 AND a.id=$2`,
+    [tenantId, id],
+  );
+  if (!rows[0]) throw notFound('Appointment');
+  return rows[0];
+}
+
+/** Hard delete (admin). Day-to-day, use status 'cancelled', which keeps history. */
+export async function deleteAppointment(tenantId, id) {
+  const { rowCount } = await query('DELETE FROM appointments WHERE tenant_id=$1 AND id=$2', [tenantId, id]);
+  if (!rowCount) throw notFound('Appointment');
+}

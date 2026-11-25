@@ -61,15 +61,15 @@ sequenceDiagram
   O->>A: analyze(text, state)
   A-->>O: intent, entities, sentiment (rules; LLM additions validated)
   O->>DB: save customer message + sentiment
-  O->>T: update_lead(new facts)  [Zod-validated]
+  O->>T: updateLead(new facts)  [Zod-validated]
   alt human request / sustained negative
-    O->>T: escalate_to_human
+    O->>T: escalateToHuman
   else customer said "yes" to a pending proposal
-    O->>T: book_appointment (consent gate checks exact proposal)
+    O->>T: bookAppointment (consent gate checks exact proposal)
     T->>DB: BEGIN · lock lead · INSERT (unique slot index) · COMMIT
   else
-    O->>T: search_knowledge_base (BM25) → grounded answer + citations
-    O->>T: check_availability → offer slots / ask contact / PROPOSE booking
+    O->>T: searchKnowledge (BM25) → grounded answer + citations
+    O->>T: checkAvailability → offer slots / ask contact / PROPOSE booking
   end
   O->>O: scoreLead(profile) → saveScore
   O->>DB: save agent message, state, decision trace
@@ -82,11 +82,11 @@ sequenceDiagram
 ```mermaid
 stateDiagram-v2
   [*] --> Idle
-  Idle --> SlotsOffered: request_visit / slot preference<br/>(check_availability)
+  Idle --> SlotsOffered: request_visit / slot preference<br/>(checkAvailability)
   SlotsOffered --> AwaitingContact: slot chosen, name/phone missing<br/>(state.desiredSlot)
   SlotsOffered --> AwaitingConfirmation: slot chosen + contact known<br/>(state.pendingProposal, 10-min TTL)
   AwaitingContact --> AwaitingConfirmation: name + phone given
-  AwaitingConfirmation --> Booked: explicit "yes" (rule-detected)<br/>book_appointment
+  AwaitingConfirmation --> Booked: explicit "yes" (rule-detected)<br/>bookAppointment
   AwaitingConfirmation --> Idle: "no" (nothing booked)
   AwaitingConfirmation --> SlotsOffered: slot taken meanwhile (SLOT_TAKEN) → re-offer
   Booked --> [*]
@@ -107,6 +107,8 @@ erDiagram
   conversations ||--o| call_summaries : "summarised by"
   conversations ||--o{ agent_execution_logs : "traced by"
   conversations ||--o{ appointments : "booked in"
+  tenants ||--o{ tool_audit_log : audits
+  conversations ||--o{ tool_audit_log : "actions in"
 ```
 
 Key constraints (from `backend/src/db/migrations/001_init.sql`):
@@ -127,8 +129,9 @@ Key constraints (from `backend/src/db/migrations/001_init.sql`):
 | `agent/output.js` | Zod schema for the structured turn output, suggested action, explanation |
 | `agent/templates.js` | EN/HI/TE fragments. Booking/slot statements are always templated |
 | `controllers/*` | HTTP layer: read validated input, call services, shape the `{ data }` response (routes only declare paths, middleware and schemas) |
-| `tools/registry.js` | Registry, argument validation, consent gate, execution record |
-| `tools/index.js` | `search_knowledge_base`, `check_availability`, `update_lead`, `book_appointment`, `escalate_to_human` |
+| `tools/definitions.js` | The 9 tool definitions: schema, actors, scope, consent requirement (no behaviour) |
+| `tools/handlers.js` | Tool implementations, reachable only through the executor |
+| `tools/executor.js` | validate → authorize (actor + tenant scope) → consent gate → execute → audit row |
 | `rag/*` | Chunking, BM25, ingestion, retrieval with relevance threshold, query expansion |
 | `nlu.js` / `sentiment.js` / `lexicon.js` | Deterministic multilingual extraction, intent flags, sentiment with evidence |
 | `leadScoring.js` | Configurable 100-point model with reasons and missing info |

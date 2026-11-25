@@ -41,15 +41,15 @@ Example: the customer says *"I am looking for a 3BHK apartment in Gachibowli. My
    1. Loads tenant settings, conversation `state`, the last 12 messages, and the lead.
    2. **Analyzer** → intent `request_visit` (secondary: `ask_info`, `provide_info`), entities `{bedrooms:3, location:"Gachibowli", budgetMax:9000000, budgetApprox:true, timelineMonths:1}`, sentiment neutral (no cue words).
    3. Saves the customer message with its sentiment.
-   4. **Tool `update_lead`** writes the new facts (Zod-validated, merged, never overwritten with empty values).
+   4. **Tool `updateLead`** writes the new facts (Zod-validated, merged, never overwritten with empty values).
    5. Adds a deterministic acknowledgement and a **budget-fit** sentence from the tenant catalogue (3BHK ₹88–115 lakh).
-   6. **Tool `search_knowledge_base`** → BM25 hits → responder answers from those chunks → citations attached.
-   7. **Booking flow** → **tool `check_availability`** reads free slots from the database → offers 3 → stores them in `state.offeredSlots`.
+   6. **Tool `searchKnowledge`** → BM25 hits → responder answers from those chunks → citations attached.
+   7. **Booking flow** → **tool `checkAvailability`** reads free slots from the database → offers 3 → stores them in `state.offeredSlots`.
    8. **Scoring** → 74/100 (warm) → saved.
    9. Saves the agent message, state and the full **decision trace** (`agent_execution_logs`).
 4. **Browser** shows the reply, citations, the score breakdown and the trace, and speaks the reply with `speechSynthesis`.
 
-Next turns: *"the first one"* + name and phone → a **proposal** (not a booking) → *"yes"* → **`book_appointment`** executes in a transaction → the score rises to 77 (hot) and the lead becomes `visit_scheduled`.
+Next turns: *"the first one"* + name and phone → a **proposal** (not a booking) → *"yes"* → **`bookAppointment`** executes in a transaction → the score rises to 77 (hot) and the lead becomes `visit_scheduled`.
 
 ---
 
@@ -70,10 +70,10 @@ Next turns: *"the first one"* + name and phone → a **proposal** (not a booking
 | Customer input | `POST /conversations/:id/messages`, Zod-validated | — |
 | Memory retrieval | `memory.loadSession`: last 12 messages + `conversations.state` + lead profile, all scoped by `tenant_id` **and** `conversation_id` | `memory`: prior message count, pending proposal, last topic |
 | Intent detection + entity extraction | `agent/analyzer.js`: rule NLU always; an LLM (if configured) may *add* intents and entities, after Zod validation | `intent`, `entities`, `sentiment` |
-| Context retrieval | `agent/context.js` builds the query (follow-up context only when the message refers back), then the `search_knowledge_base` tool runs BM25 for the top 3 chunks | `tool`, `retrieval` (chunks, top section, relevance, context added) |
+| Context retrieval | `agent/context.js` builds the query (follow-up context only when the message refers back), then the `searchKnowledge` tool runs BM25 for the top 3 chunks | `tool`, `retrieval` (chunks, top section, relevance, context added) |
 | LLM response | `agent/responder.js`: answer only from `<context>` (LLM) or a query-aware extractive quote (demo); no context means the explicit "no verified information" fallback | `response` (method) |
-| Action proposal | orchestrator: offer slots, ask for contact, or create `pendingProposal` for `book_appointment` | `action_proposal` |
-| Backend authorization + validation | `tools/registry.js`: registered? args valid (Zod)? consent gate? then the handler (transaction + DB constraint) | `tool`: validated and executed, or rejected with a code |
+| Action proposal | orchestrator: offer slots, ask for contact, or create `pendingProposal` for `bookAppointment` | `action_proposal` |
+| Backend authorization + validation | `tools/executor.js`: registered? args valid (Zod)? actor authorized? resources in tenant? consent gate? then the handler (transaction + DB constraint), then an audit row | `tool`: validated and executed, or rejected with a code |
 | Lead scoring | `leadScoring.scoreLead` → `crm.saveScore` | `scoring` |
 | Structured output validation | `agent/output.js#structuredOutputSchema.parse(...)` *before* persisting | `output_validated` (+ suggested action) |
 | Persist + respond | messages, state, trace → PostgreSQL; JSON response with `reply, intent, entities, sentiment, leadQualification, sources, suggestedAction, explanation, session` | the whole trace row |
@@ -124,27 +124,38 @@ So when the customer says *"the first one"*, the agent knows which slot that is 
 
 ## 6. How tool calling works
 
-The registry (`services/tools/registry.js`) is the only way the agent changes business state. Each tool declares a name, a Zod `argsSchema`, `sideEffect` (`read`/`write`), `requiresConfirmation`, and a handler.
+The tool layer is split into three modules (`services/tools/`):
+- **`definitions.js`**: *what* each tool is: name, description, Zod input schema, `sideEffect`, allowed `actors`, required `scope`, `requiresConfirmation`. Pure data, no behaviour.
+- **`handlers.js`**: *how* each tool works: calls into the CRM, appointments, RAG and summary services. Not reachable except through the executor.
+- **`executor.js`**: the only entry point, `executeTool(ctx, name, args, reason)`. It runs every call through seven steps:
 
-`executeTool(ctx, name, args, reason)` runs four gates and records each one:
 1. **Registered?** Otherwise `UNKNOWN_TOOL`.
-2. **Arguments valid?** `INVALID_ARGS` (for example an unknown profile field, or a malformed phone number).
-3. **Consent gate** (only `book_appointment`): passes only if `ctx.customerConfirmed` is true **and** a `pendingProposal` exists for this tool **and** its arguments are *identical* to the ones being executed **and** it has not expired (10 minutes). Otherwise `CONFIRMATION_REQUIRED`.
-4. **Handler** runs. Business errors (slot taken) come back as structured failures for the agent to explain, never as crashes.
+2. **Inputs valid?** Strict Zod schema, so unknown fields are rejected: `INVALID_ARGS`.
+3. **Actor authorized?** `ctx.actor` must be in the tool's `actors` (`agent` = the AI orchestrator, `staff` = a signed-in user) and a tenant must be present: `FORBIDDEN`.
+4. **Resources in this tenant?** For tools with `scope: ['lead']` or `['conversation']`, the id must exist *in the caller's tenant*: `FORBIDDEN`, reported to clients as 404.
+5. **Confirmation gate** (`bookAppointment`): for the **agent**, it passes only if `ctx.customerConfirmed` is true **and** a `pendingProposal` exists for this tool **and** its arguments are *identical* **and** it has not expired (10 minutes). For **staff**, the signed-in person *is* the confirming human. Otherwise `CONFIRMATION_REQUIRED`.
+6. **Execute** the handler. Business outcomes (slot taken) come back as `status: "failed"` with a code, never as crashes.
+7. **Audit:** one row in `tool_audit_log` for every attempt, including rejections: actor, user, tool, status, error code, **PII-masked** args, duration. IDs are re-resolved inside the tenant, so a foreign id is never recorded.
 
-| Tool | Side effect | Consent |
-|---|---|---|
-| `search_knowledge_base` | read | no |
-| `check_availability` | read | no |
-| `update_lead` | write | no (stores only what the customer said) |
-| `book_appointment` | write | **yes** |
-| `escalate_to_human` | write | no |
+Every call returns a structured record: `{ tool, actor, status: success|rejected|failed, ok, validation: { ok, checks[] }, result | error, durationMs }`. Staff actions in the admin console (manual booking, adding a lead, generating a summary) use the **same executor**, so the audit trail covers people as well as the AI.
+
+| Tool | Side effect | Scope | Consent | Used by |
+|---|---|---|---|---|
+| `searchKnowledge` | read | — | no | agent turns, knowledge tester |
+| `calculateLeadScore` | read | — | no | pure what-if scoring, nothing saved |
+| `qualifyLead` | write | lead | no | every agent turn (re-scores from stored facts) |
+| `checkAvailability` | read | — | no | booking flow |
+| `bookAppointment` | write | lead | **yes** (agent) | after the customer's "yes"; staff manual booking |
+| `saveLead` | write | — | no | call start, manual lead/customer creation (deduplicated by phone) |
+| `updateLead` | write | lead | no | every turn with new stated facts; customer edits |
+| `generateCallSummary` | write | conversation | no | end of call, summaries API |
+| `escalateToHuman` | write | conversation | no | human request or sustained negative sentiment |
 
 **Why can't the model book on its own?** `customerConfirmed` is set only by the orchestrator, only when the **deterministic rule NLU** detects an explicit yes (yes / हाँ / అవును…) **while a proposal is pending**. The analyzer drops `confirm`/`decline` if an LLM suggests them (`LLM_INTENTS` excludes them). A test proves an LLM returning `intents: ["confirm"]` does not book.
 
-**Structured action proposal:** when a slot is chosen and contact details are known, the orchestrator creates `state.pendingProposal = { id, tool: "book_appointment", args: { startsAt }, createdAt, expiresAt }` and asks *"Shall I book… ?"*. The proposal is visible in the trace as `awaiting_customer_confirmation`, then `confirmed_by_customer` or `declined_by_customer`.
+**Structured action proposal:** when a slot is chosen and contact details are known, the orchestrator creates `state.pendingProposal = { id, tool: "bookAppointment", args: { startsAt }, createdAt, expiresAt }` and asks *"Shall I book… ?"*. The proposal is visible in the trace as `awaiting_customer_confirmation`, then `confirmed_by_customer` or `declined_by_customer`.
 
-**Human escalation:** `escalate_to_human` runs when the customer asks for a person, or when two consecutive customer messages are negative (confidence ≥ 0.6). It sets the conversation status to `escalated` with a reason, and the summary recommends a callback within 1 hour.
+**Human escalation:** `escalateToHuman` runs when the customer asks for a person, or when two consecutive customer messages are negative (confidence ≥ 0.6). It sets the conversation status to `escalated` with a reason, and the summary recommends a callback within 1 hour.
 
 ---
 
@@ -164,15 +175,32 @@ Points = round(weight × fraction). Classification: **hot ≥ 75, warm ≥ 50, c
 
 **The scenario, worked through:** budget ₹90L vs 3BHK ₹88–115L → **25**; 3BHK + Gachibowli → 9 + 8 = **17**; within a month → **20**; decision-maker unknown → **0**; asked for a visit → **12**. Total **74 (warm)**. After booking, appointment becomes 15 → **77 (hot)**. After *"I'll decide with my wife"*, authority becomes 10 → **87**.
 
-Every factor carries a human-readable `reason`, and `missing[]` lists what is still unknown. That list drives the agent's next follow-up question, one per turn. **Never invent:** extractors return `undefined` when unsure (a time like "8" is ambiguous, so it is not guessed; budgets outside ₹10L–₹50Cr are rejected), and unknown facts score 0.
+Every factor carries a human-readable `reason` **and** structured `evidence` (`[{ field, value, source }]`, e.g. `budgetMax = 9000000 (customer)`, `priceRangeLakh = 3BHK 88-115 (tenant catalog)`, `confirmedVisit (appointments table)`). The output schema *rejects* any factor that has points but no evidence. `recommendedNextAction` is chosen by rules: prepare visit → offer visit (hot) → ask for the first missing field → follow up → nurture. `missing[]` lists what is still unknown. That list drives the agent's next follow-up question, one per turn. **Never invent:** extractors return `undefined` when unsure (a time like "8" is ambiguous, so it is not guessed; budgets outside ₹10L–₹50Cr are rejected), and unknown facts score 0.
 
 ---
 
 ## 8. Sentiment analysis
 
-`services/sentiment.js`: a lexicon for EN/HI/TE with negation handling ("not happy" counts as negative). Longest phrases are matched first and masked, so "not interested" is not also counted as "interested". Output: `label`, `confidence` (0.5 with no cues, rising with evidence), and `evidence` (the exact phrases found). With an LLM configured, its sentiment is accepted **only if every evidence quote literally appears in the message**, otherwise the lexicon result is kept (tested). Stored per message, it shows a trajectory (T1…Tn) in the UI, feeds the summary's start→end trend, and triggers escalation.
+`services/sentiment.js`: a lexicon for EN/HI/TE with negation handling ("not happy" counts as negative). Longest phrases are matched first and masked, so "not interested" is not also counted as "interested". Output: `label`, `confidence` (0.5 with no cues, rising with evidence), and `evidence` (the exact phrases found). With an LLM configured, its sentiment is accepted **only if every evidence quote literally appears in the message**, otherwise the lexicon result is kept (tested). **Scope:** this is *transcript-text* sentiment (`basis: "transcript_text"`), not acoustic voice-emotion detection. Tone, pitch and pauses are never analysed, and no audio reaches the server. The UI says so on the sentiment panel. Stored per message, it shows a trajectory (T1…Tn) in the UI, feeds the summary's start→end trend, and triggers escalation.
 
 ---
+
+## 8b. Call summarisation
+
+`services/summary.js` builds the summary from **stored facts**, not from model memory: the lead row, messages, the appointment row and the turn traces.
+
+| Field | Source |
+|---|---|
+| `customerProfile` | lead name, whether a phone is on file, language, decision-maker, purpose, status |
+| `requirements`, `budget` | lead profile; `budget.fit` is the scoring factor's reason, `approximate` keeps "around" |
+| `concerns` | negative sentiment phrases the customer said, questions with no verified answer (`info_not_found`), and a budget below range |
+| `buyingIntent` | `high` / `medium` / `low`, with evidence (visit booked or requested, timeline, decision authority, positive ending) |
+| `sentiment` | overall, start→end trend, per-turn sequence (transcript text) |
+| `leadScore` | the stored breakdown, including `recommendedNextAction` |
+| `appointmentOutcome` | `confirmed` only when an appointment row is confirmed; a pending proposal is reported as `proposed_not_confirmed` (tested) |
+| `recommendedNextActions` | rule-based follow-ups (callback for escalations, visit preparation, information still to collect) |
+
+With an LLM configured, a short narrative is written from this JSON only. Otherwise a template is used.
 
 ## 9. How appointment conflicts are prevented
 
@@ -187,13 +215,28 @@ Tested: 5 concurrent bookings of one slot → exactly 1 succeeds, 4 get `SLOT_TA
 
 ---
 
+## 9b. The end-to-end acceptance workflow (what `test/acceptance.test.js` proves)
+
+1. **Collect missing information:** "3BHK in Gachibowli" → asks for the budget → "around 90 lakhs, within a month" → asks who decides.
+2. **Retrieve documents:** "What does a 3BHK cost here?" → Price list cited, 3BHK line quoted.
+3. **Qualify:** "I will decide myself" → **77/100 (hot)**: budget 25, requirements 17, timeline 20, authority 15, appointment 0 (no visit asked yet, so no evidence and no points). Persisted to `leads`.
+4. **Check availability:** "Can I visit?" → 3 free slots read from the calendar (none already booked).
+5. **Collect contact, then propose:** "the first one" → asks name and phone → saved → "Shall I book…?" No appointment row exists yet.
+6. **Confirm and book:** "Yes" → `bookAppointment` passes the consent gate → transaction → row `confirmed`, the reference in the reply matches the row id, lead becomes `visit_scheduled`, score **92**, audit row `success/agent`.
+7. **Duplicate booking:** asking again → `already_booked`; staff trying another slot for the same lead → `409 LEAD_ALREADY_BOOKED`; still 1 row.
+8. **Booking conflict:** a second customer is proposed a slot, a rival takes it first, then the customer says yes → `SLOT_TAKEN`, the agent apologises and re-offers fresh slots; exactly 1 confirmed row for that slot; audit `failed/SLOT_TAKEN`; the turn is still `success: true` (a correct business outcome).
+9. **Summary:** persisted in `call_summaries` with profile, requirements, budget, high buying intent, score 92, `appointmentOutcome: confirmed`; conversation `ended`.
+10. **Trace/audit:** 9 traced turns, each with analysis, steps, events, response, scoring, suggested action, explanation and success; no raw phone number anywhere in traces or audit args.
+11. **Unconfirmed proposal:** a call that ends at the "Shall I book?" stage reports `proposed_not_confirmed` and has no appointment row.
+
 ## 10. How data flows into PostgreSQL
 
 | Event | Tables written |
 |---|---|
 | Call starts | `leads` (new, `is_demo`), `conversations`, `messages` (greeting) |
-| Each customer turn | `messages` (customer + sentiment), `leads` (profile, score, status, via `update_lead`/`saveScore`), `conversations.state`, `messages` (agent + sources), `agent_execution_logs` (trace) |
+| Each customer turn | `messages` (customer + sentiment), `leads` (profile, score, status, via `updateLead`/`saveScore`), `conversations.state`, `messages` (agent + sources), `agent_execution_logs` (trace) |
 | Booking | `appointments` + `leads.status` in one transaction |
+| Any tool call (agent or staff) | `tool_audit_log` (PII-masked args, status, actor) |
 | Escalation | `conversations.status/escalation_reason` |
 | End call | `call_summaries` (upsert), `conversations.status/ended_at` |
 | Knowledge upload | `knowledge_documents` + `knowledge_chunks` in one transaction |
@@ -231,6 +274,7 @@ See [SCALABILITY_AND_SECURITY.md](SCALABILITY_AND_SECURITY.md). Key points: keys
 - **"What stops the LLM from booking a random slot?"** Section 6: proposal + rule-detected consent + exact argument match + expiry + policy validation + DB constraint.
 - **"How do you avoid hallucination?"** Retrieval threshold, *answer only from context* prompting, extractive fallback, templated business statements, and "I don't have verified information" when nothing matches.
 - **"Why BM25 instead of embeddings?"** Small keyword-heavy corpus, explainable scores, no extra infrastructure. The retriever interface makes embeddings a drop-in.
+- **"What stops the LLM from inventing a price?"** The prompt forbids calculating figures, and a code check rejects any answer containing a number that is not in the retrieved sources: the reply falls back to quoting the source (tested; seen live when the model tried to apply a discount itself).
 - **"What if the LLM is down?"** Analyzer and responder catch the error, fall back to rules/extractive, and record it in `trace.errors` (tested with a failing provider).
 - **"Can a deleted user keep using their token?"** No. `requireAuth` verifies the signature *and* that the user still exists in that tenant on every request (tested).
 - **"How is it multi-tenant?"** `tenant_id` on every row; the tenant comes only from the signed JWT; every query filters by it; cross-tenant access returns 404 (tested).

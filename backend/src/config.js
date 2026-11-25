@@ -18,6 +18,7 @@ const schema = z.object({
   DEMO_MODE: z.string().default('false'),
   RATE_LIMIT_MAX: z.coerce.number().default(300),
   AGENT_RATE_LIMIT_MAX: z.coerce.number().default(60),
+  LOGIN_RATE_LIMIT_MAX: z.coerce.number().default(20),
 });
 
 const parsed = schema.safeParse(process.env);
@@ -48,4 +49,5 @@ export const config = {
   demoMode: env.DEMO_MODE === 'true' || !providerUsable,
   rateLimitMax: env.RATE_LIMIT_MAX,
   agentRateLimitMax: env.AGENT_RATE_LIMIT_MAX,
+  loginRateLimitMax: env.LOGIN_RATE_LIMIT_MAX,
 };

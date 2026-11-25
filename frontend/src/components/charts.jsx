@@ -36,7 +36,7 @@ export function DailyActivityChart({ data }) {
             <XAxis dataKey="day" tickFormatter={fmtDay} tick={AXIS} axisLine={false} tickLine={false} interval="preserveStartEnd" minTickGap={24} />
             <YAxis allowDecimals={false} tick={AXIS} axisLine={false} tickLine={false} />
             <Tooltip content={<TooltipBox />} cursor={{ stroke: '#475569', strokeDasharray: '3 3' }} />
-            {series.map(([k, name, c]) => <Line key={k} type="monotone" dataKey={k} name={name} stroke={c} strokeWidth={2} dot={false} activeDot={{ r: 4, strokeWidth: 2, stroke: '#111723' }} />)}
+            {series.map(([k, name, c]) => <Line key={k} type="monotone" dataKey={k} name={name} stroke={c} strokeWidth={2} dot={{ r: 3, strokeWidth: 2, stroke: '#111723', fill: c }} activeDot={{ r: 5, strokeWidth: 2, stroke: '#111723' }} />)}
           </LineChart>
         </ResponsiveContainer>
       </div>

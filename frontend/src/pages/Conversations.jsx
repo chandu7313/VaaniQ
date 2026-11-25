@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { Workflow } from 'lucide-react';
 import { api } from '../lib/api';
 import { useApi } from '../hooks/useApi';
@@ -12,6 +13,12 @@ function Detail({ id, onChanged }) {
   const state = useApi(`/conversations/${id}`);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const remove = async () => {
+    if (!window.confirm('Permanently delete this conversation, its messages, summary and decision traces? This cannot be undone.')) return;
+    try { await api(`/conversations/${id}`, { method: 'DELETE' }); onChanged(); navigate('/conversations'); } catch (err) { setError(err); }
+  };
   const summarise = async () => {
     setBusy(true); setError(null);
     try { await api(`/conversations/${id}/end`, { method: 'POST' }); state.reload(); onChanged(); }
@@ -26,6 +33,7 @@ function Detail({ id, onChanged }) {
               <div className="flex flex-wrap items-center gap-2">
                 <Badge tone={STATUS_TONE[c.status]}>{c.status}</Badge>
                 <Link to={`/traces?conversationId=${c.id}`} className="inline-flex items-center gap-1 text-xs text-indigo-300 hover:text-indigo-200"><Workflow className="size-3.5" />Decision traces</Link>
+                {user?.role === 'admin' && <Button size="sm" variant="danger" onClick={remove}>Delete</Button>}
               </div>
             )}>
             {c.escalation_reason && <p className="mb-3 rounded-lg bg-rose-500/10 px-3 py-2 text-xs text-rose-200">Escalated: {c.escalation_reason}</p>}
@@ -63,7 +71,7 @@ export default function Conversations() {
             ))}
           </Async>
         </Card>
-        <div>{id ? <Detail key={id} id={id} onChanged={list.reload} /> : <Card><EmptyState title="Select a conversation" hint="Pick one on the left to see the transcript, sentiment and summary." /></Card>}</div>
+        <div className="min-w-0">{id ? <Detail key={id} id={id} onChanged={list.reload} /> : <Card><EmptyState title="Select a conversation" hint="Pick one on the left to see the transcript, sentiment and summary." /></Card>}</div>
       </div>
     </div>
   );

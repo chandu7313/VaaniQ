@@ -1,8 +1,13 @@
 // Minimal BM25 (Okapi) implementation. No external dependency; ~50 lines of ranking logic.
-const STOP = new Set(['a', 'an', 'the', 'is', 'are', 'am', 'was', 'of', 'in', 'on', 'at', 'to', 'for', 'and', 'or', 'with', 'me', 'my', 'i', 'you', 'it', 'about', 'can', 'tell', 'do', 'does', 'have', 'has', 'what', 'which', 'this', 'that', 'be', 'by', 'from', 'as', 'please', 'any', 'there', 'how', 'will']);
+const STOP = new Set(['a', 'an', 'the', 'is', 'are', 'am', 'was', 'of', 'in', 'on', 'at', 'to', 'for', 'and', 'or', 'with', 'me', 'my', 'i', 'you', 'it', 'about', 'can', 'tell', 'do', 'does', 'have', 'has', 'what', 'which', 'this', 'that', 'be', 'by', 'from', 'as', 'please', 'any', 'there', 'how', 'will',
+  // conversational filler that otherwise matches incidental words in documents ("described here")
+  'here', 'also', 'would', 'could', 'should', 'get', 'want', 'need', 'know', 'our', 'your', 'we', 'us', 'they', 'them', 'it', 'its', 'so', 'just', 'like', 'some', 'tell', 'give']);
 
 export function tokenize(text) {
-  const t = text.toLowerCase().replace(/(\d)\s*bhk/g, '$1bhk').replace(/₹/g, ' rs ');
+  const t = text.toLowerCase()
+    // "three bedroom", "3 bed room", "3-bhk" all normalise to the token used in documents: "3bhk"
+    .replace(/\b(two|three|four|[2-4])[\s-]*(?:bhk|bed\s?rooms?|bedroom)\b/g, (_, n) => `${({ two: 2, three: 3, four: 4 })[n] ?? n}bhk`)
+    .replace(/(\d)\s*bhk/g, '$1bhk').replace(/₹/g, ' rs ');
   return (t.match(/[\p{L}\p{N}\p{M}]+/gu) || [])
     .filter((w) => !STOP.has(w))
     .map(stem);

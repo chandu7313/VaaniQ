@@ -97,3 +97,14 @@ export async function updateLead(tenantId, leadId, { status, fullName, email }) 
   if (!rows[0]) throw notFound('Lead');
   return rows[0];
 }
+
+export async function findLeadByPhone(tenantId, phone) {
+  const { rows } = await query(`SELECT ${LEAD_COLS} FROM leads WHERE tenant_id=$1 AND phone=$2`, [tenantId, phone]);
+  return rows[0] ?? null;
+}
+
+/** Deletes a lead; its appointments cascade, its conversations keep history with lead_id = NULL. */
+export async function deleteLead(tenantId, leadId) {
+  const { rowCount } = await query('DELETE FROM leads WHERE tenant_id=$1 AND id=$2', [tenantId, leadId]);
+  if (!rowCount) throw notFound('Lead');
+}

@@ -1,54 +1,89 @@
+import { Link } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
-import { Async, Button, Card, EmptyState, PageHeader, Stat } from '../components/ui';
-import { BarList, SENTIMENT_COLOR, DailyActivityChart } from '../components/charts';
-import { STATUS_LABEL, humanize, fmtDateTime } from '../lib/format';
+import { Async, Badge, Button, Card, DemoTag, EmptyState, PageHeader, Stat, SCORE_TONE, SENTIMENT_TONE } from '../components/ui';
+import { BarList, SENTIMENT_COLOR } from '../components/charts';
+import { humanize, fmtDateTime } from '../lib/format';
 
-const STATUS_ORDER = ['new', 'contacted', 'qualified', 'visit_scheduled', 'nurture', 'lost'];
+const INTENT_TONE = { high: 'green', medium: 'amber', low: 'slate' };
+const OUTCOME_TONE = { confirmed: 'green', proposed_not_confirmed: 'amber', declined_by_customer: 'red', none: 'slate' };
 
-export default function Analytics() {
+function SummariesTable({ rows }) {
+  if (!rows.length) return <EmptyState title="No call summaries yet" hint="End a call on the AI Voice Agent page to generate one." />;
+  return (
+    <div className="-m-5 overflow-x-auto">
+      <table className="w-full min-w-[760px] text-sm">
+        <thead className="border-b border-line text-xs text-slate-500"><tr>{['Customer', 'Requirement', 'Buying intent', 'Score', 'Sentiment', 'Appointment', 'Next action', 'When'].map((h) => <th key={h} className="px-5 py-3 text-left font-medium">{h}</th>)}</tr></thead>
+        <tbody>{rows.map(({ id, conversation_id: cid, summary: s, full_name: name, is_demo: demo, created_at: at }) => (
+          <tr key={id} className="border-b border-line/60 transition-colors hover:bg-panel-2">
+            <td className="px-5 py-3"><Link to={`/conversations/${cid}`} className="flex items-center gap-2 font-medium text-slate-100 hover:text-indigo-200">{name || 'Unnamed caller'}{demo && <DemoTag />}</Link></td>
+            <td className="px-5 py-3 text-slate-300">{[s.requirements?.configuration, s.requirements?.location, s.budget?.stated].filter(Boolean).join(' · ') || '—'}</td>
+            <td className="px-5 py-3">{s.buyingIntent ? <Badge tone={INTENT_TONE[s.buyingIntent.level]} title={s.buyingIntent.evidence.join(' · ')}>{s.buyingIntent.level}</Badge> : '—'}</td>
+            <td className="px-5 py-3">{s.leadScore ? <Badge tone={SCORE_TONE[s.leadScore.classification]}>{s.leadScore.total}</Badge> : '—'}</td>
+            <td className="px-5 py-3"><Badge tone={SENTIMENT_TONE[s.sentiment?.overall]}>{s.sentiment?.overall} · {s.sentiment?.trend}</Badge></td>
+            <td className="px-5 py-3">{s.appointmentOutcome ? <Badge tone={OUTCOME_TONE[s.appointmentOutcome] || 'slate'}>{humanize(s.appointmentOutcome)}</Badge> : <Badge>{s.outcome}</Badge>}</td>
+            <td className="max-w-64 px-5 py-3 text-xs text-slate-400">{s.recommendedNextActions?.[0] || '—'}</td>
+            <td className="whitespace-nowrap px-5 py-3 text-xs text-slate-500">{fmtDateTime(at)}</td>
+          </tr>
+        ))}</tbody>
+      </table>
+    </div>
+  );
+}
+
+export default function CallIntelligence() {
   const state = useApi('/analytics/overview');
+  const summaries = useApi('/call-summaries');
+  const reload = () => { state.reload(); summaries.reload(); };
   return (
     <div>
-      <PageHeader title="Analytics" description="Business and agent-quality metrics, aggregated live from leads, messages, appointments and execution logs." actions={<Button variant="secondary" onClick={state.reload}>Refresh</Button>} />
+      <PageHeader title="Call Intelligence" description="What customers want, how they feel and what happened, aggregated live from summaries, messages, appointments and the tool audit log." actions={<Button variant="secondary" onClick={reload}>Refresh</Button>} />
       <Async state={state}>
-        {(o) => (
-          <div className="space-y-5">
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-              <Stat label="Agent turns logged" value={o.outcomes.reduce((s, r) => s + r.count, 0)} />
-              <Stat label="Avg. turn latency" value={`${o.latency.avg_ms} ms`} hint={`p95 ${o.latency.p95_ms} ms (measured on this server, not a load test)`} />
-              <Stat label="Lead → visit conversion" value={`${o.kpi.visit_conversion}%`} />
-              <Stat label="Escalations to humans" value={o.kpi.escalations} />
-            </div>
-            <div className="grid gap-5 lg:grid-cols-2">
-              <Card title="Lead pipeline by status">
-                <BarList rows={STATUS_ORDER.map((s) => ({ label: STATUS_LABEL[s], value: o.leadsByStatus.find((r) => r.status === s)?.count || 0 }))} />
+        {(o) => {
+          const sentimentTotal = o.sentiment.reduce((n, r) => n + r.count, 0);
+          const positive = o.sentiment.find((r) => r.sentiment === 'positive')?.count || 0;
+          return (
+            <div className="space-y-5">
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                <Stat label="Calls summarised" value={summaries.data?.length ?? '…'} />
+                <Stat label="Positive customer messages" value={sentimentTotal ? `${Math.round((100 * positive) / sentimentTotal)}%` : '—'} hint={`of ${sentimentTotal} classified (transcript text)`} />
+                <Stat label="Escalations to humans" value={o.kpi.escalations} />
+                <Stat label="Avg. agent turn" value={`${o.latency.avg_ms} ms`} hint={`p95 ${o.latency.p95_ms} ms on this server (not a load test)`} />
+              </div>
+              <Card title="Call summaries" subtitle="Generated from stored facts when a call ends">
+                <Async state={summaries}>{(rows) => <SummariesTable rows={rows} />}</Async>
               </Card>
-              <Card title="Customer message sentiment" subtitle="Each customer message is classified with confidence and evidence">
-                {!o.sentiment.length ? <EmptyState title="No customer messages yet" /> : (
-                  <BarList rows={['positive', 'neutral', 'negative'].map((s) => ({ key: s, label: humanize(s), value: o.sentiment.find((r) => r.sentiment === s)?.count || 0 }))} colorFor={(r) => SENTIMENT_COLOR[r.key]} />
+              <div className="grid gap-5 lg:grid-cols-3">
+                <Card title="Customer sentiment" subtitle="Per message, from transcript text">
+                  {!sentimentTotal ? <EmptyState title="No customer messages yet" /> : (
+                    <BarList rows={['positive', 'neutral', 'negative'].map((s) => ({ key: s, label: humanize(s), value: o.sentiment.find((r) => r.sentiment === s)?.count || 0 }))} colorFor={(r) => SENTIMENT_COLOR[r.key]} />
+                  )}
+                </Card>
+                <Card title="What customers asked for" subtitle="Primary intent per turn">
+                  {!o.intents.length ? <EmptyState title="No agent turns yet" /> : <BarList rows={o.intents.map((r) => ({ label: humanize(r.intent), value: r.count }))} />}
+                </Card>
+                <Card title="Turn outcomes">
+                  {!o.outcomes.length ? <EmptyState title="No agent turns yet" /> : <BarList rows={o.outcomes.map((r) => ({ label: humanize(r.outcome), value: r.count }))} />}
+                </Card>
+              </div>
+              <Card title="Tool execution reliability" subtitle="From tool_audit_log: every agent and staff action">
+                {!o.tools.length ? <EmptyState title="No tool executions yet" /> : (
+                  <div className="-m-5 overflow-x-auto">
+                    <table className="w-full min-w-[560px] text-sm">
+                      <thead className="border-b border-line text-xs text-slate-500"><tr>{['Tool', 'Calls', 'Succeeded', 'Rejected by validation/consent', 'Failed (business or error)', 'Success rate'].map((h, i) => <th key={h} className={`px-5 py-3 font-medium ${i ? 'text-right' : 'text-left'}`}>{h}</th>)}</tr></thead>
+                      <tbody>{o.tools.map((t) => (
+                        <tr key={t.tool} className="border-b border-line/60"><td className="px-5 py-2.5"><code className="text-slate-200">{t.tool}</code></td>
+                          <td className="px-5 text-right tabular-nums">{t.calls}</td><td className="px-5 text-right tabular-nums">{t.succeeded}</td>
+                          <td className="px-5 text-right tabular-nums">{t.rejected}</td><td className="px-5 text-right tabular-nums">{t.failed}</td>
+                          <td className="px-5 text-right tabular-nums">{Math.round((100 * t.succeeded) / t.calls)}%</td></tr>
+                      ))}</tbody>
+                    </table>
+                  </div>
                 )}
               </Card>
-              <Card title="Detected customer intents (primary)">
-                {!o.intents.length ? <EmptyState title="No agent turns yet" /> : <BarList rows={o.intents.map((r) => ({ label: humanize(r.intent), value: r.count }))} />}
-              </Card>
-              <Card title="Turn outcomes">
-                {!o.outcomes.length ? <EmptyState title="No agent turns yet" /> : <BarList rows={o.outcomes.map((r) => ({ label: humanize(r.outcome), value: r.count }))} />}
-              </Card>
+              <p className="text-xs text-slate-500">Generated {fmtDateTime(o.generatedAt)}. Rejections include intentional safety refusals, such as a booking attempted without the customer's confirmation.</p>
             </div>
-            <Card title="Activity, last 14 days"><DailyActivityChart data={o.daily} /></Card>
-            <Card title="Tool execution reliability" subtitle="Every business action goes through the validated tool registry">
-              {!o.tools.length ? <EmptyState title="No tool executions yet" /> : (
-                <table className="w-full text-sm">
-                  <thead className="text-xs text-slate-500"><tr><th className="pb-2 text-left font-medium">Tool</th><th className="pb-2 text-right font-medium">Calls</th><th className="pb-2 text-right font-medium">Succeeded</th><th className="pb-2 text-right font-medium">Rejected / failed</th><th className="pb-2 text-right font-medium">Success rate</th></tr></thead>
-                  <tbody>{o.tools.map((t) => (
-                    <tr key={t.tool} className="border-t border-line"><td className="py-2"><code className="text-slate-200">{t.tool}</code></td><td className="text-right tabular-nums">{t.calls}</td><td className="text-right tabular-nums">{t.succeeded}</td><td className="text-right tabular-nums">{t.calls - t.succeeded}</td><td className="text-right tabular-nums">{Math.round((100 * t.succeeded) / t.calls)}%</td></tr>
-                  ))}</tbody>
-                </table>
-              )}
-            </Card>
-            <p className="text-xs text-slate-500">Generated {fmtDateTime(o.generatedAt)}. Rejected tool calls include intentional safety refusals (for example a booking slot taken by another customer).</p>
-          </div>
-        )}
+          );
+        }}
       </Async>
     </div>
   );

@@ -4,12 +4,11 @@ import { AppError } from '../../lib/errors.js';
 import { formatSlot } from '../../lib/time.js';
 import { getProvider } from '../llm/index.js';
 import { getTenant } from '../tenants.js';
-import { getLead, saveScore } from '../crm.js';
+import { getLead } from '../crm.js';
 import { loadSession, addMessage, saveConversation } from '../memory.js';
 import { getUpcomingAppointment } from '../appointments.js';
-import { scoreLead } from '../leadScoring.js';
-import { executeTool } from '../tools/registry.js';
-import '../tools/index.js';
+import { executeTool } from '../tools/executor.js';
+import { maskPII, maskDeep } from '../../lib/privacy.js';
 import { analyze, PROFILE_KEYS } from './analyzer.js';
 import { answerFromKnowledge } from './responder.js';
 import { buildRetrievalQuery } from './context.js';
@@ -19,11 +18,8 @@ import { t, tPart, LOCALES } from './templates.js';
 const PROPOSAL_TTL_MS = 10 * 60 * 1000;
 const FOLLOW_UP_ORDER = ['budget', 'bedrooms', 'location', 'timeline', 'decisionMaker', 'purpose'];
 
-// Phone numbers and e-mails are masked in the stored decision trace.
-export const maskPII = (s) => String(s)
-  .replace(/(?:\+?91[\s-]?)?(?:\d[\s-]?){8}(\d)[\s-]?(\d)/g, '******$1$2')
-  .replace(/[\w.+-]+@([\w-]+\.[\w.-]+)/g, '***@$1');
-const maskDeep = (v) => JSON.parse(maskPII(JSON.stringify(v ?? null)));
+// Business rejections that are correct outcomes of a working system, not failures of the turn.
+const EXPECTED_REJECTIONS = new Set(['SLOT_TAKEN', 'LEAD_ALREADY_BOOKED', 'MISSING_CONTACT', 'SLOT_OUTSIDE_POLICY']);
 
 const pick = (obj, keys) => Object.fromEntries(keys.filter((k) => obj[k] !== undefined).map((k) => [k, obj[k]]));
 const slotLabel = (iso, lang) => formatSlot(new Date(iso), LOCALES[lang]);
@@ -54,7 +50,21 @@ function budgetFitText(lang, profile, catalog) {
  *  analyse -> persist facts (tool) -> escalate | confirm | decline | (answer via RAG + booking flow)
  *  -> score lead -> compose reply -> persist messages, state and decision trace.
  */
-export async function handleTurn({ tenantId, conversationId, text, language, now = new Date() }) {
+// Turns of the SAME conversation are serialized in this process (double-clicks, retries, two tabs),
+// so each turn sees the state the previous one saved. Different conversations still run in parallel.
+// Data integrity across instances does not depend on this: bookings are protected by a transaction
+// and the unique-slot index. A multi-instance deployment would add a distributed lock (Redis/advisory).
+const turnQueues = new Map();
+export function handleTurn(args) {
+  const key = args.conversationId;
+  const previous = turnQueues.get(key) ?? Promise.resolve();
+  const current = previous.catch(() => {}).then(() => runTurn(args));
+  turnQueues.set(key, current);
+  current.finally(() => { if (turnQueues.get(key) === current) turnQueues.delete(key); }).catch(() => {});
+  return current;
+}
+
+async function runTurn({ tenantId, conversationId, text, language, now = new Date() }) {
   const started = Date.now();
   const provider = getProvider();
   const { settings } = await getTenant(tenantId);
@@ -81,13 +91,14 @@ export async function handleTurn({ tenantId, conversationId, text, language, now
   trace.analysis = { source: analysis.source, intent: analysis.intent, secondaryIntents: analysis.secondary, entities: maskDeep(e), entitySources: analysis.entitySources, sentiment: analysis.sentiment };
 
   let lead = await getLead(tenantId, conversation.lead_id);
-  const ctx = { tenantId, conversationId, leadId: lead.id, now, settings, pendingProposal: state.pendingProposal, customerConfirmed: false };
+  const ctx = { tenantId, actor: 'agent', conversationId, leadId: lead.id, now, settings, pendingProposal: state.pendingProposal, customerConfirmed: false };
   const run = async (tool, args, reason) => {
     const rec = await executeTool(ctx, tool, args, reason);
     const { result, ...rest } = rec;
     // Store a compact, PII-masked view of results in the trace (lead rows are summarised).
-    const summary = tool === 'update_lead' && result ? { leadId: result.leadId, mergedIntoExistingLead: result.mergedIntoExistingLead }
-      : tool === 'search_knowledge_base' && result ? result.map(({ title, section, score, relevance }) => ({ title, section, score, relevance }))
+    const summary = tool === 'updateLead' && result ? { leadId: result.leadId, mergedIntoExistingLead: result.mergedIntoExistingLead }
+      : tool === 'searchKnowledge' && result ? result.map(({ title, section, score, relevance }) => ({ title, section, score, relevance }))
+      : tool === 'qualifyLead' && result ? { total: result.score.total, classification: result.score.classification, status: result.lead.status }
         : result;
     trace.steps.push(maskDeep({ ...rest, result: summary }));
     ev('tool', `${tool}: ${rec.ok ? 'validated and executed' : `rejected ${rec.error.code}`}`);
@@ -106,7 +117,7 @@ export async function handleTurn({ tenantId, conversationId, text, language, now
   const contact = pick(e, ['fullName', 'phone', 'email']);
   const newFacts = Object.fromEntries(Object.entries(profilePatch).filter(([k, v]) => JSON.stringify(lead.profile[k]) !== JSON.stringify(v)));
   if (Object.keys(newFacts).length || Object.keys(contact).length) {
-    const rec = await run('update_lead', { profile: profilePatch, ...contact }, 'Customer stated new qualification or contact details');
+    const rec = await run('updateLead', { profile: profilePatch, ...contact }, 'Customer stated new qualification or contact details');
     if (rec.ok) { lead = rec.result.lead; ctx.leadId = lead.id; }
   }
   if (Object.keys(contact).length) newFacts.contact = true;
@@ -118,7 +129,7 @@ export async function handleTurn({ tenantId, conversationId, text, language, now
   }
 
   const offerSlots = async (args, prefMissed) => {
-    const rec = await run('check_availability', { ...args, limit: 3 }, prefMissed ? 'Preferred time unavailable: offer nearest free slots' : 'Customer wants a site visit: read real calendar availability');
+    const rec = await run('checkAvailability', { ...args, limit: 3 }, prefMissed ? 'Preferred time unavailable: offer nearest free slots' : 'Customer wants a site visit: read real calendar availability');
     if (rec.ok && rec.result.length) {
       state.offeredSlots = rec.result;
       reply.push(t(lang, prefMissed ? 'no_slots_for_pref' : 'offer_slots', { list: slotList(rec.result, lang) }));
@@ -139,7 +150,7 @@ export async function handleTurn({ tenantId, conversationId, text, language, now
       chosen = state.offeredSlots.at(e.slotChoice) ?? null;
     } else if (e.visitHour !== undefined) {
       // Specific time requested: look it up in the real calendar rather than assuming it is free.
-      const rec = await run('check_availability', { ...(e.visitDate ? { date: e.visitDate } : {}), limit: 10 }, 'Check whether the requested time is free');
+      const rec = await run('checkAvailability', { ...(e.visitDate ? { date: e.visitDate } : {}), limit: 10 }, 'Check whether the requested time is free');
       const wanted = (s) => { const d = new Date(new Date(s.startsAt).getTime() + 330 * 60000); return d.getUTCHours() === e.visitHour && d.getUTCMinutes() === (e.visitMinute ?? 0); };
       chosen = rec.ok ? rec.result.find(wanted) ?? null : null;
       prefMissed = !chosen;
@@ -164,12 +175,12 @@ export async function handleTurn({ tenantId, conversationId, text, language, now
     }
     // Structured action proposal. It is NOT executed now: it waits for an explicit "yes" next turn.
     state.pendingProposal = {
-      id: randomUUID(), tool: 'book_appointment', args: { startsAt: chosen.startsAt },
+      id: randomUUID(), tool: 'bookAppointment', args: { startsAt: chosen.startsAt },
       createdAt: now.toISOString(), expiresAt: new Date(now.getTime() + PROPOSAL_TTL_MS).toISOString(),
     };
     delete state.desiredSlot;
     trace.proposal = { ...state.pendingProposal, requiresConfirmation: true, status: 'awaiting_customer_confirmation' };
-    ev('action_proposal', `book_appointment ${chosen.startsAt} proposed; awaiting explicit confirmation`);
+    ev('action_proposal', `bookAppointment ${chosen.startsAt} proposed; awaiting explicit confirmation`);
     reply.push(t(lang, 'confirm_request', { slot: slotLabel(chosen.startsAt, lang) }));
     outcome = 'confirmation_requested';
     asksQuestion = true;
@@ -181,8 +192,8 @@ export async function handleTurn({ tenantId, conversationId, text, language, now
 
   if (flags.has('human_request') || sustainedNegative) {
     const reason = flags.has('human_request') ? 'Customer asked to speak with a human' : 'Negative sentiment in consecutive customer messages';
-    trace.proposal = { tool: 'escalate_to_human', args: { reason }, requiresConfirmation: false };
-    const rec = await run('escalate_to_human', { reason }, reason);
+    trace.proposal = { tool: 'escalateToHuman', args: { reason }, requiresConfirmation: false };
+    const rec = await run('escalateToHuman', { reason }, reason);
     delete state.pendingProposal;
     reply.push(rec.ok ? t(lang, 'escalated') : t(lang, 'fallback'));
     outcome = rec.ok ? 'escalated' : 'escalation_failed';
@@ -217,7 +228,7 @@ export async function handleTurn({ tenantId, conversationId, text, language, now
       // No "retry with the old topic" when nothing matches: that would answer an unsupported question
       // ("Do you have a helipad?") with the previous topic instead of admitting there is no information.
       const rq = buildRetrievalQuery({ text, searchQuery: analysis.searchQuery, profile: lead.profile, lastTopic: state.lastTopic });
-      const rec = await run('search_knowledge_base', { query: rq.query.slice(0, 500), k: 3 }, rq.contextual ? 'Follow-up question: retrieve using the previous topic from memory' : 'Customer asked for information: retrieve verified documents');
+      const rec = await run('searchKnowledge', { query: rq.query.slice(0, 500), k: 3 }, rq.contextual ? 'Follow-up question: retrieve using the previous topic from memory' : 'Customer asked for information: retrieve verified documents');
       const hits = rec.ok ? rec.result : [];
       trace.retrieval = { query: maskPII(rq.query), contextAdded: rq.added, hits: hits.map(({ title, section, score, relevance }) => ({ title, section, score, relevance })) };
       if (hits[0]) state.lastTopic = { title: hits[0].title, section: hits[0].section };
@@ -240,11 +251,12 @@ export async function handleTurn({ tenantId, conversationId, text, language, now
     if (flags.has('greeting') && !reply.length) { reply.push(t(lang, 'greeting')); outcome = 'greeted'; asksQuestion = true; }
   }
 
-  // 3. Re-score from stored facts (deterministic, explainable) and persist.
-  const hasBooking = outcome === 'appointment_booked' || Boolean(await getUpcomingAppointment(tenantId, lead.id, now));
-  const score = scoreLead(lead.profile, { catalog: settings.catalog, scoring: settings.scoring, hasBooking });
+  // 3. Re-score from stored facts (deterministic, explainable) and persist, through the qualifyLead tool.
   const prevScore = lead.score;
-  lead = await saveScore(tenantId, lead.id, score, settings.scoring?.thresholds);
+  const qualified = await run('qualifyLead', {}, 'Recompute the explainable lead score from stored, customer-stated facts');
+  if (!qualified.ok) throw new AppError(500, 'QUALIFICATION_FAILED', qualified.error.message);
+  const { score } = qualified.result;
+  lead = qualified.result.lead;
   ev('scoring', `Lead score ${prevScore} → ${score.total} (${score.classification})`);
   trace.scoring = { previous: prevScore, total: score.total, classification: score.classification, factors: score.factors, missing: score.missing };
 
@@ -261,7 +273,7 @@ export async function handleTurn({ tenantId, conversationId, text, language, now
   // Structured output validation: fails loudly (500 + log) before anything is persisted or returned.
   const output = structuredOutputSchema.parse({
     reply: replyText, intent: analysis.intent, secondaryIntents: analysis.secondary, entities: trace.analysis.entities,
-    sentiment: analysis.sentiment, leadQualification: { total: score.total, classification: score.classification, factors: score.factors, missing: score.missing },
+    sentiment: analysis.sentiment, leadQualification: { total: score.total, classification: score.classification, factors: score.factors, missing: score.missing, recommendedNextAction: score.recommendedNextAction },
     sources, suggestedAction, explanation, outcome,
   });
   ev('output_validated', `Structured output valid; suggested action: ${suggestedAction.type}`);
@@ -272,6 +284,8 @@ export async function handleTurn({ tenantId, conversationId, text, language, now
   await saveConversation(tenantId, conversationId, { state, leadId: lead.id, status: convStatus, language: lang });
 
   trace.response = { text: replyText, sources, outcome };
+  // Turn success: a valid response was produced and no tool failed for an unexpected reason.
+  trace.success = trace.steps.every((st) => st.ok || EXPECTED_REJECTIONS.has(st.error?.code));
   trace.latencyMs = Date.now() - started;
   await query(
     `INSERT INTO agent_execution_logs (tenant_id, conversation_id, turn_index, intent, outcome, provider, latency_ms, trace)

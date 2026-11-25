@@ -13,6 +13,8 @@ export default function SummaryCard({ summary }) {
         <Badge tone={summary.appointment ? 'green' : summary.outcome.includes('Escalated') ? 'red' : 'slate'}>{summary.outcome}</Badge>
         {summary.leadScore && <Badge tone={SCORE_TONE[summary.leadScore.classification]}>Score {summary.leadScore.total} · {summary.leadScore.classification}</Badge>}
         <Badge tone={SENTIMENT_TONE[summary.sentiment.overall]}>Sentiment {summary.sentiment.overall} ({summary.sentiment.trend})</Badge>
+        {summary.buyingIntent && <Badge tone={{ high: 'green', medium: 'amber', low: 'slate' }[summary.buyingIntent.level]} title={summary.buyingIntent.evidence.join(' · ')}>Buying intent {summary.buyingIntent.level}</Badge>}
+        {summary.appointmentOutcome === 'proposed_not_confirmed' && <Badge tone="amber">Visit proposed, not confirmed</Badge>}
       </div>
       <div className="grid gap-4 md:grid-cols-2">
         <div>
@@ -25,6 +27,13 @@ export default function SummaryCard({ summary }) {
         <div>
           <div className="mb-1 text-[11px] font-medium uppercase tracking-wide text-slate-500">Recommended next actions</div>
           <ul className="list-disc space-y-1 pl-4 text-xs text-slate-200">{summary.recommendedNextActions.map((a) => <li key={a}>{a}</li>)}</ul>
+          {summary.concerns?.length > 0 && (
+            <>
+              <div className="mb-1 mt-3 text-[11px] font-medium uppercase tracking-wide text-slate-500">Customer concerns</div>
+              <ul className="list-disc space-y-1 pl-4 text-xs text-amber-200">{summary.concerns.map((c, i) => <li key={i}>{c.detail}</li>)}</ul>
+            </>
+          )}
+          {summary.buyingIntent?.evidence?.length > 0 && <div className="mt-3 text-[11px] text-slate-500">Intent evidence: {summary.buyingIntent.evidence.join(' · ')}</div>}
           {summary.topicsDiscussed?.length > 0 && <div className="mt-3 text-[11px] text-slate-500">Topics: {summary.topicsDiscussed.join(', ')}</div>}
         </div>
       </div>

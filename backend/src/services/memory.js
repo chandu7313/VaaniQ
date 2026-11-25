@@ -75,3 +75,9 @@ export async function getConversationDetail(tenantId, conversationId) {
   ]);
   return { ...conversation, messages: messages.rows, summary: summary.rows[0] ?? null, lead: lead.rows[0] ?? null };
 }
+
+/** Deletes a conversation and, by cascade, its messages, summary and turn traces. */
+export async function deleteConversation(tenantId, conversationId) {
+  const { rowCount } = await query('DELETE FROM conversations WHERE tenant_id=$1 AND id=$2', [tenantId, conversationId]);
+  if (!rowCount) throw notFound('Conversation');
+}

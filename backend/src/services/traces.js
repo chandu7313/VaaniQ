@@ -21,6 +21,9 @@ export async function getTrace(tenantId, id) {
 }
 
 export async function listConversationTraces(tenantId, conversationId) {
+  // 404 (not an empty list) for unknown or other-tenant conversations, consistent with every other endpoint.
+  const owned = await query('SELECT 1 FROM conversations WHERE tenant_id = $1 AND id = $2', [tenantId, conversationId]);
+  if (!owned.rowCount) throw notFound('Conversation');
   const { rows } = await query(
     `SELECT id, turn_index, intent, outcome, provider, latency_ms, trace, created_at FROM agent_execution_logs
       WHERE tenant_id = $1 AND conversation_id = $2 ORDER BY turn_index`,

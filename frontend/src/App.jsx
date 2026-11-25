@@ -10,7 +10,8 @@ const Leads = lazy(() => import('./pages/Leads'));
 const Appointments = lazy(() => import('./pages/Appointments'));
 const Knowledge = lazy(() => import('./pages/Knowledge'));
 const Conversations = lazy(() => import('./pages/Conversations'));
-const Analytics = lazy(() => import('./pages/Analytics'));
+const CallIntelligence = lazy(() => import('./pages/CallIntelligence'));
+const Settings = lazy(() => import('./pages/Settings'));
 const Traces = lazy(() => import('./pages/Traces'));
 
 export default function App() {
@@ -28,7 +29,9 @@ export default function App() {
         <Route path="knowledge" element={<Knowledge />} />
         <Route path="conversations" element={<Conversations />} />
         <Route path="conversations/:id" element={<Conversations />} />
-        <Route path="analytics" element={<Analytics />} />
+        <Route path="intelligence" element={<CallIntelligence />} />
+        <Route path="analytics" element={<Navigate to="/intelligence" replace />} />
+        <Route path="settings" element={<Settings />} />
         <Route path="traces" element={<Traces />} />
         <Route path="traces/:id" element={<Traces />} />
         <Route path="*" element={<Navigate to="/" replace />} />

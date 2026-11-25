@@ -7,11 +7,13 @@ import { log } from '../../lib/logger.js';
 // business action is recognised only by deterministic rules on the customer's own words.
 const LLM_INTENTS = ['ask_info', 'request_visit', 'provide_info', 'greeting', 'goodbye', 'human_request'];
 const ORDER = ['human_request', 'confirm', 'decline', 'select_slot', 'request_visit', 'slot_preference', 'ask_info', 'provide_info', 'greeting', 'goodbye'];
-const PROFILE_KEYS = ['bedrooms', 'location', 'budgetMax', 'timelineMonths', 'decisionMaker', 'purpose', 'preferences'];
+// budgetApprox keeps the customer's own qualifier ("around 90 lakh") so summaries do not overstate precision.
+const PROFILE_KEYS = ['bedrooms', 'location', 'budgetMax', 'budgetApprox', 'timelineMonths', 'decisionMaker', 'purpose', 'preferences'];
 
 const nullish = (s) => s.nullish().transform((v) => v ?? undefined);
 const llmSchema = z.object({
-  intents: z.array(z.string()).default([]),
+  // Models legitimately send null for "nothing found"; treat null like absent instead of rejecting.
+  intents: z.array(z.string()).nullish().transform((v) => v ?? []),
   entities: z.object({
     bedrooms: nullish(z.number().int().min(1).max(5)),
     location: nullish(z.string().min(2).max(60)),
@@ -20,12 +22,12 @@ const llmSchema = z.object({
     decisionMaker: nullish(z.enum(['self', 'joint', 'other'])),
     purpose: nullish(z.enum(['self-use', 'investment'])),
     preferences: nullish(z.array(z.string().max(40)).max(10)),
-  }).default({}),
+  }).nullish().transform((v) => v ?? {}),
   sentiment: z.object({
     label: z.enum(['positive', 'neutral', 'negative']),
     confidence: z.number().min(0).max(1),
-    evidence: z.array(z.string().max(80)).max(5).default([]),
-  }).optional(),
+    evidence: z.array(z.string().max(80)).max(5).nullish().transform((v) => v ?? []),
+  }).nullish(),
   searchQuery: nullish(z.string().max(300)),
 });
 
@@ -70,13 +72,15 @@ export async function analyze({ text, state, history, provider, now, trace }) {
     // Accept model sentiment only if every evidence quote really occurs in the message (no fabricated evidence).
     const s = llm.sentiment;
     if (s && s.evidence.length && s.evidence.every((q) => text.toLowerCase().includes(q.toLowerCase()))) {
-      result.sentiment = { label: s.label, confidence: Number(s.confidence.toFixed(2)), evidence: s.evidence.map((p) => ({ phrase: p, polarity: s.label })), method: 'llm' };
+      result.sentiment = { label: s.label, confidence: Number(s.confidence.toFixed(2)), evidence: s.evidence.map((p) => ({ phrase: p, polarity: s.label })), method: 'llm', basis: 'transcript_text' };
     }
     if (llm.searchQuery) result.searchQuery = `${text} ${llm.searchQuery}`;
     result.source = 'rules+llm';
   } catch (err) {
-    log.warn('llm_analysis_fallback', { reason: err.message });
-    trace.errors.push({ stage: 'analysis', message: err.message, fallback: 'rule-based analysis used' });
+    // A JSON parse error quotes the model's output, which can echo customer text: never log that content.
+    const reason = err instanceof SyntaxError ? 'LLM returned invalid JSON' : err.message;
+    log.warn('llm_analysis_fallback', { reason });
+    trace.errors.push({ stage: 'analysis', message: reason, fallback: 'rule-based analysis used' });
   }
   return result;
 }

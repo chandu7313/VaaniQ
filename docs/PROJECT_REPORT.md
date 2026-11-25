@@ -8,7 +8,7 @@
 **Solution.** A modular-monolith Node/Express API with PostgreSQL and a React dashboard. Each customer turn runs: analysis (rule NLU, optionally augmented by a validated LLM) → CRM update → RAG answer with citations → booking flow (availability → proposal → explicit consent → transactional booking) → explainable re-scoring → persisted decision trace.
 
 **Key design decisions**
-1. **AI proposes, backend disposes:** five allow-listed tools behind Zod validation; booking requires a pending proposal plus a rule-detected "yes" plus identical arguments plus a 10-minute expiry.
+1. **AI proposes, backend disposes:** nine allow-listed tools (definitions separate from execution) behind Zod validation, actor/tenant authorization and an audit log; booking requires a pending proposal plus a rule-detected "yes" plus identical arguments plus a 10-minute expiry.
 2. **Two-layer conflict safety:** a row lock on the lead plus a partial unique index on `(tenant_id, starts_at)` for confirmed visits.
 3. **Explainability over opacity:** a deterministic 100-point score with reasons and missing info; BM25 relevance scores; a stored per-turn trace (no hidden chain-of-thought).
 4. **Never invent:** extractors return nothing when unsure, retrieval has a relevance threshold, and slot times and confirmations are templated.
@@ -16,8 +16,8 @@
 
 **Delivered.** 8 UI pages (Dashboard, AI Voice Agent, Leads, Appointments, Knowledge Base, Conversations, Analytics, Agent Trace); browser STT/TTS in EN/HI/TE with a text fallback; 9 core tables plus knowledge chunks; seed and reset scripts; Docker Compose; API and architecture docs.
 
-**Verification (actual results).** 56/56 automated tests pass (unit, PostgreSQL integration, HTTP end-to-end), including the full scenario, the consent gate, 5-way concurrent booking (exactly one succeeds), tenant isolation, row-level security against non-owner roles, token revocation on user deletion, the six AI situations (pricing, unsupported, budget change, follow-up, language switch, incomplete info), session isolation, LLM-output guards and LLM-failure fallback. Frontend lint and production build are clean; `npm audit` reports 0 vulnerabilities. The full scenario was also completed manually in the browser UI.
+**Verification (actual results).** 96/96 automated tests pass (unit, PostgreSQL integration, HTTP end-to-end), including the full scenario, the consent gate, 5-way concurrent booking (exactly one succeeds), tenant isolation, row-level security against non-owner roles, token revocation on user deletion, an end-to-end acceptance test verified against persisted rows (incl. duplicate booking and slot conflict), CRUD for all CRM entities, the six AI situations (pricing, unsupported, budget change, follow-up, language switch, incomplete info), session isolation, LLM-output guards and LLM-failure fallback. Frontend lint and production build are clean; `npm audit` reports 0 vulnerabilities. The full scenario was also completed manually in the browser UI.
 
-**Not verified / limitations.** Live Groq/Gemini calls (no key available; covered by mock-provider tests only); Docker images not built (daemon offline; compose config validated); no load testing; Hindi/Telugu understanding in DEMO_MODE is keyword-based; browser Telugu TTS depends on an installed voice.
+**Not verified / limitations.** Gemini live calls (adapter tests only; Groq was verified live); Docker images not built (daemon offline; compose config validated); no load testing; Hindi/Telugu understanding in DEMO_MODE is keyword-based; browser Telugu TTS depends on an installed voice.
 
 **Scale path (100k registered users ≠ concurrent calls).** Stateless pods behind a load balancer, PgBouncer, read replicas for analytics, Redis for cache, rate limits and index invalidation, queues for summaries and ingestion, an LLM gateway with quotas and failover, OpenTelemetry, and Postgres RLS for tenant isolation in depth. Details: `SCALABILITY_AND_SECURITY.md`.

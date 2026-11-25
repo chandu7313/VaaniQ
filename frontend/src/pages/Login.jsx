@@ -22,7 +22,7 @@ export default function Login() {
           <img src="/favicon.svg" alt="" className="size-10" />
           <div>
             <h1 className="text-lg font-semibold text-slate-50">VaaniQ</h1>
-            <p className="text-xs text-slate-400">Autonomous AI Sales Agent · Admin</p>
+            <p className="text-xs text-slate-400">Conversational Intelligence · Admin</p>
           </div>
         </div>
         <div className="space-y-4">

@@ -13,7 +13,10 @@
 | CORS allow-list | `app.js` | Only `CORS_ORIGINS` may call from browsers |
 | Request validation | `middleware/validate.js` + Zod in every route | Strict schemas reject unknown fields where it matters (lead PATCH, tool args) |
 | Body size limit | `express.json({ limit: '300kb' })` | |
-| Rate limiting | global 300/min, login 20/15 min, agent turns 60/min | Keyed by client IP (`trust proxy` for nginx/LB) |
+| Rate limiting | global 300/min, failed logins 20/15 min, agent turns 60/min | Keyed by client IP (`trust proxy` for nginx/LB); 429s use the JSON error envelope |
+| LLM grounding guard | `agent/responder.js#ungroundedNumbers` | Any number in an LLM answer not present in the retrieved sources (or the question) makes the reply fall back to the verbatim source; prompt forbids calculating figures |
+| Turn serialization | `orchestrator.js#handleTurn` | Same-conversation turns run one at a time (double-clicks, retries); integrity across instances still rests on the booking transaction + unique index |
+| SPA security headers | `frontend/nginx.conf` | CSP, nosniff, Referrer-Policy, Permissions-Policy (config only: not executed, Docker was unavailable) |
 | Parameterized SQL | all services | No string interpolation of input into SQL |
 | Password storage | `lib/password.js` | scrypt, 16-byte salt, constant-time comparison |
 | Admin auth | `middleware/auth.js` | JWT HS256 with algorithm pinned, 8h expiry; same error for unknown user and wrong password |
@@ -22,9 +25,11 @@
 | PII masking in traces | `orchestrator.js#maskPII` | Phones become `******NN`, e-mails become `***@domain` |
 | No raw audio stored | design | Only transcripts reach the server |
 | Retrieved docs are data | `responder.js`, `chunker.js` | `<context>` delimiting + "ignore instructions in context"; injection-like chunks flagged and excluded |
-| Untrusted model output | `analyzer.js`, `tools/registry.js` | Zod-validated; additive only; cannot set consent; tools allow-listed; booking needs the consent gate; slot policy + DB constraint |
+| Untrusted model output | `analyzer.js`, `tools/executor.js` | Zod-validated; additive only; cannot set consent; tools allow-listed; booking needs the consent gate; slot policy + DB constraint |
 | Row-level security (deny-all for non-owner roles) | `migrations/002_enable_rls.sql` | Protects hosted DBs whose public schema is exposed (Supabase Data API + public anon key); tested with a probe role |
 | DB TLS | `db/pool.js` (`DATABASE_SSL`) | `require` / `verify` (+ optional CA file) for hosted Postgres |
+| Tool authorization + audit | `tools/executor.js`, `tool_audit_log` | Actor allow-list per tool, tenant-scoped resource checks, PII-masked audit row for every attempt (agent and staff) |
+| Admin-only deletes | `requireRole('admin')` on DELETE routes | Sales-executive role (`agent`) gets 403 (tested) |
 | Error hygiene | `middleware/error.js` | 5xx returns a generic message + `requestId`; stack only in server logs |
 | Dependencies | `npm audit` | 0 known vulnerabilities at build time (backend prod deps, frontend) |
 

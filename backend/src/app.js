@@ -1,7 +1,7 @@
 import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
-import rateLimit from 'express-rate-limit';
+import { limiter } from './middleware/rateLimit.js';
 import { config } from './config.js';
 import { query, describeDbError } from './db/pool.js';
 import { requireAuth } from './middleware/auth.js';
@@ -12,6 +12,8 @@ import leadRoutes from './routes/leads.js';
 import appointmentRoutes from './routes/appointments.js';
 import knowledgeRoutes from './routes/knowledge.js';
 import insightRoutes from './routes/insights.js';
+import customerRoutes from './routes/customers.js';
+import callSummaryRoutes from './routes/callSummaries.js';
 
 export function createApp() {
   const app = express();
@@ -22,7 +24,7 @@ export function createApp() {
   // CORS: only the configured frontend origins may call the API from a browser.
   app.use(cors({ origin: (origin, cb) => cb(null, !origin || config.corsOrigins.includes(origin)), credentials: false }));
   app.use(express.json({ limit: '300kb' }));
-  app.use('/api', rateLimit({ windowMs: 60 * 1000, limit: config.rateLimitMax, standardHeaders: 'draft-7', legacyHeaders: false }));
+  app.use('/api', limiter({ windowMs: 60 * 1000, limit: config.rateLimitMax }));
 
   app.get('/api/health', async (_req, res) => {
     try {
@@ -37,6 +39,8 @@ export function createApp() {
   app.use('/api/leads', requireAuth, leadRoutes);
   app.use('/api/appointments', requireAuth, appointmentRoutes);
   app.use('/api/knowledge', requireAuth, knowledgeRoutes);
+  app.use('/api/customers', requireAuth, customerRoutes);
+  app.use('/api/call-summaries', requireAuth, callSummaryRoutes);
   app.use('/api', requireAuth, insightRoutes);
   app.use(notFoundHandler);
   app.use(errorHandler);

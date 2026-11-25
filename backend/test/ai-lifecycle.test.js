@@ -128,7 +128,7 @@ test('structured action proposal: suggestedAction mirrors backend state, not mod
   assert.equal(t1.suggestedAction.type, 'choose_slot');
   const t2 = await say(id, 'the second one');
   assert.equal(t2.suggestedAction.type, 'confirm_booking');
-  assert.equal(t2.suggestedAction.tool, 'book_appointment');
+  assert.equal(t2.suggestedAction.tool, 'bookAppointment');
   assert.equal(t2.suggestedAction.executed, false);
   assert.equal(t2.suggestedAction.args.startsAt, t1.offeredSlots[1].startsAt);
   assert.ok(t2.trace.events.some((e) => e.step === 'action_proposal'));

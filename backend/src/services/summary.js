@@ -34,13 +34,39 @@ export function recommendNextAction({ status, appointment, score, sentiment, esc
   return actions;
 }
 
+/** Concerns = negative sentiment evidence + questions we could not answer + a budget below range. */
+function customerConcerns(messages, logs, score, budgetMax) {
+  const concerns = [];
+  for (const m of messages) {
+    if (m.role !== 'customer' || !Array.isArray(m.sentiment_evidence)) continue;
+    for (const e of m.sentiment_evidence) if (e.polarity === 'negative') concerns.push({ type: 'negative_sentiment', detail: `Said "${e.phrase}"` });
+  }
+  for (const l of logs) if (l.outcome === 'info_not_found' && l.input) concerns.push({ type: 'unanswered_question', detail: l.input });
+  const budget = score?.factors?.find((f) => f.key === 'budget');
+  if (budgetMax && budget && budget.points < budget.max) concerns.push({ type: 'budget_gap', detail: budget.reason });
+  return concerns.slice(0, 10);
+}
+
+/** Buying intent from stated facts and actions only, with the evidence used. */
+function buyingIntent(p, appointment, sentiment, score) {
+  const evidence = [];
+  if (appointment?.status === 'confirmed') evidence.push('Site visit booked and confirmed');
+  if (p.visitIntent === 'requested') evidence.push('Asked for a site visit');
+  if (p.timelineMonths) evidence.push(`Plans to buy within ${p.timelineMonths} month${p.timelineMonths === 1 ? '' : 's'}`);
+  if (p.decisionMaker === 'self') evidence.push('Is the decision-maker');
+  if (sentiment.end === 'positive') evidence.push('Ended the call positively');
+  const level = appointment?.status === 'confirmed' || (p.visitIntent === 'requested' && p.timelineMonths && p.timelineMonths <= 3) ? 'high'
+    : (score?.total ?? 0) >= 50 || p.visitIntent === 'requested' || (p.timelineMonths && p.timelineMonths <= 6) ? 'medium' : 'low';
+  return { level, evidence };
+}
+
 export async function generateCallSummary(tenantId, conversationId, { end = true } = {}) {
   const conv = await getConversationDetail(tenantId, conversationId);
   const lead = conv.lead || {};
   const p = lead.profile || {};
   const score = lead.score_breakdown?.factors ? lead.score_breakdown : null;
   const { rows: appts } = await query(`SELECT id, starts_at, status FROM appointments WHERE tenant_id=$1 AND conversation_id=$2 ORDER BY created_at DESC LIMIT 1`, [tenantId, conversationId]);
-  const { rows: logs } = await query(`SELECT intent, outcome, trace->'retrieval'->'hits' AS hits FROM agent_execution_logs WHERE conversation_id=$1 ORDER BY turn_index`, [conversationId]);
+  const { rows: logs } = await query(`SELECT intent, outcome, trace->>'input' AS input, trace->'retrieval'->'hits' AS hits FROM agent_execution_logs WHERE tenant_id=$1 AND conversation_id=$2 ORDER BY turn_index`, [tenantId, conversationId]);
   const appointment = appts[0] ? { id: appts[0].id, startsAt: appts[0].starts_at, label: formatSlot(appts[0].starts_at), status: appts[0].status } : null;
   const sentiment = sentimentTrajectory(conv.messages);
   const topics = [...new Set(logs.flatMap((l) => (l.hits || []).slice(0, 1).map((h) => h.section)))];
@@ -48,23 +74,34 @@ export async function generateCallSummary(tenantId, conversationId, { end = true
   const summary = {
     generatedAt: new Date().toISOString(),
     language: conv.language,
-    customer: { name: lead.full_name || null, phoneOnFile: Boolean(lead.phone), isDemo: lead.is_demo ?? true },
+    customerProfile: {
+      name: lead.full_name || null, phoneOnFile: Boolean(lead.phone), language: conv.language,
+      decisionMaker: p.decisionMaker || null, purpose: p.purpose || null, leadStatus: lead.status || null, isDemo: lead.is_demo ?? true,
+    },
     requirements: {
       configuration: p.bedrooms ? `${p.bedrooms}BHK` : null, location: p.location || null, budget: lakh(p.budgetMax),
       timeline: p.timelineMonths ? `${p.timelineMonths} month${p.timelineMonths === 1 ? '' : 's'}` : null, decisionMaker: p.decisionMaker || null,
       purpose: p.purpose || null, preferences: p.preferences || [],
     },
+    budget: { stated: lakh(p.budgetMax), approximate: Boolean(p.budgetApprox), fit: score?.factors?.find((f) => f.key === 'budget')?.reason ?? null },
+    concerns: customerConcerns(conv.messages, logs, score, p.budgetMax),
+    buyingIntent: buyingIntent(p, appointment, sentiment, score),
     topicsDiscussed: topics,
     sentiment,
-    leadScore: score ? { total: score.total, classification: score.classification, factors: score.factors, missing: score.missing } : null,
+    leadScore: score ? { total: score.total, classification: score.classification, factors: score.factors, missing: score.missing, recommendedNextAction: score.recommendedNextAction } : null,
     outcome: conv.status === 'escalated' ? 'Escalated to human' : appointment ? 'Site visit booked' : 'Information shared',
     appointment,
+    // A proposal waiting for a "yes" is NOT an appointment; it is reported separately.
+    appointmentOutcome: appointment?.status === 'confirmed' ? 'confirmed'
+      : conv.state?.pendingProposal ? 'proposed_not_confirmed'
+        : logs.some((l) => l.outcome === 'proposal_declined') ? 'declined_by_customer'
+          : appointment ? appointment.status : 'none',
     turns: logs.length,
     recommendedNextActions: recommendNextAction({ status: conv.status, appointment, score, sentiment, escalationReason: conv.escalation_reason }),
   };
 
   const facts = [
-    `${summary.customer.name || 'The customer'} enquired about ${[summary.requirements.configuration, summary.requirements.location && `in ${summary.requirements.location}`].filter(Boolean).join(' ') || 'ABC Heights'}`,
+    `${summary.customerProfile.name || 'The customer'} enquired about ${[summary.requirements.configuration, summary.requirements.location && `in ${summary.requirements.location}`].filter(Boolean).join(' ') || 'ABC Heights'}`,
     summary.requirements.budget && `with a budget around ${summary.requirements.budget}`,
     summary.requirements.timeline && `planning to buy within ${summary.requirements.timeline}`,
   ].filter(Boolean).join(', ');

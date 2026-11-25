@@ -9,7 +9,7 @@ Every response carries an `x-request-id` header.
 
 **Validation.** Every body, query and path parameter is validated with Zod. Failures return `400 VALIDATION_ERROR` with `details: [{ path, message }]`.
 
-**Rate limits.** 300 req/min/IP on `/api` (configurable), 20 logins per 15 min, 60 agent turns/min.
+**Rate limits.** 300 req/min/IP on `/api` (configurable), 20 **failed** logins per 15 min (`LOGIN_RATE_LIMIT_MAX`), 60 agent turns/min. Turns of the same conversation are processed one at a time, so duplicate submissions cannot interleave.
 
 | Status | Codes you may see |
 |---|---|
@@ -18,7 +18,8 @@ Every response carries an `x-request-id` header.
 | 404 | `NOT_FOUND` (also returned for other tenants' resources, so their existence is not revealed) |
 | 409 | `SLOT_TAKEN`, `LEAD_ALREADY_BOOKED`, `CONVERSATION_ENDED` |
 | 422 | `SLOT_OUTSIDE_POLICY` |
-| 429 | rate limited |
+| 429 | `RATE_LIMITED`, `TOO_MANY_LOGIN_ATTEMPTS` (JSON envelope with `retryAfterSeconds`) |
+| 503 | `SERVICE_UNAVAILABLE` (database down), `DB_UNAVAILABLE` (health), `LLM_UNAVAILABLE` (AI check) |
 | 500 | `INTERNAL_ERROR` (details only in server logs, keyed by `requestId`) |
 
 ---
@@ -33,6 +34,9 @@ Body `{ email, password }` → `200 { data: { token, user: { id, email, fullName
 
 ### `GET /auth/me`
 Current user and tenant name.
+
+### `GET /llm/health`
+One tiny request to the configured provider: `{ status: "ok", provider, latencyMs }`, `{ status: "demo_mode" }`, or `503 LLM_UNAVAILABLE` with the reason (the agent keeps working on rules).
 
 ### `GET /meta`
 `{ demoMode, provider, configuredProvider, languages, tenant: { name, isDemo, catalog, scoring, booking }, tools: [{ name, description, sideEffect, requiresConfirmation }] }`
@@ -76,11 +80,11 @@ Body `{ text: string (1..1000), language?: "en"|"hi"|"te" }`
 | Field | Meaning |
 |---|---|
 | `reply` | assistant response text |
-| `intent`, `secondaryIntents`, `entities`, `sentiment` | analysis result (entities PII-masked) |
-| `leadQualification` | `{ total, classification, factors[5], missing[] }` |
+| `intent`, `secondaryIntents`, `entities`, `sentiment` | analysis result (entities PII-masked; sentiment has `basis: "transcript_text"`, not voice emotion) |
+| `leadQualification` | `{ total, classification, factors[5] (each with points, reason, evidence[]), missing[], recommendedNextAction }` |
 | `sources` | ≤ 3 retrieved chunks `{ documentId, title, section, relevance }` |
 | `suggestedAction` | `{ type: confirm_booking \| choose_slot \| provide_contact \| ask_qualification \| human_handoff \| prepare_visit \| none, tool?, args?, field?, requiresConfirmation, executed, reason }`, derived from backend state, never from model text |
-| `explanation` | one concise, auditable sentence chain built from recorded facts, e.g. `Intent: ask_info via rules. Answered from 3 source(s), top "Price list" (relevance 0.468). Tools: update_lead, search_knowledge_base. Lead score 0→9 (cold). Next: ask qualification.` |
+| `explanation` | one concise, auditable sentence chain built from recorded facts, e.g. `Intent: ask_info via rules. Answered from 3 source(s), top "Price list" (relevance 0.468). Tools: updateLead, searchKnowledge. Lead score 0→9 (cold). Next: ask qualification.` |
 | `session` | `{ conversationId, leadId, turn, language, status, historyMessagesUsed }` |
 
 The older fields (`analysis`, `score`, `lead`, `pendingConfirmation`, `offeredSlots`, `conversationStatus`, `trace`) are still returned for the UI.
@@ -95,17 +99,44 @@ Generates and upserts the call summary and marks the call ended. → `{ data: su
 ### `GET /conversations` · `GET /conversations/:id` · `GET /conversations/:id/traces`
 List (with lead name, score, message count, first message); detail (messages with sentiment, evidence, sources; lead; summary); the full decision traces for a conversation.
 
-## Leads (CRM)
-- `GET /leads?status=&search=`: list
-- `GET /leads/:id`: lead + conversations + appointments + summaries
-- `PATCH /leads/:id` body `{ status?, fullName?, email? }` (strict: unknown fields are rejected)
+## CRM
 
-## Appointments
-- `GET /appointments?from=ISO&status=confirmed|cancelled|completed|no_show`
+All write operations below that change business state run through the **tool executor** (actor `staff`), so they are validated, authorized and recorded in `tool_audit_log`. `DELETE` routes require role `admin` (a sales executive gets `403 FORBIDDEN`).
+
+### Leads
+- `GET /leads?status=&search=`: list
+- `POST /leads` body `{ fullName?, phone? (+91XXXXXXXXXX), email?, profile? }` → `201 { leadId, created, lead, score }` via `saveLead`. A known phone returns the existing lead (`created: false`) and merges the new facts.
+- `GET /leads/:id`: lead + conversations + appointments + summaries
+- `PATCH /leads/:id` body `{ status?, fullName?, email? }` (strict: `score` and other computed fields are rejected with 400)
+- `DELETE /leads/:id` (admin): appointments cascade; conversations keep their history with `lead_id = NULL`
+
+### Customers
+A customer is a lead with a known name **and** phone: a view over `leads`, not a second table, so one person never exists twice.
+- `GET /customers?search=` (adds `conversation_count`, `appointment_count`, `next_visit`)
+- `POST /customers` body `{ fullName, phone, email?, profile? }` → `201` new, or `200` existing (same phone)
+- `GET /customers/:id` (404 for anonymous leads) · `PATCH /customers/:id` (via `updateLead`) · `DELETE /customers/:id` (admin)
+
+### Conversations
+Start / list / read / message / end / traces are documented above. `DELETE /conversations/:id` (admin) cascades messages, summary and turn traces.
+
+### Appointments
+- `GET /appointments?from=ISO&status=confirmed|cancelled|completed|no_show` · `GET /appointments/:id`
 - `GET /appointments/availability?date=YYYY-MM-DD&daypart=morning|afternoon|evening&limit=`: free slots read from the database
-- `POST /appointments` body `{ leadId, startsAt, notes? }`: manual booking by signed-in staff (the staff member is the confirming human)
-- `PATCH /appointments/:id/status` body `{ status }`
-- `PATCH /appointments/:id/reschedule` body `{ startsAt }` → `409 SLOT_TAKEN` / `422 SLOT_OUTSIDE_POLICY`
+- `POST /appointments` body `{ leadId, startsAt, notes? }`: manual booking through `bookAppointment` (actor `staff`; the signed-in person is the confirming human). Errors: `409 SLOT_TAKEN`, `409 LEAD_ALREADY_BOOKED`, `422 MISSING_CONTACT`, `422 SLOT_OUTSIDE_POLICY`.
+- `PATCH /appointments/:id/status` body `{ status }` · `PATCH /appointments/:id/reschedule` body `{ startsAt }`
+- `DELETE /appointments/:id` (admin; day to day, prefer status `cancelled`)
+
+### Call summaries
+- `GET /call-summaries?leadId=` · `GET /call-summaries/:id`
+- `POST /call-summaries` body `{ conversationId, end?: false }` → `201` summary via `generateCallSummary`
+- `PATCH /call-summaries/:id` body `{ staffNotes?, followUpDone? }`: only staff annotations are editable; generated fields are rejected with 400
+- `DELETE /call-summaries/:id` (admin)
+
+Summary shape: `{ customerProfile, requirements, budget: { stated, approximate, fit }, concerns[], buyingIntent: { level, evidence[] }, topicsDiscussed, sentiment, leadScore (incl. recommendedNextAction), outcome, appointment, appointmentOutcome: confirmed | proposed_not_confirmed | declined_by_customer | none, recommendedNextActions[], narrative, narrativeMethod }`
+
+## Tool registry
+
+`GET /meta` lists the nine tools: `searchKnowledge`, `calculateLeadScore`, `qualifyLead`, `checkAvailability`, `bookAppointment`, `saveLead`, `updateLead`, `generateCallSummary`, `escalateToHuman`, each with `{ sideEffect, actors, scope, requiresConfirmation }`. Tools are not callable directly over HTTP: they run inside the agent turn or behind the CRM endpoints above.
 
 ## Knowledge base
 - `GET /knowledge`: documents with `chunk_count`, `flagged_chunks`
@@ -125,14 +156,14 @@ List (with lead name, score, message count, first message); detail (messages wit
   "turn": 3, "language": "en", "provider": "demo-rules", "demoMode": true,
   "input": "Yes, please confirm",
   "events": [{ "step": "memory", "ms": 2, "summary": "Session 64d6edba: 4 prior message(s) loaded, booking proposal pending" },
-             { "step": "intent", "ms": 4, "summary": "confirm [rules]" }, { "step": "tool", "ms": 9, "summary": "book_appointment: validated and executed" },
+             { "step": "intent", "ms": 4, "summary": "confirm [rules]" }, { "step": "tool", "ms": 9, "summary": "bookAppointment: validated and executed" },
              { "step": "scoring", "ms": 11, "summary": "Lead score 74 → 77 (hot)" }, { "step": "output_validated", "ms": 11, "summary": "Structured output valid; suggested action: prepare_visit" }],
-  "explanation": "Intent: confirm via rules. Tools: book_appointment. Lead score 74→77 (hot). Next: prepare visit.",
-  "suggestedAction": { "type": "prepare_visit", "tool": "book_appointment", "requiresConfirmation": true, "executed": true, "reason": "..." },
+  "explanation": "Intent: confirm via rules. Tools: bookAppointment. Lead score 74→77 (hot). Next: prepare visit.",
+  "suggestedAction": { "type": "prepare_visit", "tool": "bookAppointment", "requiresConfirmation": true, "executed": true, "reason": "..." },
   "analysis": { "source": "rules", "intent": "confirm", "entities": {}, "sentiment": {} },
   "retrieval": { "query": "...", "hits": [{ "title": "...", "section": "...", "score": 3.1, "relevance": 0.61 }], "answerMethod": "extractive" },
-  "proposal": { "tool": "book_appointment", "args": { "startsAt": "..." }, "requiresConfirmation": true, "status": "confirmed_by_customer" },
-  "steps": [{ "tool": "book_appointment", "reason": "...", "sideEffect": "write",
+  "proposal": { "tool": "bookAppointment", "args": { "startsAt": "..." }, "requiresConfirmation": true, "status": "confirmed_by_customer" },
+  "steps": [{ "tool": "bookAppointment", "reason": "...", "sideEffect": "write",
               "validation": { "ok": true, "checks": ["tool registered", "arguments valid", "customer confirmed this exact proposal"] },
               "ok": true, "result": {}, "durationMs": 4 }],
   "scoring": { "previous": 74, "total": 77, "classification": "hot", "factors": [], "missing": [] },

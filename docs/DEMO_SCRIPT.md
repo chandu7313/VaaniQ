@@ -30,13 +30,13 @@ Point at:
 - **Lead record:** 3BHK, Gachibowli, ₹90 lakh, 1 month; Decision and Purpose show "not stated" (nothing invented).
 - **Score 74/100 (warm)** with reasons: budget 25/25 because ₹90L fits ₹88–115L; authority 0/15, listed under missing information.
 - **Citations** under the reply. **Real slots** read from the calendar.
-- **Decision trace:** intent `request_visit` + secondary intents, entities, BM25 hits, three validated tool calls (`update_lead`, `search_knowledge_base`, `check_availability`).
+- **Decision trace:** intent `request_visit` + secondary intents, entities, BM25 hits, three validated tool calls (`updateLead`, `searchKnowledge`, `checkAvailability`).
 
 Click slot 1 (or say "the first one"). The agent asks for name and number. Say: *"My name is Kiran Rao, number 98123 45670."*
 - It now shows **"Awaiting customer confirmation… Nothing is booked until the customer says yes."** Open Appointments in a new tab: no booking exists yet.
 
 Say **"Yes, please confirm."**
-- Trace: proposal `confirmed_by_customer`; `book_appointment` passed **tool registered → arguments valid → customer confirmed this exact proposal**.
+- Trace: proposal `confirmed_by_customer`; `bookAppointment` passed **tool registered → arguments valid → customer confirmed this exact proposal**.
 - Score → **77 (hot)**, status → *Visit scheduled*. The agent asks the missing qualification question (decision-maker).
 
 Say: *"My wife and I will decide together. Is there a swimming pool? This is great!"*

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Mic, MicOff, Send, Volume2, VolumeX } from 'lucide-react';
+import { Mic, MicOff, Send, Volume2, VolumeX, RotateCcw } from 'lucide-react';
 import { Button, cx, inputCls } from '../ui';
 
 const YES = { en: 'Yes, please confirm', hi: 'हाँ, कन्फर्म कीजिए', te: 'అవును, నిర్ధారించండి' };
@@ -45,7 +45,13 @@ export default function Composer({ lang, disabled, onSend, speech, tts, ttsEnabl
           </Button>
         )}
       </form>
-      {speech.error && <p className="mt-2 text-xs text-rose-300">{speech.error}</p>}
+      {speech.error && (
+        <div role="alert" className="mt-2 flex flex-wrap items-center gap-2 text-xs text-rose-300">
+          {speech.error.message}
+          {speech.error.retryable && <Button size="sm" variant="secondary" disabled={disabled} onClick={() => { tts.cancel(); speech.retry(); }}><RotateCcw className="size-3.5" />Retry</Button>}
+          <button type="button" className="text-slate-500 hover:text-slate-300" onClick={speech.clearError}>Dismiss</button>
+        </div>
+      )}
     </div>
   );
 }

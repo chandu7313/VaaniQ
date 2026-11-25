@@ -1,16 +1,56 @@
 import { useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { X } from 'lucide-react';
 import { api } from '../lib/api';
 import { useApi } from '../hooks/useApi';
 import { useToast } from '../hooks/useToast';
-import { Async, Badge, Card, DemoTag, EmptyState, PageHeader, STATUS_TONE, SCORE_TONE, Toast, inputCls } from '../components/ui';
+import { Async, Badge, Button, Card, DemoTag, EmptyState, Field, PageHeader, STATUS_TONE, SCORE_TONE, Toast, inputCls } from '../components/ui';
+import { useAuth } from '../context/AuthContext';
 import ScoreBreakdown from '../components/ScoreBreakdown';
 import { STATUS_LABEL, fmtDateTime, fmtRupees, fmtSlot, scoreClass, humanize } from '../lib/format';
 
+/** Manual lead entry by staff (goes through the saveLead tool: validated, deduplicated by phone, scored). */
+function NewLeadForm({ onCreated, onCancel, notify }) {
+  const [f, setF] = useState({ fullName: '', phone: '', bedrooms: '', budgetLakh: '', timelineMonths: '' });
+  const [saving, setSaving] = useState(false);
+  const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
+  const submit = async (e) => {
+    e.preventDefault();
+    const profile = {
+      ...(f.bedrooms ? { bedrooms: Number(f.bedrooms) } : {}),
+      ...(f.budgetLakh ? { budgetMax: Math.round(Number(f.budgetLakh) * 1e5) } : {}),
+      ...(f.timelineMonths ? { timelineMonths: Number(f.timelineMonths) } : {}),
+    };
+    const digits = f.phone.replace(/\D/g, '').slice(-10);
+    setSaving(true);
+    try {
+      const r = await api('/leads', { method: 'POST', body: { ...(f.fullName.trim() ? { fullName: f.fullName.trim() } : {}), ...(digits ? { phone: `+91${digits}` } : {}), profile } });
+      notify(r.created ? `Lead created (score ${r.score.total})` : 'A lead with this phone already exists: details merged into it');
+      onCreated(r.leadId);
+    } catch (err) { notify(err.details?.[0]?.message || err.message, 'error'); } finally { setSaving(false); }
+  };
+  return (
+    <Card title="New lead" subtitle="Only enter what the customer actually said; unknown fields score 0." className="mb-4">
+      <form onSubmit={submit} className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        <Field label="Name"><input className={inputCls} value={f.fullName} onChange={set('fullName')} maxLength={80} /></Field>
+        <Field label="Mobile (10 digits)"><input className={inputCls} value={f.phone} onChange={set('phone')} inputMode="tel" /></Field>
+        <Field label="BHK"><select className={inputCls} value={f.bedrooms} onChange={set('bedrooms')}><option value="">Not stated</option><option value="2">2BHK</option><option value="3">3BHK</option></select></Field>
+        <Field label="Budget (₹ lakh)"><input className={inputCls} type="number" min="10" max="5000" value={f.budgetLakh} onChange={set('budgetLakh')} /></Field>
+        <Field label="Timeline (months)"><input className={inputCls} type="number" min="1" max="120" value={f.timelineMonths} onChange={set('timelineMonths')} /></Field>
+        <div className="flex items-end gap-2"><Button type="submit" loading={saving}>Save</Button><Button variant="ghost" onClick={onCancel}>Cancel</Button></div>
+      </form>
+    </Card>
+  );
+}
+
 function LeadDetail({ id, onClose, onChanged, notify }) {
   const state = useApi(`/leads/${id}`);
+  const { user } = useAuth();
   const [saving, setSaving] = useState(false);
+  const remove = async (l) => {
+    if (!window.confirm(`Permanently delete ${l.full_name || 'this lead'}? Their appointments are deleted too; conversations stay without a lead. This cannot be undone.`)) return;
+    try { await api(`/leads/${id}`, { method: 'DELETE' }); notify('Lead deleted'); onChanged(); onClose(); } catch (err) { notify(err.message, 'error'); }
+  };
   const setStatus = async (status) => {
     setSaving(true);
     try { await api(`/leads/${id}`, { method: 'PATCH', body: { status } }); notify('Lead status updated'); state.reload(); onChanged(); }
@@ -31,6 +71,7 @@ function LeadDetail({ id, onClose, onChanged, notify }) {
                 </select>
               </label>
             </div>
+            {user?.role === 'admin' && <Button variant="danger" size="sm" onClick={() => remove(l)}>Delete lead</Button>}
             <Card title="Requirements (customer-stated only)">
               <dl className="grid grid-cols-2 gap-3 text-xs">
                 {[['Configuration', l.profile.bedrooms && `${l.profile.bedrooms}BHK`], ['Location', l.profile.location], ['Budget', l.profile.budgetMax && fmtRupees(l.profile.budgetMax)], ['Timeline', l.profile.timelineMonths && `${l.profile.timelineMonths} month${l.profile.timelineMonths === 1 ? '' : 's'}`], ['Decision-maker', l.profile.decisionMaker && humanize(l.profile.decisionMaker)], ['Purpose', l.profile.purpose && humanize(l.profile.purpose)]].map(([k, v]) => (
@@ -58,15 +99,20 @@ function LeadDetail({ id, onClose, onChanged, notify }) {
 export default function Leads() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [status, setStatus] = useState('');
+  const [params] = useSearchParams();
+  // Pipeline links on the dashboard open this page pre-filtered (?status=qualified).
+  const [status, setStatus] = useState(params.get('status') || '');
   const [search, setSearch] = useState('');
   const qs = new URLSearchParams({ ...(status && { status }), ...(search.trim() && { search: search.trim() }) }).toString();
   const state = useApi(`/leads${qs ? `?${qs}` : ''}`);
   const { toast, notify, clear } = useToast();
+  const [adding, setAdding] = useState(false);
 
   return (
     <div>
-      <PageHeader title="Lead Management" description="Leads are created and updated by the agent through the validated update_lead tool. Scores are recomputed every turn." />
+      <PageHeader title="Lead Management" description="Leads are created and updated through the validated saveLead / updateLead tools. Scores are recomputed every turn."
+        actions={!adding && <Button onClick={() => setAdding(true)}>Add lead</Button>} />
+      {adding && <NewLeadForm notify={notify} onCancel={() => setAdding(false)} onCreated={(leadId) => { setAdding(false); state.reload(); navigate(`/leads/${leadId}`); }} />}
       <div className="mb-4 flex flex-wrap gap-2">
         <input className={`${inputCls} max-w-xs`} placeholder="Search name or phone…" value={search} onChange={(e) => setSearch(e.target.value)} />
         <select className={`${inputCls} w-48`} value={status} onChange={(e) => setStatus(e.target.value)} aria-label="Filter by status">

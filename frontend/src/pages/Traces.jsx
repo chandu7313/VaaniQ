@@ -43,7 +43,7 @@ export default function Traces() {
             ))}
           </Async>
         </Card>
-        <div>{id ? <TraceDetail key={id} id={id} /> : <Card><EmptyState title="Select a turn" hint="Each entry is one customer message and everything the agent decided and executed in response." /></Card>}</div>
+        <div className="min-w-0">{id ? <TraceDetail key={id} id={id} /> : <Card><EmptyState title="Select a turn" hint="Each entry is one customer message and everything the agent decided and executed in response." /></Card>}</div>
       </div>
     </div>
   );
