@@ -1,0 +1,51 @@
+# One command demo stack: PostgreSQL + API + web UI.
+#   cp .env.example .env   # set JWT_SECRET (and optionally LLM_* / SEED_ADMIN_PASSWORD)
+#   docker compose up --build
+# UI: http://localhost:8080
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: vaaniq
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-vaaniq}
+      POSTGRES_DB: vaaniq
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vaaniq -d vaaniq"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build: ./backend
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      DATABASE_URL: postgres://vaaniq:${POSTGRES_PASSWORD:-vaaniq}@db:5432/vaaniq
+      CORS_ORIGINS: http://localhost:8080
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-8h}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-}
+      LLM_PROVIDER: ${LLM_PROVIDER:-demo}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_MODEL: ${LLM_MODEL:-}
+      DEMO_MODE: ${DEMO_MODE:-false}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:4000/api/health || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  frontend:
+    build: ./frontend
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
+
+volumes:
+  pgdata:

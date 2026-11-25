@@ -1,0 +1,40 @@
+import express from 'express';
+import helmet from 'helmet';
+import cors from 'cors';
+import rateLimit from 'express-rate-limit';
+import { config } from './config.js';
+import { query } from './db/pool.js';
+import { requireAuth } from './middleware/auth.js';
+import { requestId, errorHandler, notFoundHandler, ah } from './middleware/error.js';
+import authRoutes from './routes/auth.js';
+import conversationRoutes from './routes/conversations.js';
+import leadRoutes from './routes/leads.js';
+import appointmentRoutes from './routes/appointments.js';
+import knowledgeRoutes from './routes/knowledge.js';
+import insightRoutes from './routes/insights.js';
+
+export function createApp() {
+  const app = express();
+  app.disable('x-powered-by');
+  app.set('trust proxy', 1); // behind nginx / a load balancer: rate-limit by real client IP
+  app.use(requestId);
+  app.use(helmet());
+  // CORS: only the configured frontend origins may call the API from a browser.
+  app.use(cors({ origin: (origin, cb) => cb(null, !origin || config.corsOrigins.includes(origin)), credentials: false }));
+  app.use(express.json({ limit: '300kb' }));
+  app.use('/api', rateLimit({ windowMs: 60 * 1000, limit: config.rateLimitMax, standardHeaders: 'draft-7', legacyHeaders: false }));
+
+  app.get('/api/health', ah(async (_req, res) => {
+    await query('SELECT 1');
+    res.json({ data: { status: 'ok', database: 'ok', time: new Date().toISOString() } });
+  }));
+  app.use('/api/auth', authRoutes);
+  app.use('/api/conversations', requireAuth, conversationRoutes);
+  app.use('/api/leads', requireAuth, leadRoutes);
+  app.use('/api/appointments', requireAuth, appointmentRoutes);
+  app.use('/api/knowledge', requireAuth, knowledgeRoutes);
+  app.use('/api', requireAuth, insightRoutes);
+  app.use(notFoundHandler);
+  app.use(errorHandler);
+  return app;
+}
