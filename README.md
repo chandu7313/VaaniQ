@@ -116,3 +116,4 @@ docs/           architecture, API, report, explanation guide, demo script, scala
 - Staff use the admin console. The "customer" on the Agent page is role-played by the operator. A public customer widget is future scope.
 - Site visits are 1-hour slots, Mon–Sat, 10:00–18:00 IST, capacity one visit per slot, at least 2 hours ahead, within 7 days (all in tenant settings).
 - No raw audio is stored. Browser speech recognition may be processed by the browser vendor's speech service (for example, Chrome); VaaniQ receives text only.
+# VaaniQ
