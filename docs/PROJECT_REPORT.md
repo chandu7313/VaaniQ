@@ -16,7 +16,7 @@
 
 **Delivered.** 8 UI pages (Dashboard, AI Voice Agent, Leads, Appointments, Knowledge Base, Conversations, Analytics, Agent Trace); browser STT/TTS in EN/HI/TE with a text fallback; 9 core tables plus knowledge chunks; seed and reset scripts; Docker Compose; API and architecture docs.
 
-**Verification (actual results).** 39/39 automated tests pass (unit, PostgreSQL integration, HTTP end-to-end), including the full scenario, the consent gate, 5-way concurrent booking (exactly one succeeds), tenant isolation, LLM-output guards and LLM-failure fallback. Frontend lint and production build are clean; `npm audit` reports 0 vulnerabilities. The full scenario was also completed manually in the browser UI.
+**Verification (actual results).** 56/56 automated tests pass (unit, PostgreSQL integration, HTTP end-to-end), including the full scenario, the consent gate, 5-way concurrent booking (exactly one succeeds), tenant isolation, row-level security against non-owner roles, token revocation on user deletion, the six AI situations (pricing, unsupported, budget change, follow-up, language switch, incomplete info), session isolation, LLM-output guards and LLM-failure fallback. Frontend lint and production build are clean; `npm audit` reports 0 vulnerabilities. The full scenario was also completed manually in the browser UI.
 
 **Not verified / limitations.** Live Groq/Gemini calls (no key available; covered by mock-provider tests only); Docker images not built (daemon offline; compose config validated); no load testing; Hindi/Telugu understanding in DEMO_MODE is keyword-based; browser Telugu TTS depends on an installed voice.
 

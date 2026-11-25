@@ -101,3 +101,9 @@ test('Hindi and Telugu names keep their vowel signs (regression)', () => {
   assert.equal(extractEntities('मेरा नाम राहुल है, नंबर 9876501234').fullName, 'राहुल');
   assert.equal(extractEntities('నా పేరు సురేష్').fullName, 'సురేష్');
 });
+
+test('"This is great!" is not a name, "This is Priya" is (regression)', () => {
+  assert.equal(extractEntities('My wife and I will decide together. Is there a swimming pool? This is great!').fullName, undefined);
+  assert.equal(extractEntities('This is Priya Sharma calling').fullName, 'Priya Sharma');
+  assert.equal(extractEntities('this is too expensive').fullName, undefined);
+});

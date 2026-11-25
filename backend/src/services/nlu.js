@@ -77,14 +77,14 @@ function parsePhone(text) {
   return m ? `+91${m[1]}` : undefined;
 }
 
-const NOT_NAMES = new Set(['looking', 'planning', 'interested', 'not', 'very', 'a', 'an', 'the', 'just', 'ok', 'okay', 'fine', 'sure', 'from', 'here', 'happy', 'buying', 'calling', 'available', 'free', 'good', 'thinking']);
+const NOT_NAMES = new Set(['looking', 'planning', 'interested', 'not', 'very', 'a', 'an', 'the', 'just', 'ok', 'okay', 'fine', 'sure', 'from', 'here', 'happy', 'buying', 'calling', 'available', 'free', 'good', 'thinking', 'great', 'nice', 'perfect', 'awesome', 'amazing', 'excellent', 'wonderful', 'too', 'really', 'so', 'expensive', 'costly', 'helpful', 'correct', 'right', 'exactly', 'what', 'it', 'about']);
 
 function parseName(text) {
-  let m = /(?:my name is|this is|call me|i am called|मेरा नाम|నా పేరు)\s+(\p{L}[\p{L}\p{M}.'-]*(?:\s+\p{L}[\p{L}\p{M}.'-]*){0,2})/iu.exec(text);
-  // "I'm Meera Rao" / "I am Meera": only when the next word is Capitalised and not a common word,
-  // so "I am looking for..." is never taken as a name.
+  let m = /(?:my name is|call me|i am called|मेरा नाम|నా పేరు)\s+(\p{L}[\p{L}\p{M}.'-]*(?:\s+\p{L}[\p{L}\p{M}.'-]*){0,2})/iu.exec(text);
+  // "I'm Meera Rao" / "This is Meera": only when the next word is Capitalised and not a common word,
+  // so "I am looking for..." and "This is great!" are never taken as names.
   if (!m) {
-    const c = /\b(?:I'm|I am|Im)\s+(\p{Lu}[\p{L}\p{M}.'-]*(?:\s+\p{Lu}[\p{L}\p{M}.'-]*){0,2})/u.exec(text);
+    const c = /\b(?:I'm|I am|Im|This is|this is)\s+(\p{Lu}[\p{L}\p{M}.'-]*(?:\s+\p{Lu}[\p{L}\p{M}.'-]*){0,2})/u.exec(text);
     if (c && !NOT_NAMES.has(c[1].split(/\s+/)[0].toLowerCase())) m = c;
   }
   if (!m) return undefined;

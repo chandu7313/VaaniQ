@@ -53,6 +53,33 @@ Next turns: *"the first one"* + name and phone → a **proposal** (not a booking
 
 ---
 
+### 3a. Application bootstrap (what happens on `npm run setup` and `npm run dev`)
+
+1. **Config** (`config.js`): `node --env-file` loads `.env`; Zod validates every variable. The process refuses to start without `DATABASE_URL` or a 32+ character `JWT_SECRET`. DEMO_MODE is decided here (no key or model means demo).
+2. **Pool** (`db/pool.js`): one `pg.Pool` (size `DB_POOL_MAX`, optional TLS via `DATABASE_SSL`). Every query goes through it with `$1` parameters; `withTransaction()` wraps multi-statement work.
+3. **Migrations** (`npm run migrate`): each `migrations/*.sql` runs once inside a transaction and is recorded in `schema_migrations`, so it is safe to re-run.
+4. **Seed** (`npm run seed`): an idempotent upsert of the fictional tenant, admin user (scrypt hash), 10 knowledge documents (chunked on ingest) and 4 demo leads whose scores come from the real scoring model.
+5. **App** (`app.js`): request id → Helmet → CORS allow-list → JSON body limit → rate limit → routes. Routes stay thin (path + middleware + Zod schema), **controllers** translate HTTP to service calls, and **services** hold the business logic and SQL. Errors flow to one handler that returns `{ error: { code, message, requestId } }`.
+6. **Server** (`server.js`): listens, checks the database once and logs `database_connected` or `database_unreachable` with a plain reason, and drains the pool on SIGTERM.
+7. **Frontend** (`main.jsx`): `AuthProvider` restores the session (`/auth/me` + `/meta`) → `Layout` (sidebar, demo banner, DEMO_MODE badge) → lazy-loaded pages. Vite proxies `/api` to port 4000, so there is one origin and no keys in the browser.
+
+### 3b. The AI request lifecycle (pipeline view)
+
+| Pipeline step | Code | What is recorded (`trace.events`) |
+|---|---|---|
+| Customer input | `POST /conversations/:id/messages`, Zod-validated | — |
+| Memory retrieval | `memory.loadSession`: last 12 messages + `conversations.state` + lead profile, all scoped by `tenant_id` **and** `conversation_id` | `memory`: prior message count, pending proposal, last topic |
+| Intent detection + entity extraction | `agent/analyzer.js`: rule NLU always; an LLM (if configured) may *add* intents and entities, after Zod validation | `intent`, `entities`, `sentiment` |
+| Context retrieval | `agent/context.js` builds the query (follow-up context only when the message refers back), then the `search_knowledge_base` tool runs BM25 for the top 3 chunks | `tool`, `retrieval` (chunks, top section, relevance, context added) |
+| LLM response | `agent/responder.js`: answer only from `<context>` (LLM) or a query-aware extractive quote (demo); no context means the explicit "no verified information" fallback | `response` (method) |
+| Action proposal | orchestrator: offer slots, ask for contact, or create `pendingProposal` for `book_appointment` | `action_proposal` |
+| Backend authorization + validation | `tools/registry.js`: registered? args valid (Zod)? consent gate? then the handler (transaction + DB constraint) | `tool`: validated and executed, or rejected with a code |
+| Lead scoring | `leadScoring.scoreLead` → `crm.saveScore` | `scoring` |
+| Structured output validation | `agent/output.js#structuredOutputSchema.parse(...)` *before* persisting | `output_validated` (+ suggested action) |
+| Persist + respond | messages, state, trace → PostgreSQL; JSON response with `reply, intent, entities, sentiment, leadQualification, sources, suggestedAction, explanation, session` | the whole trace row |
+
+The LLM never sees tools or SQL. It returns text, or JSON that is validated and then *read* by backend code, which decides what to run.
+
 ## 4. How RAG works here
 
 **Ingestion** (`rag/knowledge.js#ingestDocument`, `rag/chunker.js`)
@@ -86,6 +113,10 @@ Three layers (services/memory.js):
 3. **Structured memory:** what actually matters is stored as structure, not text:
    - the **lead profile** (`leads.profile` JSONB): bedrooms, budget, timeline… It survives across conversations, and a repeat caller is merged by phone number (`crm.js#upsertLeadFacts`);
    - the **session state** (`conversations.state` JSONB): `offeredSlots`, `desiredSlot`, `pendingProposal` (with expiry).
+
+**Follow-up questions** (`agent/context.js`): when a message refers back ("How big are **they**?", "what about…", "and the…", or वो/అది), the retrieval query is extended with the section of the previous answer (`state.lastTopic`) and the customer's stated BHK. The added words are listed in `trace.retrieval.contextAdded`. A self-contained new question ("Is there parking?") is **not** expanded, and an unsupported question is never answered with the old topic (tested). With an LLM configured, the responder also receives the last 4 turns to resolve pronouns; facts still come only from the retrieved context.
+
+**Session isolation:** every read and write is keyed by `tenant_id` + `conversation_id`. Two customers talking at the same time have separate state, offered slots and leads (tested concurrently).
 
 So when the customer says *"the first one"*, the agent knows which slot that is from `state.offeredSlots`, not from re-reading text. When they later say *"yes"*, it knows exactly which proposal is pending. The server is **stateless between requests**: all memory lives in PostgreSQL, which is what allows horizontal scaling.
 
@@ -187,7 +218,7 @@ See [SCALABILITY_AND_SECURITY.md](SCALABILITY_AND_SECURITY.md). Key points: keys
 | Session + structured memory in Postgres | Redis session cache, LLM conversation summarisation for long calls |
 | Explainable lead scoring, configurable weights | Scoring config UI, ML-calibrated weights from conversion data |
 | Transactional booking, conflict prevention | Calendar sync (Google/Outlook), multiple sales executives / capacity > 1, SMS/WhatsApp confirmations |
-| JWT admin auth, tenant isolation | Tenant self sign-up, RBAC UI, SSO, refresh tokens, PostgreSQL row-level security |
+| JWT admin auth, tenant isolation, deny-all RLS for non-owner DB roles | Tenant self sign-up, RBAC UI, SSO, refresh tokens, per-tenant RLS policies |
 | Live analytics | Data warehouse, cohort and funnel analysis |
 | Docker Compose config | Kubernetes manifests, CI/CD, load testing (none performed) |
 
@@ -201,5 +232,6 @@ See [SCALABILITY_AND_SECURITY.md](SCALABILITY_AND_SECURITY.md). Key points: keys
 - **"How do you avoid hallucination?"** Retrieval threshold, *answer only from context* prompting, extractive fallback, templated business statements, and "I don't have verified information" when nothing matches.
 - **"Why BM25 instead of embeddings?"** Small keyword-heavy corpus, explainable scores, no extra infrastructure. The retriever interface makes embeddings a drop-in.
 - **"What if the LLM is down?"** Analyzer and responder catch the error, fall back to rules/extractive, and record it in `trace.errors` (tested with a failing provider).
+- **"Can a deleted user keep using their token?"** No. `requireAuth` verifies the signature *and* that the user still exists in that tenant on every request (tested).
 - **"How is it multi-tenant?"** `tenant_id` on every row; the tenant comes only from the signed JWT; every query filters by it; cross-tenant access returns 404 (tested).
 - **"What happens if two people book the same slot?"** Section 9: the unique partial index guarantees it at the DB level.

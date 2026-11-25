@@ -4,6 +4,7 @@ import { pool, query } from './pool.js';
 import { hashPassword } from '../lib/password.js';
 import { ingestDocument } from '../services/rag/knowledge.js';
 import { demoDocuments, demoLeads, demoTenantSettings } from './seedData.js';
+import { scoreLead } from '../services/leadScoring.js';
 
 export const DEMO_ADMIN_EMAIL = 'admin@abcdevelopers.demo';
 
@@ -31,10 +32,16 @@ export async function seed({ adminPassword } = {}) {
   for (const d of demoDocuments) if (!have.has(d.title)) await ingestDocument(tenantId, { ...d, isDemo: true });
 
   for (const l of demoLeads) {
+    const score = scoreLead(l.profile, { catalog: demoTenantSettings.catalog, scoring: demoTenantSettings.scoring });
+    // Re-running refreshes a demo lead's profile and score (keeps them in sync with the model)
+    // but never touches its status, which staff may have changed, or any non-demo lead.
     await query(
-      `INSERT INTO leads (tenant_id, full_name, phone, status, score, profile, is_demo) VALUES ($1,$2,$3,$4,$5,$6,true)
-       ON CONFLICT (tenant_id, phone) WHERE phone IS NOT NULL DO NOTHING`,
-      [tenantId, l.full_name, l.phone, l.status, l.score, l.profile],
+      `INSERT INTO leads (tenant_id, full_name, phone, status, score, score_breakdown, profile, is_demo)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,true)
+       ON CONFLICT (tenant_id, phone) WHERE phone IS NOT NULL
+       DO UPDATE SET profile = EXCLUDED.profile, score = EXCLUDED.score, score_breakdown = EXCLUDED.score_breakdown, updated_at = now()
+       WHERE leads.is_demo`,
+      [tenantId, l.full_name, l.phone, l.status, score.total, score, l.profile],
     );
   }
   return { tenantId, generatedPassword: generated ? password : null };

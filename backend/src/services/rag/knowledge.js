@@ -31,6 +31,30 @@ export async function ingestDocument(tenantId, { title, content, sourceType = 't
   return { ...doc, chunkCount: chunks.length, flaggedChunks: chunks.filter((c) => c.flagged).length };
 }
 
+/**
+ * Re-chunks stored documents with the current chunker (e.g. after changing chunking rules).
+ * One transaction per document: its chunks are replaced atomically; CRM data is untouched.
+ */
+export async function reindexDocuments(tenantId) {
+  const { rows } = await query(`SELECT id, tenant_id, title, content FROM knowledge_documents ${tenantId ? 'WHERE tenant_id = $1' : ''}`, tenantId ? [tenantId] : []);
+  let chunkTotal = 0;
+  for (const doc of rows) {
+    const chunks = chunkDocument(doc.title, doc.content);
+    await withTransaction(async (c) => {
+      await c.query('DELETE FROM knowledge_chunks WHERE document_id = $1', [doc.id]);
+      for (const ch of chunks) {
+        await c.query(
+          `INSERT INTO knowledge_chunks (tenant_id, document_id, chunk_index, section, content, flagged) VALUES ($1,$2,$3,$4,$5,$6)`,
+          [doc.tenant_id, doc.id, ch.chunkIndex, ch.section, ch.content, ch.flagged],
+        );
+      }
+    });
+    chunkTotal += chunks.length;
+    invalidate(doc.tenant_id);
+  }
+  return { documents: rows.length, chunks: chunkTotal };
+}
+
 export async function listDocuments(tenantId) {
   const { rows } = await query(
     `SELECT d.id, d.title, d.source_type, d.is_demo, d.created_at,
@@ -65,8 +89,9 @@ async function loadIndex(tenantId) {
   );
   const entry = {
     byId: new Map(rows.map((r) => [r.id, r])),
-    // Title and section are indexed too: "pricing" should find the Pricing document.
-    bm25: new BM25(rows.map((r) => ({ id: r.id, text: `${r.title} ${r.section} ${r.content}` }))),
+    // Title and section are indexed with the body; the section heading counts twice (field boost)
+    // because it is a curated summary of the chunk ("Price list", "Cancellation and refunds").
+    bm25: new BM25(rows.map((r) => ({ id: r.id, text: `${r.title} ${r.section} ${r.section} ${r.content}` }))),
   };
   indexCache.set(tenantId, entry);
   return entry;

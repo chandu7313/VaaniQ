@@ -123,7 +123,10 @@ Key constraints (from `backend/src/db/migrations/001_init.sql`):
 | `agent/orchestrator.js` | Runs a turn: decides the primary action, calls tools, composes the reply, persists the trace |
 | `agent/analyzer.js` | Rule NLU always; optional LLM JSON analysis validated with Zod and merged *additively* |
 | `agent/responder.js` | Answers from retrieved chunks only (LLM-grounded or extractive) |
+| `agent/context.js` | Follow-up context for retrieval (previous topic + stated BHK), only when the message refers back |
+| `agent/output.js` | Zod schema for the structured turn output, suggested action, explanation |
 | `agent/templates.js` | EN/HI/TE fragments. Booking/slot statements are always templated |
+| `controllers/*` | HTTP layer: read validated input, call services, shape the `{ data }` response (routes only declare paths, middleware and schemas) |
 | `tools/registry.js` | Registry, argument validation, consent gate, execution record |
 | `tools/index.js` | `search_knowledge_base`, `check_availability`, `update_lead`, `book_appointment`, `escalate_to_human` |
 | `rag/*` | Chunking, BM25, ingestion, retrieval with relevance threshold, query expansion |

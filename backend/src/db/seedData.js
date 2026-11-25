@@ -106,14 +106,89 @@ Visits can be rescheduled or cancelled up to 4 hours before the slot by contacti
 ## Can I bring family
 Yes. Family members and co-decision makers are welcome on the visit.`,
   },
+  {
+    title: 'ABC Developers - Company Profile',
+    content: `# ABC Developers - Company Profile
+(FICTIONAL DEMO DATA - ABC Developers is not a real company.)
+
+## Who we are
+ABC Developers is a Hyderabad-based residential developer founded in 2009. It has delivered 6 residential projects with over 1,800 homes in western Hyderabad, all fictional for this demonstration.
+
+## Current project
+The company's current project is ABC Heights. Configurations, prices and availability are described in the ABC Heights project documents.
+
+## Sales office
+The sales office at the ABC Heights site is open Monday to Saturday, 10 AM to 6 PM. A human sales executive can call back customers who prefer to speak with a person.`,
+  },
+  {
+    title: 'ABC Heights - Inventory and Availability',
+    content: `# ABC Heights - Inventory and Availability
+(FICTIONAL DEMO DATA)
+
+## Total inventory
+ABC Heights has 264 apartments in 2 towers: each tower has 66 2BHK and 66 3BHK apartments.
+
+## Units available
+As of the demonstration data date: 2BHK apartments available: 49 (18 in Tower A and 31 in Tower B). 3BHK apartments available: 33 (11 in Tower A and 22 in Tower B).
+
+## Facing and floors
+East-facing and north-facing units are available in both configurations. Higher floors carry a floor-rise charge that is included in the quoted price range.
+
+## Availability changes
+Availability changes daily as units are booked. The sales team confirms the exact unit availability at the time of booking.`,
+  },
+  {
+    title: 'ABC Developers - Sales and Booking Policies',
+    content: `# ABC Developers - Sales and Booking Policies
+(FICTIONAL DEMO DATA)
+
+## Blocking a unit
+A token amount of Rs 1 lakh blocks a selected unit for 7 days. The token is adjusted against the 10 percent booking amount.
+
+## Cancellation and refunds
+The token is fully refundable if the booking is cancelled within 7 days. After the sale agreement is signed, a cancellation charge of 2 percent of the agreement value applies.
+
+## Discounts and negotiation
+Only the offers published in the official price list apply. No sales representative, including the VaaniQ virtual assistant, may promise any other discount. Price negotiation is handled only by the sales manager.
+
+## Quotations
+Prices may change. A written quotation is valid for 15 days from its date.
+
+## Documents required
+Buyers need PAN, Aadhaar and two passport-size photographs to book. NRI buyers are welcome and need a valid passport.`,
+  },
+  {
+    title: 'ABC Heights - Frequently Asked Questions',
+    content: `# ABC Heights - Frequently Asked Questions
+(FICTIONAL DEMO DATA)
+
+## What are the maintenance charges
+Maintenance is Rs 3 per sq ft per month, collected from possession.
+
+## Are pets allowed
+Pets are allowed. Owners must keep pets on a leash in common areas.
+
+## What is the water supply
+Municipal water supply is supplemented by borewells and rainwater harvesting.
+
+## Can I visit on a Sunday
+Site visits are not available on Sundays. Visits run Monday to Saturday, 10 AM to 6 PM.
+
+## Is car parking included
+Each 3BHK includes 2 covered parking slots and each 2BHK includes 1 covered parking slot.`,
+  },
 ];
 
-// Sample CRM data so dashboards are not empty on first run. Flagged is_demo and shown as fictional in the UI.
+// Sample CRM records so the CRM pages are not empty on first run. Flagged is_demo and shown as fictional
+// in the UI. Profiles contain only facts a customer could have stated; scores are NOT hand-written:
+// the seed computes them with the real scoring model (services/leadScoring.js), so they always match it.
 export const demoLeads = [
-  { full_name: 'Ravi Kumar (demo)', phone: '+919000000001', status: 'qualified', score: 78,
+  { full_name: 'Ravi Kumar (demo)', phone: '+919000000001', status: 'qualified',
     profile: { bedrooms: 3, location: 'Gachibowli', budgetMax: 9500000, timelineMonths: 1, decisionMaker: 'self' } },
-  { full_name: 'Sneha Reddy (demo)', phone: '+919000000002', status: 'contacted', score: 52,
+  { full_name: 'Sneha Reddy (demo)', phone: '+919000000002', status: 'qualified',
     profile: { bedrooms: 2, location: 'Gachibowli', budgetMax: 7500000, timelineMonths: 4, decisionMaker: 'joint' } },
-  { full_name: 'Imran Shaikh (demo)', phone: '+919000000003', status: 'new', score: 24,
+  { full_name: 'Lakshmi Prasad (demo)', phone: '+919000000004', status: 'nurture',
+    profile: { bedrooms: 2, location: 'Kondapur', budgetMax: 6000000, timelineMonths: 8, purpose: 'investment' } },
+  { full_name: 'Imran Shaikh (demo)', phone: '+919000000003', status: 'new',
     profile: { bedrooms: 3 } },
 ];

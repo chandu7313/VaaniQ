@@ -17,6 +17,10 @@ export function chunkDocument(title, content) {
   const sections = [];
   let current = { section: title, lines: [] };
   for (const line of lines) {
+    // A line that is only a parenthetical note, e.g. "(FICTIONAL DEMO DATA)", is document metadata:
+    // indexing it alone creates a contentless chunk that wins queries like "ABC Developers".
+    // The full document (with the note) is still stored and shown.
+    if (/^\s*\([^)]*\)\s*$/.test(line)) continue;
     const h = /^#{1,3}\s+(.*)$/.exec(line);
     if (h) {
       if (current.lines.join('').trim()) sections.push(current);

@@ -6,6 +6,9 @@ const schema = z.object({
   CORS_ORIGINS: z.string().default('http://localhost:5173'),
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
   DB_POOL_MAX: z.coerce.number().default(10),
+  // Hosted Postgres (Supabase, RDS…) needs TLS. 'require' = encrypted; 'verify' = encrypted + CA check.
+  DATABASE_SSL: z.enum(['false', 'require', 'verify']).default('false'),
+  DATABASE_SSL_CA_FILE: z.string().optional().default(''),
   JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
   JWT_EXPIRES_IN: z.string().default('8h'),
   LLM_PROVIDER: z.enum(['groq', 'gemini', 'demo']).default('demo'),
@@ -32,6 +35,8 @@ export const config = {
   corsOrigins: env.CORS_ORIGINS.split(',').map((s) => s.trim()).filter(Boolean),
   databaseUrl: env.DATABASE_URL,
   dbPoolMax: env.DB_POOL_MAX,
+  dbSsl: env.DATABASE_SSL,
+  dbSslCaFile: env.DATABASE_SSL_CA_FILE,
   jwtSecret: env.JWT_SECRET,
   jwtExpiresIn: env.JWT_EXPIRES_IN,
   llm: {

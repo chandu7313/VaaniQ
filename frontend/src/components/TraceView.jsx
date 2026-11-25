@@ -1,4 +1,4 @@
-import { CheckCircle2, XCircle, Brain, Search, FileCheck2, Wrench, Gauge, MessageSquareReply, AlertTriangle } from 'lucide-react';
+import { CheckCircle2, XCircle, Brain, Search, FileCheck2, Wrench, Gauge, MessageSquareReply, AlertTriangle, ListChecks } from 'lucide-react';
 import { Badge, SENTIMENT_TONE, cx } from './ui';
 import { humanize } from '../lib/format';
 
@@ -21,6 +21,26 @@ export default function TraceView({ trace }) {
   const a = trace.analysis || {};
   return (
     <div className="pl-3">
+      {(trace.explanation || trace.events?.length > 0) && (
+        <Section icon={ListChecks} title="Summary & execution events" tone="text-sky-300">
+          {trace.explanation && <p className="mb-2 rounded-lg bg-surface p-2.5 text-xs leading-relaxed text-slate-200">{trace.explanation}</p>}
+          {trace.suggestedAction && (
+            <div className="mb-2 flex flex-wrap items-center gap-1.5 text-xs">
+              <span className="text-slate-500">Suggested action</span>
+              <Badge tone={trace.suggestedAction.executed ? 'green' : 'amber'}>{humanize(trace.suggestedAction.type)}</Badge>
+              {trace.suggestedAction.requiresConfirmation && !trace.suggestedAction.executed && <Badge tone="amber">needs customer consent</Badge>}
+              <span className="text-slate-400">{trace.suggestedAction.reason}</span>
+            </div>
+          )}
+          {trace.events?.length > 0 && (
+            <ol className="space-y-0.5 font-mono text-[11px]">
+              {trace.events.map((ev, i) => (
+                <li key={i} className="flex gap-2"><span className="w-11 shrink-0 text-right tabular-nums text-slate-600">+{ev.ms}ms</span><span className="w-20 shrink-0 text-sky-300">{ev.step}</span><span className="text-slate-300">{ev.summary}</span></li>
+              ))}
+            </ol>
+          )}
+        </Section>
+      )}
       <Section icon={Brain} title="1 · Intent & entities">
         <div className="space-y-1">
           <KV k="Customer said" v={<span className="italic text-slate-300">“{trace.input}”</span>} />

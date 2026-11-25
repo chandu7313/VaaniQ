@@ -14,7 +14,7 @@ Every response carries an `x-request-id` header.
 | Status | Codes you may see |
 |---|---|
 | 400 | `VALIDATION_ERROR`, `INVALID_JSON` |
-| 401 | `UNAUTHENTICATED`, `INVALID_TOKEN`, `INVALID_CREDENTIALS` |
+| 401 | `UNAUTHENTICATED`, `INVALID_TOKEN` (bad/expired signature, or the user no longer exists), `INVALID_CREDENTIALS` |
 | 404 | `NOT_FOUND` (also returned for other tenants' resources, so their existence is not revealed) |
 | 409 | `SLOT_TAKEN`, `LEAD_ALREADY_BOOKED`, `CONVERSATION_ENDED` |
 | 422 | `SLOT_OUTSIDE_POLICY` |
@@ -26,7 +26,7 @@ Every response carries an `x-request-id` header.
 ## Health and auth
 
 ### `GET /health`
-`200 { data: { status: "ok", database: "ok", time } }`
+`200 { data: { status: "ok", database: "ok", time } }`, or `503 { error: { code: "DB_UNAVAILABLE", message } }` with a human-readable reason (never the connection string).
 
 ### `POST /auth/login`
 Body `{ email, password }` → `200 { data: { token, user: { id, email, fullName, role, tenantName } } }`. Wrong email or password: `401 INVALID_CREDENTIALS` (same message for both).
@@ -71,6 +71,20 @@ Body `{ text: string (1..1000), language?: "en"|"hi"|"te" }`
   }
 }
 ```
+**Structured fields** (validated with Zod in `services/agent/output.js` *before* anything is persisted or returned):
+
+| Field | Meaning |
+|---|---|
+| `reply` | assistant response text |
+| `intent`, `secondaryIntents`, `entities`, `sentiment` | analysis result (entities PII-masked) |
+| `leadQualification` | `{ total, classification, factors[5], missing[] }` |
+| `sources` | ≤ 3 retrieved chunks `{ documentId, title, section, relevance }` |
+| `suggestedAction` | `{ type: confirm_booking \| choose_slot \| provide_contact \| ask_qualification \| human_handoff \| prepare_visit \| none, tool?, args?, field?, requiresConfirmation, executed, reason }`, derived from backend state, never from model text |
+| `explanation` | one concise, auditable sentence chain built from recorded facts, e.g. `Intent: ask_info via rules. Answered from 3 source(s), top "Price list" (relevance 0.468). Tools: update_lead, search_knowledge_base. Lead score 0→9 (cold). Next: ask qualification.` |
+| `session` | `{ conversationId, leadId, turn, language, status, historyMessagesUsed }` |
+
+The older fields (`analysis`, `score`, `lead`, `pendingConfirmation`, `offeredSlots`, `conversationStatus`, `trace`) are still returned for the UI.
+
 `outcome` is one of: `slots_offered`, `awaiting_contact`, `confirmation_requested`, `appointment_booked`, `proposal_declined`, `booking_conflict`, `booking_failed`, `already_booked`, `no_availability`, `info_provided`, `info_not_found`, `escalated`, `greeted`, `goodbye`, `responded`.
 Errors: `404` unknown/other-tenant conversation, `409 CONVERSATION_ENDED`.
 
@@ -110,6 +124,11 @@ List (with lead name, score, message count, first message); detail (messages wit
 {
   "turn": 3, "language": "en", "provider": "demo-rules", "demoMode": true,
   "input": "Yes, please confirm",
+  "events": [{ "step": "memory", "ms": 2, "summary": "Session 64d6edba: 4 prior message(s) loaded, booking proposal pending" },
+             { "step": "intent", "ms": 4, "summary": "confirm [rules]" }, { "step": "tool", "ms": 9, "summary": "book_appointment: validated and executed" },
+             { "step": "scoring", "ms": 11, "summary": "Lead score 74 → 77 (hot)" }, { "step": "output_validated", "ms": 11, "summary": "Structured output valid; suggested action: prepare_visit" }],
+  "explanation": "Intent: confirm via rules. Tools: book_appointment. Lead score 74→77 (hot). Next: prepare visit.",
+  "suggestedAction": { "type": "prepare_visit", "tool": "book_appointment", "requiresConfirmation": true, "executed": true, "reason": "..." },
   "analysis": { "source": "rules", "intent": "confirm", "entities": {}, "sentiment": {} },
   "retrieval": { "query": "...", "hits": [{ "title": "...", "section": "...", "score": 3.1, "relevance": 0.61 }], "answerMethod": "extractive" },
   "proposal": { "tool": "book_appointment", "args": { "startsAt": "..." }, "requiresConfirmation": true, "status": "confirmed_by_customer" },

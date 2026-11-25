@@ -15,7 +15,8 @@
     "test": "node --env-file-if-exists=../.env.test --test --test-concurrency=1 test/*.test.js",
     "lint": "node --check src/server.js && node scripts/lint.mjs",
     "db:reset": "node --env-file-if-exists=../.env src/db/reset.js",
-    "start:prod": "node src/db/migrate.js && node src/db/seed.js && node src/server.js"
+    "start:prod": "node src/db/migrate.js && node src/db/seed.js && node src/server.js",
+    "kb:reindex": "node --env-file-if-exists=../.env src/db/reindex.js"
   },
   "dependencies": {
     "cors": "^2.8.6",

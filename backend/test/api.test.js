@@ -153,12 +153,22 @@ test('tenant isolation: another tenant cannot read this tenant\'s data', async (
   assert.equal((await api('GET', '/knowledge', null, other)).body.data.length, 0);
 });
 
+test('deleting a user revokes their existing token immediately', async () => {
+  const { rows } = await query(`INSERT INTO users (tenant_id, email, password_hash, full_name) VALUES ($1, 'temp@abc.test', $2, 'Temp') RETURNING id`, [tenantId, await hashPassword('temp-pass-1')]);
+  const tok = (await api('POST', '/auth/login', { email: 'temp@abc.test', password: 'temp-pass-1' }, null)).body.data.token;
+  assert.equal((await api('GET', '/meta', null, tok)).status, 200);
+  await query('DELETE FROM users WHERE id = $1', [rows[0].id]);
+  const after = await api('GET', '/meta', null, tok);
+  assert.equal(after.status, 401);
+  assert.equal(after.body.error.code, 'INVALID_TOKEN');
+});
+
 test('knowledge base: ingest, search with citations, delete', async () => {
-  const doc = (await api('POST', '/knowledge', { title: 'Pet Policy (demo)', content: '# Pet Policy\n## Pets\nPets are allowed in ABC Heights with a registered pet tag and leash in common areas.' })).body.data;
+  const doc = (await api('POST', '/knowledge', { title: 'Rooftop Observatory (demo)', content: '# Rooftop Observatory\n## Telescope booking\nResidents can reserve the rooftop telescope deck for stargazing in one-hour sessions.' })).body.data;
   assert.equal(doc.chunkCount, 1);
-  const hits = (await api('POST', '/knowledge/search', { query: 'are pets allowed' })).body.data;
-  assert.equal(hits[0].title, 'Pet Policy (demo)');
-  assert.equal(hits[0].section, 'Pets');
+  const hits = (await api('POST', '/knowledge/search', { query: 'reserve the telescope for stargazing' })).body.data;
+  assert.equal(hits[0].title, 'Rooftop Observatory (demo)');
+  assert.equal(hits[0].section, 'Telescope booking');
   assert.equal((await api('DELETE', `/knowledge/${doc.id}`)).status, 204);
-  assert.notEqual((await api('POST', '/knowledge/search', { query: 'are pets allowed' })).body.data[0]?.title, 'Pet Policy (demo)');
+  assert.notEqual((await api('POST', '/knowledge/search', { query: 'reserve the telescope for stargazing' })).body.data[0]?.title, 'Pet Policy (demo)');
 });

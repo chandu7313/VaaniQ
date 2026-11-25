@@ -2,6 +2,9 @@
 #   cp .env.example .env   # set JWT_SECRET (and optionally LLM_* / SEED_ADMIN_PASSWORD)
 #   docker compose up --build
 # UI: http://localhost:8080
+#
+# Database only, for local development with `npm run dev`:
+#   docker compose up -d db      # then DATABASE_URL=postgres://vaaniq:vaaniq@localhost:5432/vaaniq
 services:
   db:
     image: postgres:17-alpine
@@ -9,6 +12,8 @@ services:
       POSTGRES_USER: vaaniq
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-vaaniq}
       POSTGRES_DB: vaaniq
+    ports:
+      - "127.0.0.1:5432:5432"   # loopback only: never exposed to the network
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:

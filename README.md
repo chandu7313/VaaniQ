@@ -21,7 +21,7 @@ VaaniQ is a configurable B2B SaaS "digital sales employee". It talks to customer
 
 ## Quick start (local, no Docker)
 
-Requirements: Node.js ≥ 20 (developed on Node 26) and PostgreSQL ≥ 14.
+Requirements: Node.js ≥ 20 (developed on Node 26) and PostgreSQL ≥ 14. No local Postgres? `docker compose up -d db` starts one on `localhost:5432` that matches `.env.example`.
 
 ```bash
 cp .env.example .env
@@ -40,6 +40,11 @@ cd frontend && npm install && npm run dev
 ```
 Open http://localhost:5173 and sign in as `admin@abcdevelopers.demo` with your `SEED_ADMIN_PASSWORD`. If you left it empty, `npm run setup` prints a generated password once.
 
+After changing chunking rules, re-chunk stored documents without touching CRM data:
+```bash
+cd backend && npm run kb:reindex
+```
+
 To get a clean demo database before presenting (dev only, deletes all data):
 ```bash
 cd backend && npm run db:reset -- --yes
@@ -56,6 +61,16 @@ docker compose up --build
 ```
 UI at http://localhost:8080. The backend container runs migrations and the idempotent seed on start. *Note: `docker compose config` was validated in this build, but the images were **not** built or run, because the Docker daemon was not running on the build machine.*
 
+## Using Supabase (or another hosted Postgres)
+
+In Supabase, open **Connect → Session pooler**, copy that URI into `DATABASE_URL`, and set `DATABASE_SSL=require`. Then:
+```bash
+cd backend && npm run setup
+```
+- Do **not** use the direct host `db.<ref>.supabase.co`: it is IPv6-only, and on an IPv4 network the backend logs `database_unreachable` and `/api/health` returns `503 DB_UNAVAILABLE`.
+- Migration `002_enable_rls.sql` turns on row-level security for every table. Supabase's Data API exposes the `public` schema to anyone with the project's public anon key; with RLS on and no policies, that key sees nothing. The backend connects as the table owner and is unaffected.
+- Tests never touch Supabase: they use `.env.test`, and the helper refuses any database whose name lacks `_test`.
+
 ## Enabling a real LLM
 
 ```
@@ -68,7 +83,7 @@ Without a key and model, the system runs in **DEMO_MODE**: rule-based NLU, deter
 ## Tests and checks
 
 ```bash
-cd backend && npm test        # 39 tests: unit + PostgreSQL integration + HTTP end-to-end
+cd backend && npm test        # 56 tests: unit + PostgreSQL integration + HTTP end-to-end
 cd backend && npm run lint    # syntax check of all source files
 cd frontend && npm run lint && npm run build
 ```
@@ -80,18 +95,21 @@ Tests need a database named in `.env.test` (it must contain `_test`; the helper 
 backend/
   src/
     app.js, server.js, config.js          Express app, security middleware, env validation
-    db/                                    pool, migrations/001_init.sql, migrate, seed (+ fictional seedData), reset
-    middleware/                            auth (JWT + tenant), validate (Zod), error envelope
-    routes/                                auth, conversations, leads, appointments, knowledge, insights
+    db/                                    pool (+TLS), migrations 001_init / 002_enable_rls, migrate, seed (+ fictional seedData), reset, reindex
+    middleware/                            auth (JWT + live user check), validate (Zod), error envelope
+    routes/                                paths + middleware + Zod schemas (thin)
+    controllers/                           HTTP in/out: read req.valid, call a service, shape the response
     services/
       agent/orchestrator.js                one conversational turn, end to end
       agent/analyzer.js                    rules NLU + optional validated LLM merge
-      agent/responder.js                   grounded answer (LLM) or extractive answer (demo)
+      agent/responder.js                   grounded answer (LLM) or query-aware extractive answer (demo)
+      agent/context.js                     follow-up context for retrieval (previous topic, stated BHK)
+      agent/output.js                      Zod schema for the structured turn output; suggested action; explanation
       agent/templates.js                   EN/HI/TE reply fragments
       tools/registry.js, tools/index.js    tool registry, validation, consent gate; the 5 tools
       rag/chunker.js, bm25.js, knowledge.js
       nlu.js, sentiment.js, lexicon.js, leadScoring.js
-      crm.js, appointments.js, memory.js, summary.js, analytics.js, tenants.js
+      crm.js, appointments.js, memory.js, summary.js, analytics.js, tenants.js, users.js, traces.js
       llm/index.js, groq.js, gemini.js, http.js
   test/                                    node:test suites
 frontend/src/
@@ -116,4 +134,3 @@ docs/           architecture, API, report, explanation guide, demo script, scala
 - Staff use the admin console. The "customer" on the Agent page is role-played by the operator. A public customer widget is future scope.
 - Site visits are 1-hour slots, Mon–Sat, 10:00–18:00 IST, capacity one visit per slot, at least 2 hours ahead, within 7 days (all in tenant settings).
 - No raw audio is stored. Browser speech recognition may be processed by the browser vendor's speech service (for example, Chrome); VaaniQ receives text only.
-# VaaniQ

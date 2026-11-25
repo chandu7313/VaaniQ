@@ -5,8 +5,24 @@ export function tokenize(text) {
   const t = text.toLowerCase().replace(/(\d)\s*bhk/g, '$1bhk').replace(/₹/g, ' rs ');
   return (t.match(/[\p{L}\p{N}\p{M}]+/gu) || [])
     .filter((w) => !STOP.has(w))
-    // very light stemming so "amenities"/"amenity" and "visits"/"visit" match
-    .map((w) => (w.length > 4 && w.endsWith('ies') ? `${w.slice(0, -3)}y` : w.length > 3 && w.endsWith('s') && !w.endsWith('ss') ? w.slice(0, -1) : w));
+    .map(stem);
+}
+
+/**
+ * Light suffix stemmer applied identically to documents and queries, so
+ * price/prices/priced/pricing -> "pric", amenities/amenity -> "amenity", visits/visiting -> "visit".
+ * Non-Latin scripts pass through unchanged.
+ */
+export function stem(w) {
+  if (!/^[a-z]+$/.test(w) || w.length <= 3) return w;
+  if (w.length > 4 && w.endsWith('ies')) return `${w.slice(0, -3)}y`;
+  let s = w;
+  if (s.length > 5 && s.endsWith('ing')) s = s.slice(0, -3);
+  else if (s.length > 4 && s.endsWith('ed')) s = s.slice(0, -2);
+  else if (s.length > 4 && s.endsWith('es')) s = s.slice(0, -2);
+  else if (s.endsWith('s') && !s.endsWith('ss')) s = s.slice(0, -1);
+  if (s.length > 4 && s.endsWith('e')) s = s.slice(0, -1);
+  return s;
 }
 
 export class BM25 {

@@ -51,6 +51,23 @@ test('flagged chunks are excluded from retrieval', async () => {
 
 test('tokenizer does not split words containing "rs" (regression)', async () => {
   const { tokenize } = await import('../src/services/rag/bm25.js');
-  assert.deepEqual(tokenize('golf course members'), ['golf', 'course', 'member']);
+  assert.deepEqual(tokenize('golf course members'), ['golf', 'cours', 'member']);
+  assert.deepEqual(['price', 'prices', 'priced', 'pricing'].map((w) => tokenize(w)[0]), ['pric', 'pric', 'pric', 'pric']);
   assert.ok(tokenize('₹90 lakh').includes('rs'));
+});
+
+test('parenthetical notes are not indexed as standalone chunks', () => {
+  const chunks = chunkDocument('Doc', '# Doc\n(FICTIONAL DEMO DATA)\n\n## Price list\n3BHK priced at 90 lakh');
+  assert.deepEqual(chunks.map((c) => c.section), ['Price list']);
+});
+
+test('reindex replaces old chunks with the current chunker output', async () => {
+  const { reindexDocuments } = await import('../src/services/rag/knowledge.js');
+  const { query } = await import('./helpers.js');
+  const before = (await query('SELECT COUNT(*)::int n FROM knowledge_chunks WHERE tenant_id=$1', [tenantId])).rows[0].n;
+  const r = await reindexDocuments(tenantId);
+  const after = (await query('SELECT COUNT(*)::int n FROM knowledge_chunks WHERE tenant_id=$1', [tenantId])).rows[0].n;
+  assert.equal(after, r.chunks);
+  assert.equal(after, before, 'already-current chunks are reproduced exactly');
+  assert.ok((await retrieve(tenantId, '3BHK price')).length > 0);
 });

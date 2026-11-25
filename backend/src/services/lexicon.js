@@ -4,6 +4,7 @@
 
 /** Hindi/Telugu/Hinglish surface forms -> English retrieval keywords. */
 export const retrievalSynonyms = {
+  'sq ft size': ['big', 'size', 'square feet', 'sqft', 'carpet area', 'बड़ा', 'साइज', 'साइज़', 'సైజు', 'ఎంత పెద్ద'],
   price: ['कीमत', 'दाम', 'रेट', 'ధర', 'రేటు', 'kimat', 'daam', 'dhara'],
   amenities: ['सुविधा', 'सुविधाएं', 'सुविधाएँ', 'సౌకర్యాలు', 'సదుపాయాలు', 'suvidha'],
   location: ['लोकेशन', 'स्थान', 'पता', 'లొకేషన్', 'ప్రదేశం'],

@@ -23,10 +23,12 @@
 | No raw audio stored | design | Only transcripts reach the server |
 | Retrieved docs are data | `responder.js`, `chunker.js` | `<context>` delimiting + "ignore instructions in context"; injection-like chunks flagged and excluded |
 | Untrusted model output | `analyzer.js`, `tools/registry.js` | Zod-validated; additive only; cannot set consent; tools allow-listed; booking needs the consent gate; slot policy + DB constraint |
+| Row-level security (deny-all for non-owner roles) | `migrations/002_enable_rls.sql` | Protects hosted DBs whose public schema is exposed (Supabase Data API + public anon key); tested with a probe role |
+| DB TLS | `db/pool.js` (`DATABASE_SSL`) | `require` / `verify` (+ optional CA file) for hosted Postgres |
 | Error hygiene | `middleware/error.js` | 5xx returns a generic message + `requestId`; stack only in server logs |
 | Dependencies | `npm audit` | 0 known vulnerabilities at build time (backend prod deps, frontend) |
 
-**Gaps to close before production:** HTTPS termination (at the load balancer), refresh tokens + revocation list, PostgreSQL row-level security as defence in depth, encryption at rest for PII columns (phone), audit log of staff actions, a CSP tuned for the SPA's assets, secret manager (AWS Secrets Manager / Vault) instead of env files, data-retention policy for transcripts, DPDP Act (India) consent capture.
+**Gaps to close before production:** HTTPS termination (at the load balancer), refresh tokens + revocation list, per-tenant RLS policies (`SET app.tenant_id`) on top of today's deny-all RLS, encryption at rest for PII columns (phone), audit log of staff actions, a CSP tuned for the SPA's assets, secret manager (AWS Secrets Manager / Vault) instead of env files, data-retention policy for transcripts, DPDP Act (India) consent capture.
 
 ## Part B: Scaling to 100,000 registered users
 
@@ -70,7 +72,7 @@ flowchart LR
 | **Object storage** | Uploaded source documents (PDFs later) in S3/GCS; Postgres keeps chunks + metadata |
 | **LLM rate limits** | An LLM gateway with per-tenant token budgets, concurrency caps, exponential backoff with jitter, a timeout per call (implemented: `LLM_TIMEOUT_MS`), provider failover (the abstraction already allows Groq↔Gemini), and the existing **rule-based degradation path** when providers are saturated |
 | **Observability** | Structured JSON logs (implemented) with `requestId`; add OpenTelemetry traces across HTTP → DB → LLM; SLOs on p95 turn latency, LLM error rate, booking failures; alerts. Per-turn latency is already persisted in `agent_execution_logs.latency_ms` |
-| **Multi-tenant isolation** | Today: `tenant_id` on every row + JWT-derived filtering. Next: Postgres **row-level security** policies (`SET app.tenant_id`) as a second wall; per-tenant rate limits and LLM quotas (noisy-neighbour protection); dedicated databases for enterprise tenants if required |
+| **Multi-tenant isolation** | Today: `tenant_id` on every row + JWT-derived filtering. RLS is enabled (deny-all for non-owner roles). Next: per-tenant RLS **policies** (`SET app.tenant_id`) as a second wall; per-tenant rate limits and LLM quotas (noisy-neighbour protection); dedicated databases for enterprise tenants if required |
 | **Voice at scale** | Browser STT does not scale to phone calls. Production telephony would use a streaming STT/TTS provider via WebSockets/SIP, with media servers sized by **concurrent calls**, not registered users |
 
 ### What I would load-test first
