@@ -4,7 +4,7 @@
 
 > **All business data is fictional.** "ABC Developers", the *GreenHaven Residences* project in Gachibowli, Hyderabad, its prices, inventory, RERA number and every seeded customer are demonstration data, labelled `DEMO` in the UI.
 
-**Docs:** [Project report](docs/PROJECT_REPORT.md) · [Architecture](docs/ARCHITECTURE.md) · [Explanation guide](docs/EXPLANATION_GUIDE.md) · [API reference](docs/API_REFERENCE.md) · [Technical Q&A](docs/TECHNICAL_QA.md) · [Demo script (5 min)](docs/DEMO_SCRIPT.md) · [Scalability & security](docs/SCALABILITY_AND_SECURITY.md) · [QA report](docs/QA_REPORT.md) · [Test results](docs/TEST_RESULTS.md)
+**Docs:** [Project report](docs/PROJECT_REPORT.md) · [Architecture](docs/ARCHITECTURE.md) · [Explanation guide](docs/EXPLANATION_GUIDE.md) · [API reference](docs/API_REFERENCE.md) · [Technical Q&A](docs/TECHNICAL_QA.md) · [Demo script (5 min)](docs/DEMO_SCRIPT.md) · [Scalability & security](docs/SCALABILITY_AND_SECURITY.md) · [Load test](docs/LOAD_TEST.md) · [QA report](docs/QA_REPORT.md) · [Test results](docs/TEST_RESULTS.md)
 
 ## Feature status
 
@@ -13,10 +13,11 @@
 | Area | Status | Notes |
 |---|---|---|
 | AI Voice Agent: live transcript, listening/thinking/speaking state, replay, mute, retry | Implemented | browser Web Speech API |
-| Speech-to-text / text-to-speech coverage | **Partial** | depends on the browser and installed voices (Telugu voices are often missing); feature-detected, text input always available |
+| Speech-to-text | Implemented | browser Web Speech API, plus an automatic **server transcription fallback** (Groq Whisper `whisper-large-v3`) when the browser cannot recognise speech or the language; audio is never stored |
+| Text-to-speech coverage | **Partial** | browser voices only: Hindi/Telugu replies are spoken only if the device has that voice (Settings explains how to install one); otherwise shown as text |
 | English / Hindi / Telugu | Implemented · **Partial** in DEMO_MODE | DEMO_MODE understanding is keyword-based and quotes English documents |
 | LLM provider abstraction | Implemented | **Groq verified live**; Gemini adapter-tested only |
-| DEMO_MODE (no API key) | **Mocked/Demo** | rule-based NLU + verbatim extractive answers; shown in the header badge and every trace |
+| DEMO_MODE (when no API key is set) | **Mocked/Demo** | rule-based NLU + verbatim extractive answers; shown in the header badge and every trace |
 | RAG: 18 fictional company documents, ingestion, chunking, BM25 top-3, threshold, citations, injection flagging | Implemented | embeddings / pgvector **Planned** |
 | Numeric grounding guard on LLM answers | Implemented | figures not in the sources trigger a verbatim fallback |
 | Conversation memory, follow-ups, session isolation | Implemented | turn serialization is per process (multi-instance lock **Planned**) |
@@ -28,7 +29,7 @@
 | Call summaries, Executive Dashboard, Call Intelligence (live SQL) | Implemented | |
 | Decision Trace + tool audit log (PII-masked) | Implemented | OpenTelemetry **Planned** |
 | Auth (JWT + scrypt), multi-tenancy, admin-only deletes, rate limits | Implemented | refresh tokens / SSO **Planned** |
-| Docker Compose (db, API, nginx frontend) | **Partial** | config validated; images not built here (Docker daemon unavailable) |
+| Docker Compose (db, API, nginx frontend) | Implemented | built and run: migrations + seed on start, app and API through nginx, security headers, Groq connected |
 | Telephony, SMS/WhatsApp, tenant sign-up UI | **Planned** | |
 | Company, inventory and customer data | **Mocked/Demo** | fictional seed data |
 
@@ -61,8 +62,9 @@ Useful scripts (from `backend/`):
 | `npm run setup` | migrate + idempotent seed |
 | `npm run db:reset -- --yes` | **dev only, deletes all data**, then re-seeds the demo |
 | `npm run kb:reindex` | re-chunk stored documents (CRM data untouched) |
-| `npm test` | 105 tests (unit, PostgreSQL integration, HTTP end-to-end) |
+| `npm test` | 111 tests (unit, PostgreSQL integration, HTTP end-to-end) |
 | `npm run lint` | syntax check of every source file |
+| `npm run loadtest` | load test against an isolated demo-mode instance ([how](docs/LOAD_TEST.md)) |
 
 ## Docker Compose
 
@@ -73,7 +75,7 @@ Set `JWT_SECRET` (and optionally `SEED_ADMIN_PASSWORD`, `LLM_*`), then:
 ```bash
 docker compose up --build
 ```
-UI at http://localhost:8080; the API container migrates and seeds on start. *Status: `docker compose config` is valid, but the images were not built or run during development.*
+UI at http://localhost:8080; the API container migrates and seeds on start. *Verified: images built and the stack run end to end (login, AI turn, customer page, nginx security headers).*
 
 ## Hosted PostgreSQL (Supabase)
 
@@ -101,7 +103,7 @@ Tests use the database in `.env.test`, whose name must contain `_test`; the help
 ```bash
 node --env-file-if-exists=../.env.test --test --test-concurrency=1 --test-name-pattern="concurrent bookings" test/booking.test.js
 ```
-Latest results: [docs/TEST_RESULTS.md](docs/TEST_RESULTS.md) (105/105 passing).
+Latest results: [docs/TEST_RESULTS.md](docs/TEST_RESULTS.md) (111/111 passing).
 
 ## Repository layout
 
@@ -141,7 +143,7 @@ git diff --cached | grep -nE "gsk_[A-Za-z0-9]{20,}|AIza[0-9A-Za-z_-]{30,}|sk-[A-
 ## Submission checklist
 
 - [ ] `.env.example` contains placeholders only (no real keys or passwords)
-- [ ] `cd backend && npm test` → 105/105 passing
+- [ ] `cd backend && npm test` → 111/111 passing
 - [ ] `cd backend && npm run lint` and `cd frontend && npm run lint && npm run build` clean
 - [ ] `npm run db:reset -- --yes` run on the demo database
 - [ ] App starts, `/api/health` returns `ok`, and you can log in

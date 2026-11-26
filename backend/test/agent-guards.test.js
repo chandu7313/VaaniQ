@@ -79,7 +79,7 @@ test('LLM failure falls back to rules and is recorded in the trace', async () =>
 test('LLM analysis with null fields is accepted (not rejected as invalid)', async () => {
   setProvider({ name: 'nully-llm', isDemo: false, chat: async ({ json }) => (json
     ? JSON.stringify({ intents: ['ask_info'], entities: null, sentiment: null, searchQuery: null })
-    : 'The 3BHK range is Rs 88 lakh to Rs 115 lakh.\n\nPrices exclude GST.') });
+    : 'The 3BHK range is ₹89,50,000 to ₹92,00,000.\n\nPrices exclude GST.') });
   const r = await handleTurn({ tenantId, conversationId: conv.id, text: 'What is the 3BHK price?' });
   assert.equal(r.analysis.source, 'rules+llm');
   assert.ok(!r.trace.errors.some((e) => e.stage === 'analysis'), JSON.stringify(r.trace.errors));
@@ -107,4 +107,14 @@ test('grounding guard: an LLM answer with a computed/invented figure is replaced
   assert.equal(r.trace.retrieval.answerMethod, 'extractive');
   assert.ok(r.trace.errors.some((e) => e.stage === 'response' && /figures not in the sources \(86, 113\)/.test(e.message)));
   assert.doesNotMatch(r.reply, /86 lakh|113 lakh/);
+});
+
+test('LLM answers: duplicate visit offers removed; LLM cannot turn a loan amount into a budget (regressions)', async () => {
+  setProvider({ name: 'offer-llm', isDemo: false, chat: async ({ json }) => (json
+    ? JSON.stringify({ intents: ['ask_info'], entities: { budgetMax: 7000000 }, sentiment: null, searchQuery: 'EMI home loan' })
+    : 'A loan of Rs 70 lakh has an EMI of about Rs 60,748. I can arrange a site visit for you.') });
+  const r = await handleTurn({ tenantId, conversationId: conv.id, text: '70 लाख के लोन पर EMI कितनी होगी?' });
+  assert.equal(r.lead.profile.budgetMax, undefined, 'loan amount from the LLM is not stored as budget');
+  assert.match(r.reply, /Rs 60,748/);
+  assert.doesNotMatch(r.reply, /I can arrange a site visit/);
 });

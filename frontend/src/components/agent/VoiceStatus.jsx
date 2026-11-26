@@ -52,6 +52,7 @@ export default function VoiceStatus({
   ttsSupported,
   hasVoice,
   muted,
+  sttMode = 'browser',
   onDark = false,
 }) {
   const s = STATES[state];
@@ -84,7 +85,14 @@ export default function VoiceStatus({
       </span>
 
       {sttSupported ? (
-        <Badge tone={tone}>{label}</Badge>
+        <>
+          <Badge tone={tone}>{label}</Badge>
+          {sttMode === 'server' && (
+            <Badge tone="indigo" title="Your browser cannot recognise this language, so speech is transcribed on the server (Groq Whisper). Audio is not stored.">
+              Server transcription
+            </Badge>
+          )}
+        </>
       ) : (
         <Badge
           tone="amber"

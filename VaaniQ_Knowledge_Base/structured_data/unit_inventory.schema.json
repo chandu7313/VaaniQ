@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "vaaniq/abc-developers/unit_inventory_row",
+  "title": "Unit inventory row (database import seed, NOT retrievable by RAG)",
+  "description": "One apartment unit. Live status must be maintained in the database; this seed only initialises it. The VaaniQ app has no inventory table yet (reconciliation item R-16).",
+  "type": "object",
+  "required": ["unit_id", "tenant_slug", "tower", "floor", "unit_number", "configuration", "built_up_area_sqft", "inventory_status", "field_status"],
+  "additionalProperties": false,
+  "properties": {
+    "unit_id": {"type": "string", "pattern": "^GHR-[AB]-[0-9]{4}$"},
+    "tenant_slug": {"const": "abc-developers"},
+    "tower": {"enum": ["Tower A", "Tower B"]},
+    "floor": {"type": "integer", "minimum": 1, "maximum": 18},
+    "unit_number": {"type": "string"},
+    "configuration": {"enum": ["2BHK", "3BHK"]},
+    "built_up_area_sqft": {"enum": [1180, 1560], "description": "CANONICAL approximate built-up area"},
+    "carpet_area_sqft": {"type": ["number", "null"], "description": "NOT_PROVIDED; must stay null until taken from an approved plan. Never derived from built-up area."},
+    "facing": {"enum": ["East", "North"]},
+    "covered_parking_slots": {"type": "integer", "minimum": 0},
+    "base_price_inr": {"type": ["integer", "null"], "description": "REQUIRES_HUMAN_CONFIRMATION; if set, must lie within pricing_catalog.json range for the configuration"},
+    "inventory_status": {"enum": ["available", "held", "booked", "blocked"]},
+    "field_status": {"type": "string"}
+  }
+}

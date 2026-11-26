@@ -38,7 +38,7 @@ Earlier sessions fixed (also covered by tests): tokens valid after user deletion
 | 8 Source attribution | ✅ | document + section + relevance on replies and in traces |
 | 9 Conversation memory | ✅ | follow-ups, budget change, session isolation tests |
 | 10 Multilingual text | ✅ | EN/HI/TE extraction, templates, LLM answers |
-| 11 Speech availability/fallback | ✅ denied path live · ⚠️ unsupported path code-reviewed | alert + Retry, typing works |
+| 11 Speech availability/fallback | ✅ denied path live · ✅ server Whisper fallback (API tested with real EN/HI/TE audio) · ⚠️ in-browser recording path not exercised (no microphone in the test browser) | alert + Retry, typing works |
 | 12 Lead qualification | ✅ | 77 → 92 in acceptance test, evidence per factor |
 | 13 Sentiment | ✅ | label, confidence, evidence; labelled transcript-text only |
 | 14 Tool authorization | ✅ | actor + tenant scope + consent gate + audit (tools tests) |
@@ -69,8 +69,8 @@ Earlier sessions fixed (also covered by tests): tokens valid after user deletion
 
 - **Gemini live** (no key): adapter verified with a mocked fetch only.
 - **Speech-unsupported browser:** fallback UI exists (feature detection), but no genuinely unsupported browser was run. Real microphone capture is not possible in the pane (denied path tested).
-- **Docker images and nginx security headers:** config written and `docker compose config` valid; never built (daemon offline).
-- **Load/performance:** no load test; no throughput claims.
+- **Docker:** now built and run end to end (see TEST_RESULTS).
+- **Load/performance:** laptop-scale load test done ([LOAD_TEST.md](LOAD_TEST.md)); not a production capacity test.
 - **Multi-instance concurrency:** turn serialization is per process; booking integrity across instances relies on the transaction + unique index (tested). A distributed lock is the documented next step.
 - **Tokens in `sessionStorage`:** readable by injected script if an XSS were ever introduced. HttpOnly cookies are the production option.
 - **`.env` still points at the Supabase direct host** (IPv6-only, unreachable here). Use the Session pooler URL + `DATABASE_SSL=require`, or the local DB. The Groq key belongs in `.env` (`LLM_PROVIDER=groq`, `LLM_MODEL=openai/gpt-oss-20b`) if you want live AI. Consider rotating the Groq key and the Supabase password, since both were pasted into a tracked file and appeared in tool output during this session (never pushed).

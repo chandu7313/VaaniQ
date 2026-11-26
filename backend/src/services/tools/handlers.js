@@ -17,7 +17,7 @@ async function scoreAndSave(ctx, lead) {
 }
 
 export const handlers = {
-  searchKnowledge: (ctx, { query, k }) => retrieve(ctx.tenantId, query, { k }),
+  searchKnowledge: (ctx, { query, k }) => retrieve(ctx.tenantId, query, { k, includeInternal: ctx.actor === 'staff' }),
 
   calculateLeadScore: (ctx, { profile, hasBooking }) =>
     scoreLead(profile, { catalog: ctx.settings.catalog, scoring: ctx.settings.scoring, hasBooking }),

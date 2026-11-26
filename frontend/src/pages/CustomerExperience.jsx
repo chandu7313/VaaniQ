@@ -194,7 +194,12 @@ export default function CustomerExperience() {
     [session, sending, status, slug, lang, autoSay, loadAvailability],
   );
 
-  const speech = useSpeechRecognition({ lang: bcp47, onFinal: sendMessage });
+  // Server (Whisper) transcription when the backend offers it and the browser cannot recognise speech.
+  const transcribe = useCallback(async (blob, language) => {
+    const s = customerSessionStore.get(slug);
+    return (await publicApi(slug, `/conversations/${s?.conversationId}/transcribe?language=${language}`, { method: 'POST', rawBody: blob, sessionToken: s?.sessionToken })).text;
+  }, [slug]);
+  const speech = useSpeechRecognition({ lang: bcp47, onFinal: sendMessage, transcribe: overview?.speech?.serverTranscription ? transcribe : undefined });
   useEffect(() => {
     if (speech.listening) tts.cancel();
   }, [speech.listening, tts]);
@@ -330,7 +335,7 @@ export default function CustomerExperience() {
   }
 
   const ended = status === 'ended';
-  const voiceState = speech.listening ? 'listening' : sending ? 'thinking' : tts.speaking ? 'speaking' : 'idle';
+  const voiceState = speech.listening ? 'listening' : sending || speech.transcribing ? 'thinking' : tts.speaking ? 'speaking' : 'idle';
   const tenant = overview?.tenant;
 
   return (

@@ -54,7 +54,7 @@ test('full scenario: qualify, RAG answer, offer slots, collect contact, confirm,
   assert.equal(t1.outcome, 'slots_offered');
   assert.equal(t1.analysis.intent, 'request_visit');
   assert.match(t1.reply, /3BHK/);
-  assert.match(t1.reply, /fits our 3BHK range/);
+  assert.match(t1.reply, /within our 3BHK indicative base price of ₹89\.5–92 lakh/);
   assert.ok(t1.sources.length > 0, 'answer must cite sources');
   assert.equal(t1.offeredSlots.length, 3);
   assert.equal(t1.score.total, 74);

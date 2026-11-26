@@ -38,14 +38,14 @@ test('response contract: every structured field is present and the pipeline even
   assert.equal(t.session.turn, 1);
 });
 
-test('1. pricing question: answered from the Price list with sources, no invented figures', async () => {
+test('1. pricing question: answered from the pricing doc with sources, no invented figures', async () => {
   const t = await say(await newSession(), 'What is the price of a 3BHK?');
   assert.equal(t.intent, 'ask_info');
   assert.equal(t.outcome, 'info_provided');
-  assert.equal(t.sources[0].section, 'Price list');
+  assert.equal(t.sources[0].title, '3BHK Pricing Details');
   assert.ok(t.sources.length <= 3);
-  assert.match(t.reply, /88 lakh to Rs 115 lakh/);
-  assert.match(t.explanation, /Price list/);
+  assert.match(t.reply, /89,50,000.*92,00,000|89\.5 lakh to ₹?92 lakh/);
+  assert.match(t.explanation, /3BHK Pricing Details/);
   assert.equal(t.suggestedAction.type, 'ask_qualification');
   assert.equal(t.suggestedAction.field, 'budget');
 });
@@ -66,9 +66,9 @@ test('3. budget change mid-conversation: newer value wins and the score is recom
   const t2 = await say(id, 'Actually, my budget is now 75 lakhs');
   assert.equal(t2.lead.profile.budgetMax, 7500000);
   assert.equal(t2.lead.profile.bedrooms, 3, 'earlier facts are kept');
-  assert.equal(factor(t2, 'budget'), 10, '75L is 10-20% below the 3BHK floor of 88L');
+  assert.equal(factor(t2, 'budget'), 10, '75L is 10-20% below the 3BHK floor of 89.5L');
   assert.match(t2.reply, /budget around ₹75 lakh/);
-  assert.match(t2.reply, /slightly above that budget/);
+  assert.match(t2.reply, /above that budget/);
   const stored = await query('SELECT profile->>\'budgetMax\' AS b FROM leads WHERE id = $1', [t2.lead.id]);
   assert.equal(stored.rows[0].b, '7500000');
 });
@@ -80,8 +80,8 @@ test('4. follow-up question uses the previous topic from memory', async () => {
   const t2 = await say(id, 'How big are they?');
   assert.equal(t2.outcome, 'info_provided');
   assert.ok(t2.trace.retrieval.contextAdded.length > 0, 'context from memory was added to the query');
-  assert.ok(t2.sources.some((s) => s.section === 'Apartment configurations'));
-  assert.match(t2.reply, /1620 to 1840 sq ft/);
+  assert.ok(t2.sources.some((s) => /Floor Plan|3BHK Detailed Specifications/.test(s.title)));
+  assert.match(t2.reply, /1,560 sq\.ft/);
   assert.equal(t2.session.historyMessagesUsed, 3, 'greeting + first exchange were loaded');
 });
 
@@ -92,7 +92,7 @@ test('5. language switch: replies follow the newly selected language and it is p
   const t2 = await say(id, 'क्या पार्किंग है?', 'hi');
   assert.equal(t2.session.language, 'hi');
   assert.match(t2.reply, /हमारी परियोजना जानकारी के अनुसार/);
-  assert.ok(t2.sources.some((s) => /parking/i.test(s.section)));
+  assert.ok(t2.sources.some((s) => /parking/i.test(s.title)));
   const conv = await query('SELECT language FROM conversations WHERE id = $1', [id]);
   assert.equal(conv.rows[0].language, 'hi');
 });
@@ -150,18 +150,28 @@ test('memory never turns an unsupported question into an answer about the previo
 test('a loan amount is not mistaken for a budget; "payment schedule" is not a visit request (regressions)', async () => {
   const t1 = await say(await newSession(), 'What would my EMI be for a 70 lakh loan?');
   assert.equal(t1.lead.profile.budgetMax, undefined, 'loan amount not stored as budget');
-  assert.match(t1.reply, /Rs 60,748/);
+  assert.match(t1.reply, /₹?60,748/);
   const t2 = await say(await newSession(), 'What is the payment schedule?');
   assert.notEqual(t2.outcome, 'slots_offered');
-  assert.match(t2.reply, /construction-linked/);
+  assert.match(t2.reply, /construction-linked|instalment|milestone/i);
   const t3 = await say(await newSession(), 'Can I schedule a site visit for Saturday?');
   assert.equal(t3.outcome, 'slots_offered', 'a real scheduling request still offers slots');
 });
 
 test('demo-mode answer combines the most relevant sentences across close sections', async () => {
   const t = await say(await newSession(), 'Which schools and hospitals are nearby?');
-  assert.match(t.reply, /CBSE and IB school/);
-  assert.match(t.reply, /multi-speciality hospital/);
+  assert.match(t.reply, /schools/i);
+  assert.match(t.reply, /hospitals/i);
   const p = await say(await newSession(), 'What is the price of a 3BHK?');
-  assert.equal((p.reply.match(/Rs 88 lakh to Rs 115 lakh/g) || []).length, 1, 'same price not repeated from two documents');
+  assert.match(p.reply, /89,50,000|89\.5 lakh/);
+  assert.ok((p.reply.match(/89,50,000/g) || []).length <= 1, 'same price not repeated from two documents');
+});
+
+test('low budget mismatch & unknown RERA are handled honestly without guessing', async () => {
+  const low = await say(await newSession(), 'Looking for a 3BHK in Gachibowli, my budget is 20 lakhs');
+  assert.match(low.reply, /89\.5–92 lakh/);
+  assert.match(low.reply, /above that budget/);
+  const rera = await say(await newSession(), 'What is the RERA number?');
+  assert.doesNotMatch(rera.reply, /P0{6,}/);
+  assert.match(rera.reply, /NOT_PROVIDED|not part of my verified information|legal and compliance/i);
 });

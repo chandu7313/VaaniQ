@@ -1,0 +1,94 @@
+{
+  "schema_version": "1.0",
+  "file_id": "ABC-GHR-CFG-01",
+  "tenant_slug": "abc-developers",
+  "fictional_demo_data": true,
+  "authority_level": 1,
+  "last_updated": "2026-11-26",
+  "approval_status": "PENDING_REVIEW",
+  "retrievable_by_rag": true,
+  "company": {
+    "legal_name": {
+      "value": null,
+      "status": "NOT_PROVIDED",
+      "source": "",
+      "note": "Fictional company; no legal entity details exist."
+    },
+    "display_name": {
+      "value": "ABC Developers",
+      "status": "CANONICAL",
+      "source": "knowledge-base brief 2026-11-26 (canonical starting facts)"
+    },
+    "fictional_disclaimer": {
+      "value": "ABC Developers and GreenHaven Residences are fictional, created for a technical assessment. No information describes a real company, project, person or regulatory record.",
+      "status": "CANONICAL",
+      "source": "knowledge-base brief 2026-11-26 (canonical starting facts)"
+    },
+    "business": {
+      "value": "Residential apartment sales",
+      "status": "CANONICAL",
+      "source": "knowledge-base brief 2026-11-26 (canonical starting facts)"
+    },
+    "headquarters_city": {
+      "value": "Hyderabad, Telangana, India",
+      "status": "SYNTHETIC_DEMO_ASSUMPTION",
+      "source": "VaaniQ seed data (backend/src/db/seedData.js), carried forward as synthetic"
+    },
+    "founded_year": {
+      "value": 2009,
+      "status": "SYNTHETIC_DEMO_ASSUMPTION",
+      "source": "VaaniQ seed data (backend/src/db/seedData.js), carried forward as synthetic"
+    },
+    "projects_delivered": {
+      "value": 6,
+      "status": "SYNTHETIC_DEMO_ASSUMPTION",
+      "source": "VaaniQ seed data (backend/src/db/seedData.js), carried forward as synthetic",
+      "note": "Count is illustrative only."
+    },
+    "homes_delivered_approx": {
+      "value": 1800,
+      "status": "SYNTHETIC_DEMO_ASSUMPTION",
+      "source": "VaaniQ seed data (backend/src/db/seedData.js), carried forward as synthetic"
+    },
+    "current_project": {
+      "value": "GreenHaven Residences",
+      "status": "CANONICAL",
+      "source": "knowledge-base brief 2026-11-26 (canonical starting facts)"
+    },
+    "sales_office_location": {
+      "value": "At the GreenHaven Residences project site, Gachibowli",
+      "status": "SYNTHETIC_DEMO_ASSUMPTION",
+      "source": "VaaniQ seed data (backend/src/db/seedData.js), carried forward as synthetic"
+    },
+    "sales_office_hours": {
+      "value": "Monday to Saturday, 10:00 to 18:00 IST",
+      "status": "SYNTHETIC_DEMO_ASSUMPTION",
+      "source": "VaaniQ seed data (backend/src/db/seedData.js), carried forward as synthetic"
+    },
+    "phone": {
+      "value": null,
+      "status": "NOT_CONFIGURED",
+      "source": ""
+    },
+    "email": {
+      "value": null,
+      "status": "NOT_CONFIGURED",
+      "source": ""
+    },
+    "website": {
+      "value": null,
+      "status": "NOT_CONFIGURED",
+      "source": ""
+    },
+    "gstin": {
+      "value": null,
+      "status": "NOT_PROVIDED",
+      "source": ""
+    },
+    "cin": {
+      "value": null,
+      "status": "NOT_PROVIDED",
+      "source": ""
+    }
+  }
+}

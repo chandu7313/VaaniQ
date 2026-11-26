@@ -11,11 +11,14 @@ import { executeTool } from '../services/tools/executor.js';
 import { handleTurn } from '../services/agent/orchestrator.js';
 import { t, LOCALES } from '../services/agent/templates.js';
 import { signCustomerSessionToken } from '../middleware/auth.js';
+import { speechCapabilities } from '../services/speech.js';
 
 const PROPOSAL_TTL_MS = 10 * 60 * 1000;
-const INTERNAL_POLICY_PATTERN = /sales and booking policies/i;
+const INTERNAL_POLICY_PATTERN = /sales and booking policies|escalation matrix|call scenarios|objection handling|objection library|conversation examples|negotiation authority/i;
 
-const isInternalDoc = (title) => INTERNAL_POLICY_PATTERN.test(title || '');
+const isInternalDoc = (doc) => doc?.retrieval_scope === 'agent_internal'
+  || doc?.retrievalScope === 'agent_internal'
+  || INTERNAL_POLICY_PATTERN.test(typeof doc === 'string' ? doc : (doc?.title || ''));
 const slotLabel = (iso, lang) => formatSlot(new Date(iso), LOCALES[lang] || LOCALES.en);
 
 function sanitizeRequirements(profile = {}) {
@@ -30,7 +33,7 @@ function sanitizeRequirements(profile = {}) {
 
 function sanitizeSources(sources = []) {
   return (sources || [])
-    .filter((s) => !isInternalDoc(s.title))
+    .filter((s) => !isInternalDoc(s))
     .map(({ title, section, relevance }) => ({ title, section, relevance }));
 }
 
@@ -46,7 +49,7 @@ function sanitizeBookingPolicy(booking = {}) {
 function extractHighlightsFromDocs(docs) {
   const sections = [];
   for (const doc of docs) {
-    if (isInternalDoc(doc.title)) continue;
+    if (isInternalDoc(doc)) continue;
     const lines = String(doc.content || '').split('\n');
     let heading = doc.title;
     let buffer = [];
@@ -98,7 +101,11 @@ export async function resolvePublicTenant(req, _res, next) {
 export async function overview(req, res) {
   const tenant = req.publicTenant;
   const { rows: docs } = await query(
-    `SELECT title, content FROM knowledge_documents WHERE tenant_id = $1 ORDER BY created_at ASC`,
+    `SELECT title, content, retrieval_scope FROM knowledge_documents
+      WHERE tenant_id = $1
+        AND retrieval_scope = 'customer_facing'
+        AND lifecycle_status NOT IN ('superseded', 'failed', 'uploaded')
+      ORDER BY created_at ASC`,
     [tenant.id],
   );
   const availableSlots = await getAvailableSlots(tenant.id, tenant.settings.booking, { limit: 6 });
@@ -117,6 +124,7 @@ export async function overview(req, res) {
       },
       highlights: extractHighlightsFromDocs(docs),
       availableSlots,
+      speech: { serverTranscription: speechCapabilities().serverTranscription },
     },
   });
 }
@@ -131,9 +139,9 @@ export async function availability(req, res) {
 export async function searchKnowledge(req, res) {
   const tenant = req.publicTenant;
   const { query: q, k } = req.valid.body;
-  const hits = await retrieve(tenant.id, q, { k: Math.min(k + 2, 8) });
+  const hits = await retrieve(tenant.id, q, { k: Math.min(k + 2, 8), includeInternal: false });
   const safeHits = hits
-    .filter((h) => !isInternalDoc(h.title))
+    .filter((h) => !isInternalDoc(h))
     .slice(0, k)
     .map(({ title, section, content, relevance }) => ({ title, section, content, relevance }));
   res.json({ data: safeHits });

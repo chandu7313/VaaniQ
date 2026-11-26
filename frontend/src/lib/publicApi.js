@@ -37,17 +37,17 @@ export const customerSessionStore = {
   },
 };
 
-export async function publicApi(slug, path, { method = 'GET', body, sessionToken, signal } = {}) {
+export async function publicApi(slug, path, { method = 'GET', body, rawBody, sessionToken, signal } = {}) {
   let res;
   try {
     res = await fetch(`/api/public/${encodeURIComponent(slug)}${path}`, {
       method,
       signal,
       headers: {
-        ...(body ? { 'content-type': 'application/json' } : {}),
+        ...(rawBody ? { 'content-type': rawBody.type } : body ? { 'content-type': 'application/json' } : {}),
         ...(sessionToken ? { 'x-customer-session': sessionToken } : {}),
       },
-      body: body ? JSON.stringify(body) : undefined,
+      body: rawBody ?? (body ? JSON.stringify(body) : undefined),
     });
   } catch (err) {
     if (err.name === 'AbortError') throw err;

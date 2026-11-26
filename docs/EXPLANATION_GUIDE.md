@@ -267,7 +267,7 @@ See [SCALABILITY_AND_SECURITY.md](SCALABILITY_AND_SECURITY.md). Key points: keys
 | Transactional booking, conflict prevention | Calendar sync (Google/Outlook), multiple sales executives / capacity > 1, SMS/WhatsApp confirmations |
 | JWT admin auth, tenant isolation, deny-all RLS for non-owner DB roles | Tenant self sign-up, RBAC UI, SSO, refresh tokens, per-tenant RLS policies |
 | Live analytics | Data warehouse, cohort and funnel analysis |
-| Docker Compose config | Kubernetes manifests, CI/CD, load testing (none performed) |
+| Docker Compose (built and run), laptop load test | Kubernetes manifests, CI/CD, distributed load testing |
 
 **Known limitations:** Hindi/Telugu understanding in DEMO_MODE is keyword-based and covers common phrasings only. Demo-mode answers to Hindi/Telugu questions quote English documents. Browser Telugu TTS depends on an installed voice (the UI says so when one is missing). Chrome's speech recognition sends audio to the browser vendor's service.
 
@@ -439,6 +439,6 @@ node --env-file-if-exists=../.env.test --test --test-concurrency=1 --test-name-p
 ### B18. Voice (frontend)
 - **What / why:** hands-free conversations in the browser with graceful fallback.
 - **Input → output:** microphone → interim and final transcript (text only) → agent; reply text → speech in the chosen voice.
-- **Files:** `frontend/src/hooks/useSpeech.js` (feature detection, permission state, errors, retry, voice selection), `components/agent/{VoiceStatus,Composer,ChatTranscript}.jsx`, `pages/Settings.jsx`.
+- **Files:** `frontend/src/hooks/useSpeech.js` (feature detection, permission state, errors, retry, voice selection, and the server-transcription fallback that records with `MediaRecorder` and calls `/api/speech/transcribe`), `backend/src/services/speech.js` (Groq Whisper, audio held in memory only), `components/agent/{VoiceStatus,Composer,ChatTranscript}.jsx`, `pages/Settings.jsx`.
 - **Example:** microphone blocked → "Microphone permission was denied… press Retry, or type instead" + a Retry button; typing keeps working.
 - **Debug:** Settings & Language → *This browser's voice capabilities* (STT support, mic permission, voices per language) and the per-language **Test** buttons.

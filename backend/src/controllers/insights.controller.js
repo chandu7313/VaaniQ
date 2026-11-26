@@ -1,6 +1,7 @@
 import { config } from '../config.js';
 import { getProvider } from '../services/llm/index.js';
 import { listTools } from '../services/tools/definitions.js';
+import { speechCapabilities } from '../services/speech.js';
 import { getOverview } from '../services/analytics.js';
 import { getTenant } from '../services/tenants.js';
 import { listTraces, getTrace } from '../services/traces.js';
@@ -13,6 +14,7 @@ export async function meta(req, res) {
       demoMode: p.isDemo, provider: p.name, configuredProvider: config.llm.provider, languages: ['en', 'hi', 'te'],
       tenant: { name: tenant.name, isDemo: tenant.is_demo, catalog: tenant.settings.catalog, scoring: tenant.settings.scoring, booking: tenant.settings.booking },
       tools: listTools(),
+      speech: speechCapabilities(),
     },
   });
 }

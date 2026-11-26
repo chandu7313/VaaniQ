@@ -17,6 +17,7 @@ import {
   Car,
 } from 'lucide-react';
 import { WaveformIcon } from './BrandHeader';
+import { fmtArea } from '../../lib/format';
 
 /** Screen 3: Verified Residence Cards inline inside the conversation stream */
 export function InlineResidenceCards({ units = [], budgetLakh, sources = [] }) {
@@ -27,7 +28,7 @@ export function InlineResidenceCards({ units = [], budgetLakh, sources = [] }) {
       <div className="grid gap-3.5 sm:grid-cols-2">
         {units.map((u, idx) => {
           const fitsBudget = budgetLakh != null && budgetLakh >= u.priceLakh[0];
-          const parkingSlots = u.bedrooms >= 3 ? '2 Covered Parking' : '1 Covered Parking';
+          const parkingSlots = u.bedrooms >= 3 ? '2 Covered Parking (demo)' : '1 Covered Parking (demo)';
           return (
             <div
               key={u.type}
@@ -45,7 +46,7 @@ export function InlineResidenceCards({ units = [], budgetLakh, sources = [] }) {
                 <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-[#657168]">
                   <span className="inline-flex items-center gap-1">
                     <Maximize2 className="size-3.5 text-[#244D3C]" />
-                    {u.sizeSqft[0]}–{u.sizeSqft[1]} sq.ft.
+                    {fmtArea(u)}
                   </span>
                   <span className="inline-flex items-center gap-1">
                     <BedDouble className="size-3.5 text-[#244D3C]" />
@@ -62,7 +63,7 @@ export function InlineResidenceCards({ units = [], budgetLakh, sources = [] }) {
                   </span>
                   {fitsBudget && (
                     <span className="rounded-full bg-[#DCE9DD] px-2.5 py-0.5 text-[11px] font-semibold text-[#193B30]">
-                      Within your budget
+                      Base price within budget
                     </span>
                   )}
                 </div>
@@ -71,6 +72,10 @@ export function InlineResidenceCards({ units = [], budgetLakh, sources = [] }) {
           );
         })}
       </div>
+
+      <p className="px-1 text-[11px] text-[#657168]">
+        *Indicative base price; additional charges and taxes extra. Areas are approximate built-up areas (carpet area not provided); parking slots are demo assumptions. Final cost comes on an approved cost sheet.
+      </p>
 
       {sources.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 px-1 text-xs text-[#657168]">

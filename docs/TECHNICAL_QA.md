@@ -74,8 +74,11 @@ Five configurable factors: budget fit 25, requirement clarity 25, timeline 20, d
 
 ## Voice and language
 
+**Q: What did load testing show?**
+On a laptop (one Node process, local PostgreSQL, DEMO_MODE): about 680 agent turns/s at 50 concurrent customers, p95 under 100 ms, 0 errors; 100 simultaneous customers competing for 10 slots gave exactly 10 bookings. With live Groq and a Supabase database in Sydney, 10 simultaneous turns took about 4–5 s each. So the real bottlenecks are LLM latency and database distance, not the app. It is not a production capacity test (`LOAD_TEST.md`).
+
 **Q: How do STT and TTS work in VaaniQ?**
-Browser Web Speech API: `SpeechRecognition` (interim + final results, `en-IN`/`hi-IN`/`te-IN`) and `speechSynthesis` with per-language voice selection, rate, replay and mute (`hooks/useSpeech.js`). Microphone permission and voice availability are detected and shown. Errors give clear messages and a Retry button, and typing always works. No audio is stored; only text reaches the server, though in Chrome recognition runs on the browser vendor's speech service. **Telephony and streaming STT/TTS are planned.**
+Browser Web Speech API: `SpeechRecognition` (interim + final results, `en-IN`/`hi-IN`/`te-IN`) and `speechSynthesis` with per-language voice selection, rate, replay and mute (`hooks/useSpeech.js`). Microphone permission and voice availability are detected and shown. Errors give clear messages and a Retry button, and typing always works. No audio is stored; only text reaches the server, though in Chrome recognition runs on the browser vendor's speech service. If the browser cannot recognise speech or the selected language, VaaniQ switches to **server transcription**: the clip is recorded with `MediaRecorder`, sent once to `/api/speech/transcribe`, transcribed by Groq Whisper (`whisper-large-v3`) in memory, and discarded. TTS has no server fallback for Hindi/Telugu (Groq's TTS voices are English/Arabic only), so Settings explains how to install a voice. **Telephony and streaming STT/TTS are planned.**
 
 **Q: How is multilingual support handled?**
 - **Rules:** extraction, intent and sentiment lexicons in EN/HI/TE, Unicode-aware tokenizer (`\p{M}` keeps Indic vowel signs).
@@ -126,7 +129,7 @@ Tests: 21 cross-tenant endpoint checks return 404 and 7 list endpoints return no
 ## Operations and scale
 
 **Q: How is Docker used?**
-`docker-compose.yml` runs PostgreSQL (bound to localhost only), the API (migrates and seeds on start, non-root user) and the frontend (Vite build served by nginx with a `/api` proxy and security headers). `docker compose up -d db` gives a local database alone. **Honest status:** the compose config is validated, but the images were not built or run in this project, because the Docker daemon was unavailable.
+`docker-compose.yml` runs PostgreSQL (bound to localhost only), the API (migrates and seeds on start, non-root user) and the frontend (Vite build served by nginx with a `/api` proxy and security headers). `docker compose up -d db` gives a local database alone. **Status:** verified. The images were built and the stack run: the API migrated and seeded itself, and login, an AI turn, the customer page and nginx's security headers all worked through `http://localhost:8080`.
 
 **Q: How would it scale horizontally?**
 The API is stateless (memory lives in PostgreSQL, auth is a JWT), so pods can be added behind a load balancer and autoscaled on CPU or in-flight requests. Graceful shutdown drains the pool on SIGTERM. Two changes are needed for many instances:

@@ -14,6 +14,7 @@ import knowledgeRoutes from './routes/knowledge.js';
 import insightRoutes from './routes/insights.js';
 import customerRoutes from './routes/customers.js';
 import callSummaryRoutes from './routes/callSummaries.js';
+import speechRoutes from './routes/speech.js';
 import publicRoutes from './routes/public.js';
 
 export function createApp() {
@@ -43,6 +44,7 @@ export function createApp() {
   app.use('/api/knowledge', requireAuth, knowledgeRoutes);
   app.use('/api/customers', requireAuth, customerRoutes);
   app.use('/api/call-summaries', requireAuth, callSummaryRoutes);
+  app.use('/api/speech', requireAuth, speechRoutes);
   app.use('/api', requireAuth, insightRoutes);
   app.use(notFoundHandler);
   app.use(errorHandler);

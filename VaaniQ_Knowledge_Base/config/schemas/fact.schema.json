@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "vaaniq/fact.schema.json",
+  "title": "Fact record",
+  "description": "Every business fact in the config files uses this shape so its provenance is explicit.",
+  "type": "object",
+  "required": ["value", "status"],
+  "properties": {
+    "value": { "description": "The fact, or null when status is NOT_PROVIDED / NOT_CONFIGURED." },
+    "unit": { "type": "string" },
+    "status": { "enum": ["CANONICAL", "SYNTHETIC_DEMO_ASSUMPTION", "NOT_PROVIDED", "NOT_CONFIGURED", "REQUIRES_HUMAN_CONFIRMATION"] },
+    "source": { "type": "string", "description": "Where the value comes from (brief, seed, policy, etc.)." },
+    "note": { "type": "string" }
+  },
+  "allOf": [
+    { "if": { "properties": { "status": { "enum": ["NOT_PROVIDED", "NOT_CONFIGURED"] } } }, "then": { "properties": { "value": { "type": "null" } } } }
+  ]
+}

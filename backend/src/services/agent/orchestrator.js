@@ -67,22 +67,28 @@ export function handleTurn(args) {
 async function runTurn({ tenantId, conversationId, text, language, now = new Date() }) {
   const started = Date.now();
   const provider = getProvider();
-  const { settings } = await getTenant(tenantId);
-  const { conversation, history } = await loadSession(tenantId, conversationId);
+  // Independent reads in parallel: tenant settings, session (conversation + history) and the turn number.
+  const [{ settings }, { conversation, history }, { rows: [{ n }] }] = await Promise.all([
+    getTenant(tenantId),
+    loadSession(tenantId, conversationId),
+    query('SELECT COUNT(*)::int AS n FROM agent_execution_logs WHERE tenant_id=$1 AND conversation_id=$2', [tenantId, conversationId]),
+  ]);
   if (conversation.status === 'ended') throw new AppError(409, 'CONVERSATION_ENDED', 'This conversation has ended; start a new one');
 
   const lang = language || conversation.language;
   const state = structuredClone(conversation.state || {});
   if (state.pendingProposal && new Date(state.pendingProposal.expiresAt) <= now) delete state.pendingProposal;
 
-  const { rows: [{ n }] } = await query('SELECT COUNT(*)::int AS n FROM agent_execution_logs WHERE conversation_id=$1', [conversationId]);
   const trace = { turn: n + 1, language: lang, provider: provider.name, demoMode: provider.isDemo, input: maskPII(text), events: [], steps: [], errors: [] };
   // Concise execution events, one per pipeline step: what happened, never hidden model reasoning.
   const ev = (step, summary) => trace.events.push({ step, ms: Date.now() - started, summary: maskPII(summary) });
   ev('memory', `Session ${conversationId.slice(0, 8)}: ${history.length} prior message(s) loaded${state.pendingProposal ? ', booking proposal pending' : ''}${state.lastTopic ? `, last topic "${state.lastTopic.section}"` : ''}`);
 
   const analysis = await analyze({ text, state, history, provider, now, trace });
-  await addMessage(tenantId, conversationId, { role: 'customer', content: text, sentiment: analysis.sentiment });
+  const [, initialLead] = await Promise.all([
+    addMessage(tenantId, conversationId, { role: 'customer', content: text, sentiment: analysis.sentiment }),
+    getLead(tenantId, conversation.lead_id),
+  ]);
   const flags = new Set([analysis.intent, ...analysis.secondary]);
   const e = analysis.entities;
   ev('intent', `${analysis.intent}${analysis.secondary.length ? ` (+${analysis.secondary.join(', ')})` : ''} [${analysis.source}]`);
@@ -90,8 +96,11 @@ async function runTurn({ tenantId, conversationId, text, language, now = new Dat
   ev('sentiment', `${analysis.sentiment.label} (${analysis.sentiment.confidence})`);
   trace.analysis = { source: analysis.source, intent: analysis.intent, secondaryIntents: analysis.secondary, entities: maskDeep(e), entitySources: analysis.entitySources, sentiment: analysis.sentiment };
 
-  let lead = await getLead(tenantId, conversation.lead_id);
-  const ctx = { tenantId, actor: 'agent', conversationId, leadId: lead.id, now, settings, pendingProposal: state.pendingProposal, customerConfirmed: false };
+  let lead = initialLead;
+  // verified: ids this turn already loaded through tenant-scoped queries, so the executor need not re-check
+  // them. deferredAudits: audit rows are written alongside the final saves instead of one round trip per tool.
+  const ctx = { tenantId, actor: 'agent', conversationId, leadId: lead.id, now, settings, pendingProposal: state.pendingProposal, customerConfirmed: false,
+    verified: { conversationId, leadId: lead.id }, deferredAudits: [] };
   const run = async (tool, args, reason) => {
     const rec = await executeTool(ctx, tool, args, reason);
     const { result, ...rest } = rec;
@@ -118,7 +127,7 @@ async function runTurn({ tenantId, conversationId, text, language, now = new Dat
   const newFacts = Object.fromEntries(Object.entries(profilePatch).filter(([k, v]) => JSON.stringify(lead.profile[k]) !== JSON.stringify(v)));
   if (Object.keys(newFacts).length || Object.keys(contact).length) {
     const rec = await run('updateLead', { profile: profilePatch, ...contact }, 'Customer stated new qualification or contact details');
-    if (rec.ok) { lead = rec.result.lead; ctx.leadId = lead.id; }
+    if (rec.ok) { lead = rec.result.lead; ctx.leadId = lead.id; ctx.verified.leadId = lead.id; }
   }
   if (Object.keys(contact).length) newFacts.contact = true;
   const ack = ackText(lang, newFacts);
@@ -228,7 +237,8 @@ async function runTurn({ tenantId, conversationId, text, language, now = new Dat
       // No "retry with the old topic" when nothing matches: that would answer an unsupported question
       // ("Do you have a helipad?") with the previous topic instead of admitting there is no information.
       const rq = buildRetrievalQuery({ text, searchQuery: analysis.searchQuery, profile: lead.profile, lastTopic: state.lastTopic });
-      const rec = await run('searchKnowledge', { query: rq.query.slice(0, 500), k: 3 }, rq.contextual ? 'Follow-up question: retrieve using the previous topic from memory' : 'Customer asked for information: retrieve verified documents');
+      // An LLM can use one more passage (two-part questions such as "price and schools"); demo mode quotes from 3.
+      const rec = await run('searchKnowledge', { query: rq.query.slice(0, 500), k: provider.isDemo ? 3 : 4 }, rq.contextual ? 'Follow-up question: retrieve using the previous topic from memory' : 'Customer asked for information: retrieve verified documents');
       const hits = rec.ok ? rec.result : [];
       trace.retrieval = { query: maskPII(rq.query), contextAdded: rq.added, hits: hits.map(({ title, section, score, relevance }) => ({ title, section, score, relevance })) };
       if (hits[0]) state.lastTopic = { title: hits[0].title, section: hits[0].section };
@@ -280,18 +290,21 @@ async function runTurn({ tenantId, conversationId, text, language, now = new Dat
   trace.suggestedAction = suggestedAction;
   trace.explanation = explanation;
 
-  const agentMsg = await addMessage(tenantId, conversationId, { role: 'agent', content: replyText, sources: sources.length ? sources : null });
-  await saveConversation(tenantId, conversationId, { state, leadId: lead.id, status: convStatus, language: lang });
-
   trace.response = { text: replyText, sources, outcome };
   // Turn success: a valid response was produced and no tool failed for an unexpected reason.
   trace.success = trace.steps.every((st) => st.ok || EXPECTED_REJECTIONS.has(st.error?.code));
   trace.latencyMs = Date.now() - started;
-  await query(
-    `INSERT INTO agent_execution_logs (tenant_id, conversation_id, turn_index, intent, outcome, provider, latency_ms, trace)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
-    [tenantId, conversationId, trace.turn, analysis.intent, outcome, provider.name, trace.latencyMs, trace],
-  );
+  // Final writes are independent of each other: run them (and this turn's audit rows) in parallel.
+  const [agentMsg] = await Promise.all([
+    addMessage(tenantId, conversationId, { role: 'agent', content: replyText, sources: sources.length ? sources : null }),
+    saveConversation(tenantId, conversationId, { state, leadId: lead.id, status: convStatus, language: lang }),
+    query(
+      `INSERT INTO agent_execution_logs (tenant_id, conversation_id, turn_index, intent, outcome, provider, latency_ms, trace)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+      [tenantId, conversationId, trace.turn, analysis.intent, outcome, provider.name, trace.latencyMs, trace],
+    ),
+    ...ctx.deferredAudits,
+  ]);
 
   return {
     ...output,

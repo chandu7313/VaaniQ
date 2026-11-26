@@ -1,3 +1,4 @@
+import { AppError } from '../lib/errors.js';
 import { randomUUID } from 'node:crypto';
 import { log } from '../lib/logger.js';
 
@@ -23,9 +24,12 @@ export function errorHandler(err, req, res, _next) {
     return res.status(503).json({ error: { code: 'SERVICE_UNAVAILABLE', message: 'The database is temporarily unavailable. Please try again in a moment.', requestId: req.id } });
   }
   const status = err.status && err.status < 600 ? err.status : 500;
-  if (status >= 500) log.error('unhandled_error', { requestId: req.id, path: req.path, message: err.message, stack: err.stack?.split('\n').slice(0, 4).join(' | ') });
+  // Deliberate application errors (AppError, with a code) keep their user-facing message even when 5xx
+  // (e.g. 502 "speech service unavailable, please type instead"). Unexpected errors never leak internals.
+  const expected = err instanceof AppError;
+  if (status >= 500 && !expected) log.error('unhandled_error', { requestId: req.id, path: req.path, message: err.message, stack: err.stack?.split('\n').slice(0, 4).join(' | ') });
   res.status(status).json({
-    error: { code: status >= 500 ? 'INTERNAL_ERROR' : err.code, message: status >= 500 ? 'Unexpected server error' : err.message, details: err.details, requestId: req.id },
+    error: { code: status >= 500 && !expected ? 'INTERNAL_ERROR' : err.code, message: status >= 500 && !expected ? 'Unexpected server error' : err.message, details: err.details, requestId: req.id },
   });
 }
 

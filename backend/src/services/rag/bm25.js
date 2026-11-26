@@ -4,7 +4,10 @@ const STOP = new Set(['a', 'an', 'the', 'is', 'are', 'am', 'was', 'of', 'in', 'o
   'here', 'also', 'would', 'could', 'should', 'get', 'want', 'need', 'know', 'our', 'your', 'we', 'us', 'they', 'them', 'it', 'its', 'so', 'just', 'like', 'some', 'tell', 'give',
   // buying-conversation filler: says nothing about WHICH document is relevant
   'look', 'looking', 'around', 'purchase', 'purchasing', 'buy', 'buying', 'next', 'arrange', 'plan', 'planning', 'big', 'much', 'many',
-  'sell', 'show', 'see', 'budget', 'when', 'where', 'why', 'who', 'whom', 'each', 'every', 'ok', 'okay', 'hi', 'hello', 'thanks', 'thank', 'yes', 'no', 'kindly', 'may', 'might', 'there', 'their', 'am', 'i']);
+  // romanised Hindi fillers ("3 bhk rate kya hai"): avoid matching incidental glossary rows
+  'kya', 'hai', 'hain', 'ki', 'ka', 'ke', 'ko', 'mein', 'bhi', 'kitni', 'kitna', 'par',
+  'क्या', 'है', 'हैं', 'की', 'का', 'के', 'को', 'में', 'पर', 'भी', 'कोई', 'कितनी', 'कितना', 'होगी', 'होगा',
+  'show', 'see', 'budget', 'when', 'where', 'why', 'who', 'whom', 'each', 'every', 'ok', 'okay', 'hi', 'hello', 'thanks', 'thank', 'yes', 'no', 'kindly', 'may', 'might', 'there', 'their', 'am', 'i']);
 
 export function tokenize(text) {
   const t = text.toLowerCase()
@@ -50,9 +53,17 @@ export class BM25 {
       for (const tok of tokens) tf.set(tok, (tf.get(tok) || 0) + 1);
       return { id: d.id, len: tokens.length, tf };
     });
+    this.byId = new Map(this.docs.map((d) => [d.id, d]));
     this.avgLen = this.docs.reduce((s, d) => s + d.len, 0) / (this.docs.length || 1) || 1;
     this.df = new Map();
     for (const d of this.docs) for (const tok of d.tf.keys()) this.df.set(tok, (this.df.get(tok) || 0) + 1);
+  }
+
+  /** Query terms (known to the corpus, not ubiquitous) that none of the given chunks contain. */
+  uncoveredTerms(query, ids) {
+    const docs = ids.map((id) => this.byId.get(id)).filter(Boolean);
+    return [...new Set(tokenize(query))].filter((t) => /^[a-z0-9]+$/i.test(t) && this.df.has(t) && this.df.get(t) / this.docs.length < 0.5
+      && !docs.some((d) => d.tf.has(t)));
   }
 
   /** True when every content term of the query appears in most chunks (e.g. only the project or company name). */
@@ -70,12 +81,13 @@ export class BM25 {
   search(query, k = 4) {
     const terms = [...new Set(tokenize(query))];
     if (!terms.length) return [];
-    // Relevance ceiling = best score the query could reach. English topic words the knowledge base has
-    // never seen ("helipad", "beach", "stock") also count, so an off-topic question cannot look relevant by
-    // matching one incidental word ("private"). Numbers and non-Latin words (Hindi/Telugu, whose meaning
-    // arrives through query expansion) are not counted: the documents are English.
+    // Relevance ceiling = best score the query could reach over English/numeric terms.
+    // Non-Latin words (Hindi/Telugu, whose meaning arrives via query expansion) are skipped
+    // in the ceiling even if incidental glossary entries exist, unless no Latin/digit terms are present.
     const maxIdf = Math.log(1 + (this.docs.length + 0.5) / 0.5);
-    const ceiling = terms.reduce((s, t) => {
+    const asciiTerms = terms.filter((t) => /^[a-z0-9]+$/i.test(t));
+    const ceilingTerms = asciiTerms.length ? asciiTerms : terms;
+    const ceiling = ceilingTerms.reduce((s, t) => {
       if (this.df.has(t)) return s + this.idf(t) * (this.k1 + 1);
       return /^[a-z]+$/.test(t) ? s + maxIdf * (this.k1 + 1) : s;
     }, 0);

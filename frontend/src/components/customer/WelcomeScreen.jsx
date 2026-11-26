@@ -9,7 +9,7 @@ import {
   MicOff,
   X,
 } from 'lucide-react';
-import { LANG_LABEL } from '../../lib/format';
+import { LANG_LABEL, fmtArea } from '../../lib/format';
 import { DeveloperMark, WaveformIcon } from './BrandHeader';
 
 const NAV_TOPICS = [
@@ -149,7 +149,7 @@ export default function WelcomeScreen({
                 </span>
                 <div className="leading-tight">
                   <div className="text-[13px] font-semibold text-[#202922]">Modern Amenities</div>
-                  <div className="text-xs text-[#657168]">25,000 sq ft Clubhouse</div>
+                  <div className="text-xs text-[#657168]">≈25,000 sq ft Clubhouse (Planned Demo)</div>
                 </div>
               </div>
 
@@ -158,8 +158,8 @@ export default function WelcomeScreen({
                   <ShieldCheck className="size-4.5" />
                 </span>
                 <div className="leading-tight">
-                  <div className="text-[13px] font-semibold text-[#202922]">Verified Facts</div>
-                  <div className="text-xs text-[#657168]">Official Brochure</div>
+                  <div className="text-[13px] font-semibold text-[#202922]">Demo Knowledge Base</div>
+                  <div className="text-xs text-[#657168]">Pending Review · Synthetic Demo Data</div>
                 </div>
               </div>
             </div>
@@ -253,10 +253,10 @@ export default function WelcomeScreen({
               <div className="flex items-center justify-between border-b border-[#E2E4DC] pb-3.5">
                 <div>
                   <h3 className="font-serif text-xl font-medium capitalize text-[#202922]">
-                    {activeTopic} · Verified Project Information
+                    {activeTopic} · Demo Project Information
                   </h3>
                   <p className="text-xs text-[#657168]">
-                    Retrieved directly from ABC Developers’ published brochure documents.
+                    Retrieved from ABC Developers’ demo knowledge base (pending review).
                   </p>
                 </div>
                 <button
@@ -284,7 +284,7 @@ export default function WelcomeScreen({
                       <div className="min-w-0 flex-1">
                         <div className="text-sm font-semibold text-[#202922]">{u.type} Residences</div>
                         <div className="text-xs text-[#657168]">
-                          {u.sizeSqft[0]}–{u.sizeSqft[1]} sq.ft. · {u.bedrooms} Bedrooms
+                          {fmtArea(u)} · {u.bedrooms} Bedrooms
                         </div>
                         <div className="mt-1 font-mono text-sm font-semibold text-[#244D3C]">
                           ₹{u.priceLakh[0]}–{u.priceLakh[1]} Lakhs*
@@ -292,6 +292,9 @@ export default function WelcomeScreen({
                       </div>
                     </div>
                   ))}
+                  <p className="text-[11px] text-[#657168]">
+                    *Indicative base price; additional charges and taxes extra. Areas are approximate built-up areas.
+                  </p>
                 </div>
               )}
 

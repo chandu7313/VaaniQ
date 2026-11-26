@@ -4,16 +4,21 @@
 
 /** Hindi/Telugu/Hinglish surface forms -> English retrieval keywords. */
 export const retrievalSynonyms = {
+  '2bhk 3bhk configuration overview': ['types of apartments', 'apartment types', 'flat types', 'what types', 'configurations', 'options do you have'],
   'sq ft size': ['big', 'size', 'square feet', 'sqft', 'carpet area', 'बड़ा', 'साइज', 'साइज़', 'సైజు', 'ఎంత పెద్ద'],
+  'carpet area': ['कार्पेट एरिया', 'कार्पेट', 'కార్పెట్ ఏరియా', 'కార్పెట్'],
   price: ['cost', 'how much', 'rate', 'कीमत', 'दाम', 'रेट', 'ధర', 'రేటు', 'kimat', 'daam', 'dhara'],
   amenities: ['सुविधा', 'सुविधाएं', 'सुविधाएँ', 'సౌకర్యాలు', 'సదుపాయాలు', 'suvidha'],
   location: ['लोकेशन', 'स्थान', 'पता', 'లొకేషన్', 'ప్రదేశం'],
+  schools: ['स्कूल', 'స్కూల్స్', 'పాఠశాల'],
   possession: ['कब्जा', 'पजेशन', 'స్వాధీనం', 'పొజెషన్'],
   visit: ['विजिट', 'दौरा', 'देखने', 'సందర్శన', 'విజిట్'],
-  loan: ['लोन', 'ऋण', 'లోన్', 'రుణం'],
+  loan: ['लोन', 'ऋण', 'ईएमआई', 'लोन पर', 'లోన్', 'రుణం'],
   rera: ['रेरा', 'రెరా'],
   payment: ['भुगतान', 'చెల్లింపు'],
   parking: ['पार्किंग', 'పార్కింగ్'],
+  'discount offer': ['डिस्काउंट', 'ऑफर', 'छूट', 'డిస్కౌంట్', 'ఆఫర్'],
+  'swimming pool': ['स्विमिंग पूल', 'पूल', 'तैराकी', 'ఈత కొలను', 'స్విమ్మింగ్ పూల్', 'పూల్'],
 };
 
 export const positiveWords = {

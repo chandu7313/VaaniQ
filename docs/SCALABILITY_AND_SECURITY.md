@@ -1,6 +1,6 @@
 # Scalability and Security
 
-> No load tests were run for this MVP. All capacity figures below are **design estimates** to be validated with load testing (for example k6) before any production commitment.
+> A laptop-scale load test has been run (see [LOAD_TEST.md](LOAD_TEST.md)): it validates correctness under concurrency, not production capacity. The capacity figures below remain **design estimates** to be validated with distributed load testing (for example k6) before any production commitment.
 
 ## Part A: Security (implemented)
 
@@ -16,7 +16,7 @@
 | Rate limiting | global 300/min, failed logins 20/15 min, agent turns 60/min | Keyed by client IP (`trust proxy` for nginx/LB); 429s use the JSON error envelope |
 | LLM grounding guard | `agent/responder.js#ungroundedNumbers` | Any number in an LLM answer not present in the retrieved sources (or the question) makes the reply fall back to the verbatim source; prompt forbids calculating figures |
 | Turn serialization | `orchestrator.js#handleTurn` | Same-conversation turns run one at a time (double-clicks, retries); integrity across instances still rests on the booking transaction + unique index |
-| SPA security headers | `frontend/nginx.conf` | CSP, nosniff, Referrer-Policy, Permissions-Policy (config only: not executed, Docker was unavailable) |
+| SPA security headers | `frontend/nginx.conf` | CSP, nosniff, Referrer-Policy, Permissions-Policy (verified in the Docker stack) |
 | Parameterized SQL | all services | No string interpolation of input into SQL |
 | Password storage | `lib/password.js` | scrypt, 16-byte salt, constant-time comparison |
 | Admin auth | `middleware/auth.js` | JWT HS256 with algorithm pinned, 8h expiry; same error for unknown user and wrong password |
@@ -80,7 +80,6 @@ flowchart LR
 | **Multi-tenant isolation** | Today: `tenant_id` on every row + JWT-derived filtering. RLS is enabled (deny-all for non-owner roles). Next: per-tenant RLS **policies** (`SET app.tenant_id`) as a second wall; per-tenant rate limits and LLM quotas (noisy-neighbour protection); dedicated databases for enterprise tenants if required |
 | **Voice at scale** | Browser STT does not scale to phone calls. Production telephony would use a streaming STT/TTS provider via WebSockets/SIP, with media servers sized by **concurrent calls**, not registered users |
 
-### What I would load-test first
-1. Turn endpoint at 20 turns/s in DEMO_MODE (DB-bound baseline).
-2. The same with a mocked LLM adding 1.5 s latency (connection and event-loop behaviour under slow I/O).
-3. 100 concurrent bookings on 10 slots (expect exactly 10 successes, matching the existing concurrency test at a larger scale).
+### Load testing done, and what comes next
+Done ([LOAD_TEST.md](LOAD_TEST.md)): demo-mode turns up to 50 concurrent customers (0 errors), 100 simultaneous bookings on 10 slots (exactly 10 succeed), and 10 simultaneous live-Groq turns. Measured: a distant database (about 288 ms per round trip to Sydney) dominates turn time, so independent queries now run in parallel and tenant settings are cached.
+Next: a distributed test from separate machines, a soak test, a mocked LLM with realistic latency at higher concurrency, and the same against a database in the users' region.

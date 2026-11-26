@@ -1,0 +1,1141 @@
+{
+ "errors": [],
+ "warnings": [
+  "high similarity 0.602 between ABC-GHR-KB-28 and ABC-GHR-KB-29",
+  "64 documents below the 700-word target (min 367, ABC-GHR-KB-59)"
+ ],
+ "info": {
+  "documents": 69,
+  "categories": {
+   "company": 6,
+   "project": 8,
+   "apartments": 6,
+   "amenities": 6,
+   "commercial": 11,
+   "legal": 6,
+   "sales_operations": 9,
+   "customer_support": 11,
+   "post_sales": 6
+  },
+  "words_total": 36886,
+  "words_min": 367,
+  "words_max": 808,
+  "words_mean": 535,
+  "below_700": 64,
+  "word_counts": {
+   "ABC-GHR-KB-01": 808,
+   "ABC-GHR-KB-02": 709,
+   "ABC-GHR-KB-03": 653,
+   "ABC-GHR-KB-04": 742,
+   "ABC-GHR-KB-05": 617,
+   "ABC-GHR-KB-06": 653,
+   "ABC-GHR-KB-07": 675,
+   "ABC-GHR-KB-08": 662,
+   "ABC-GHR-KB-09": 581,
+   "ABC-GHR-KB-10": 526,
+   "ABC-GHR-KB-11": 593,
+   "ABC-GHR-KB-12": 469,
+   "ABC-GHR-KB-13": 430,
+   "ABC-GHR-KB-14": 482,
+   "ABC-GHR-KB-15": 677,
+   "ABC-GHR-KB-16": 600,
+   "ABC-GHR-KB-17": 562,
+   "ABC-GHR-KB-18": 574,
+   "ABC-GHR-KB-19": 716,
+   "ABC-GHR-KB-20": 612,
+   "ABC-GHR-KB-21": 569,
+   "ABC-GHR-KB-22": 568,
+   "ABC-GHR-KB-23": 494,
+   "ABC-GHR-KB-24": 567,
+   "ABC-GHR-KB-25": 540,
+   "ABC-GHR-KB-26": 509,
+   "ABC-GHR-KB-27": 628,
+   "ABC-GHR-KB-28": 509,
+   "ABC-GHR-KB-29": 532,
+   "ABC-GHR-KB-30": 599,
+   "ABC-GHR-KB-31": 549,
+   "ABC-GHR-KB-32": 617,
+   "ABC-GHR-KB-33": 650,
+   "ABC-GHR-KB-34": 473,
+   "ABC-GHR-KB-35": 493,
+   "ABC-GHR-KB-36": 388,
+   "ABC-GHR-KB-37": 475,
+   "ABC-GHR-KB-38": 468,
+   "ABC-GHR-KB-39": 516,
+   "ABC-GHR-KB-40": 511,
+   "ABC-GHR-KB-41": 519,
+   "ABC-GHR-KB-42": 514,
+   "ABC-GHR-KB-43": 410,
+   "ABC-GHR-KB-44": 566,
+   "ABC-GHR-KB-45": 543,
+   "ABC-GHR-KB-46": 371,
+   "ABC-GHR-KB-47": 442,
+   "ABC-GHR-KB-48": 595,
+   "ABC-GHR-KB-49": 426,
+   "ABC-GHR-KB-50": 529,
+   "ABC-GHR-KB-51": 580,
+   "ABC-GHR-KB-52": 381,
+   "ABC-GHR-KB-53": 639,
+   "ABC-GHR-KB-54": 417,
+   "ABC-GHR-KB-55": 422,
+   "ABC-GHR-KB-56": 415,
+   "ABC-GHR-KB-57": 451,
+   "ABC-GHR-KB-58": 437,
+   "ABC-GHR-KB-59": 367,
+   "ABC-GHR-KB-60": 469,
+   "ABC-GHR-KB-61": 711,
+   "ABC-GHR-KB-62": 525,
+   "ABC-GHR-KB-63": 518,
+   "ABC-GHR-KB-64": 475,
+   "ABC-GHR-KB-65": 466,
+   "ABC-GHR-KB-66": 376,
+   "ABC-GHR-KB-67": 451,
+   "ABC-GHR-KB-68": 448,
+   "ABC-GHR-KB-69": 427
+  },
+  "configs": [
+   "amenity_catalog.json",
+   "company_facts.json",
+   "data_authority_registry.json",
+   "escalation_matrix.json",
+   "lead_scoring_rules.json",
+   "pricing_catalog.json",
+   "project_catalog.json",
+   "sales_policy.json"
+  ],
+  "stale_values_in_supersession_context": [
+   "ABC-GHR-KB-15:49 [2BHK area 1,150–1,290]",
+   "ABC-GHR-KB-15:49 [2BHK price ₹68–82L]",
+   "ABC-GHR-KB-16:46 [3BHK area 1,620–1,840]",
+   "ABC-GHR-KB-16:46 [3BHK price ₹88–115L]",
+   "ABC-GHR-KB-26:3 [seed maintenance/corpus]",
+   "ABC-GHR-KB-26:50 [seed maintenance/corpus]",
+   "ABC-GHR-KB-27:9 [2BHK price ₹68–82L]",
+   "ABC-GHR-KB-27:9 [3BHK price ₹88–115L]",
+   "ABC-GHR-KB-29:40 [3BHK price ₹88–115L]",
+   "ABC-GHR-KB-32:37 [seed maintenance/corpus]",
+   "ABC-GHR-KB-34:3 [fictional partner banks]",
+   "ABC-GHR-KB-35:9 [seed discount ₹2 lakh]",
+   "ABC-GHR-KB-36:3 [seed discount ₹2 lakh]",
+   "ABC-GHR-KB-37:3 [seed cancellation 2%]",
+   "ABC-GHR-KB-37:23 [seed cancellation 2%]",
+   "ABC-GHR-KB-37:45 [seed cancellation 2%]",
+   "ABC-GHR-KB-38:3 [placeholder RERA no.]",
+   "ABC-GHR-KB-55:36 [2BHK price ₹68–82L]",
+   "ABC-GHR-KB-55:36 [3BHK price ₹88–115L]",
+   "ABC-GHR-KB-67:3 [seed possession dates]",
+   "ABC-GHR-KB-67:44 [seed possession dates]"
+  ],
+  "stale_values_quoted_in_customer_questions": [
+   "ABC-GHR-KB-35:46 [seed discount ₹2 lakh]",
+   "ABC-GHR-KB-36:41 [seed discount ₹2 lakh]"
+  ],
+  "rupee_amounts": {
+   "67,50,000": 9,
+   "69,00,000": 8,
+   "89,50,000": 9,
+   "92,00,000": 8,
+   "1,00,000": 4,
+   "60,748": 2
+  },
+  "lakh_amount_usage": {
+   "canonical_or_policy": 61,
+   "example_budget": 26,
+   "superseded": 13
+  },
+  "unknown_marker_counts": {
+   "ABC-GHR-KB-01": {
+    "NOT_PROVIDED": 6,
+    "NOT_CONFIGURED": 3,
+    "REQUIRES_HUMAN_CONFIRMATION": 1
+   },
+   "ABC-GHR-KB-02": {
+    "NOT_PROVIDED": 4,
+    "NOT_CONFIGURED": 2,
+    "REQUIRES_HUMAN_CONFIRMATION": 0
+   },
+   "ABC-GHR-KB-03": {
+    "NOT_PROVIDED": 3,
+    "NOT_CONFIGURED": 0,
+    "REQUIRES_HUMAN_CONFIRMATION": 0
+   },
+   "ABC-GHR-KB-04": {
+    "NOT_PROVIDED": 0,
+    "NOT_CONFIGURED": 1,
+    "REQUIRES_HUMAN_CONFIRMATION": 0
+   },
+   "ABC-GHR-KB-05": {
+    "NOT_PROVIDED": 0,
+    "NOT_CONFIGURED": 1,
+    "REQUIRES_HUMAN_CONFIRMATION": 0
+   },
+   "ABC-GHR-KB-06": {
+    "NOT_PROVIDED": 0,
+    "NOT_CONFIGURED": 7,
+    "REQUIRES_HUMAN_CONFIRMATION": 0
+   },
+   "ABC-GHR-KB-07": {
+    "NOT_PROVIDED": 8,
+    "NOT_CONFIGURED": 1,
+    "REQUIRES_HUMAN_CONFIRMATION": 1
+   },
+   "ABC-GHR-KB-08": {
+    "NOT_PROVIDED": 9,
+    "NOT_CONFIGURED": 0,
+    "REQUIRES_HUMAN_CONFIRMATION": 0
+   },
+   "ABC-GHR-KB-09": {
+    "NOT_PROVIDED": 3,
+    "NOT_CONFIGURED": 1,
+    "REQUIRES_HUMAN_CONFIRMATION": 0
+   },
+   "ABC-GHR-KB-10": {
+    "NOT_PROVIDED": 4,
+    "NOT_CONFIGURED": 0,
+    "REQUIRES_HUMAN_CONFIRMATION": 2
+   },
+   "ABC-GHR-KB-11": {
+    "NOT_PROVIDED": 6,
+    "NOT_CONFIGURED": 0,
+    "REQUIRES_HUMAN_CONFIRMATION": 0
+   },
+   "ABC-GHR-KB-12": {
+    "NOT_PROVIDED": 6,
+    "NOT_CONFIGURED": 0,
+    "REQUIRES_HUMAN_CONFIRMATION": 0
+   },
+   "ABC-GHR-KB-13": {
+    "NOT_PROVIDED": 8,
+    "NOT_CONFIGURED": 0,
+    "REQUIRES_HUMAN_CONFIRMATION": 0
+   },
+   "ABC-GHR-KB-14": {
+    "NOT_PROVIDED": 4,
+    "NOT_CONFIGURED": 0,
+    "REQUIRES_HUMAN_CONFIRMATION": 0
+   },
+   "ABC-GHR-KB-15": {
+    "NOT_PROVIDED": 5,
+    "NOT_CONFIGURED": 1,
+    "REQUIRES_HUMAN_CONFIRMATION": 0
+   },
+   "ABC-GHR-KB-16": {
+    "NOT_PROVIDED": 4,
+    "NOT_CONFIGURED": 0,
+    "REQUIRES_HUMAN_CONFIRMATION": 0
+   },
+   "ABC-GHR-KB-17": {
+    "NOT_PROVIDED": 4,
+    "NOT_CONFIGURED": 0,
+    "REQUIRES_HUMAN_CONFIRMATION": 1
+   },
+   "ABC-GHR-KB-18": {
+    "NOT_PROVIDED": 5,
+    "NOT_CONFIGURED": 0,
+    "REQUIRES_HUMAN_CONFIRMATION": 0
+   },
+   "ABC-GHR-KB-19": {
+    "NOT_PROVIDED": 4,
+    "NOT_CONFIGURED": 1,
+    "REQUIRES_HUMAN_CONFIRMATION": 2
+   },
+   "ABC-GHR-KB-20": {
+    "NOT_PROVIDED": 3,
+    "NOT_CONFIGURED": 0,
+    "REQUIRES_HUMAN_CONFIRMATION": 4
+   },
+   "ABC-GHR-KB-21": {
+    "NOT_PROVIDED": 3,
+    "NOT_CONFIGURED": 4,
+    "REQUIRES_HUMAN_CONFIRMATION": 0
+   },
+   "ABC-GHR-KB-22": {
+    "NOT_PROVIDED": 5,
+    "NOT_CONFIGURED": 4,
+    "REQUIRES_HUMAN_CONFIRMATION": 0
+   },
+   "ABC-GHR-KB-23": {
+    "NOT_PROVIDED": 7,
+    "NOT_CONFIGURED": 0,
+    "REQUIRES_HUMAN_CONFIRMATION": 0
+   },
+   "ABC-GHR-KB-24": {
+    "NOT_PROVIDED": 3,
+    "NOT_CONFIGURED": 5,
+    "REQUIRES_HUMAN_CONFIRMATION": 0
+   },
+   "ABC-GHR-KB-25": {
+    "NOT_PROVIDED": 0,
+    "NOT_CONFIGURED": 3,
+    "REQUIRES_HUMAN_CONFIRMATION": 0
+   },
+   "ABC-GHR-KB-26": {
+    "NOT_PROVIDED": 7,
+    "NOT_CONFIGURED": 0,
+    "REQUIRES_HUMAN_CONFIRMATION": 1
+   },
+   "ABC-GHR-KB-27": {
+    "NOT_PROVIDED": 2,
+    "NOT_CONFIGURED": 0,
+    "REQUIRES_HUMAN_CONFIRMATION": 2
+   },
+   "ABC-GHR-KB-28": {
+    "NOT_PROVIDED": 6,
+    "NOT_CONFIGURED": 0,
+    "REQUIRES_HUMAN_CONFIRMATION": 2
+   },
+   "ABC-GHR-KB-29": {
+    "NOT_PROVIDED": 7,
+    "NOT_CONFIGURED": 0,
+    "REQUIRES_HUMAN_CONFIRMATION": 2
+   },
+   "ABC-GHR-KB-30": {
+    "NOT_PROVIDED": 2,
+    "NOT_CONFIGURED": 2,
+    "REQUIRES_HUMAN_CONFIRMATION": 3
+   },
+   "ABC-GHR-KB-31": {
+    "NOT_PROVIDED": 0,
+    "NOT_CONFIGURED": 1,
+    "REQUIRES_HUMAN_CONFIRMATION": 4
+   },
+   "ABC-GHR-KB-32": {
+    "NOT_PROVIDED": 12,
+    "NOT_CONFIGURED": 0,
+    "REQUIRES_HUMAN_CONFIRMATION": 2
+   },
+   "ABC-GHR-KB-33": {
+    "NOT_PROVIDED": 4,
+    "NOT_CONFIGURED": 1,
+    "REQUIRES_HUMAN_CONFIRMATION": 0
+   },
+   "ABC-GHR-KB-34": {
+    "NOT_PROVIDED": 5,
+    "NOT_CONFIGURED": 4,
+    "REQUIRES_HUMAN_CONFIRMATION": 0
+   },
+   "ABC-GHR-KB-35": {
+    "NOT_PROVIDED": 1,
+    "NOT_CONFIGURED": 1,
+    "REQUIRES_HUMAN_CONFIRMATION": 0
+   },
+   "ABC-GHR-KB-36": {
+    "NOT_PROVIDED": 0,
+    "NOT_CONFIGURED": 7,
+    "REQUIRES_HUMAN_CONFIRMATION": 0
+   },
+   "ABC-GHR-KB-37": {
+    "NOT_PROVIDED": 0,
+    "NOT_CONFIGURED": 0,
+    "REQUIRES_HUMAN_CONFIRMATION": 7
+   },
+   "ABC-GHR-KB-38": {
+    "NOT_PROVIDED": 7,
+    "NOT_CONFIGURED": 0,
+    "REQUIRES_HUMAN_CONFIRMATION": 0
+   },
+   "ABC-GHR-KB-39": {
+    "NOT_PROVIDED": 17,
+    "NOT_CONFIGURED": 0,
+    "REQUIRES_HUMAN_CONFIRMATION": 0
+   },
+   "ABC-GHR-KB-40": {
+    "NOT_PROVIDED": 6,
+    "NOT_CONFIGURED": 0,
+    "REQUIRES_HUMAN_CONFIRMATION": 2
+   },
+   "ABC-GHR-KB-41": {
+    "NOT_PROVIDED": 0,
+    "NOT_CONFIGURED": 0,
+    "REQUIRES_HUMAN_CONFIRMATION": 0
+   },
+   "ABC-GHR-KB-42": {
+    "NOT_PROVIDED": 0,
+    "NOT_CONFIGURED": 5,
+    "REQUIRES_HUMAN_CONFIRMATION": 2
+   },
+   "ABC-GHR-KB-43": {
+    "NOT_PROVIDED": 0,
+    "NOT_CONFIGURED": 1,
+    "REQUIRES_HUMAN_CONFIRMATION": 0
+   },
+   "ABC-GHR-KB-44": {
+    "NOT_PROVIDED": 0,
+    "NOT_CONFIGURED": 0,
+    "REQUIRES_HUMAN_CONFIRMATION": 0
+   },
+   "ABC-GHR-KB-45": {
+    "NOT_PROVIDED": 0,
+    "NOT_CONFIGURED": 0,
+    "REQUIRES_HUMAN_CONFIRMATION": 0
+   },
+   "ABC-GHR-KB-46": {
+    "NOT_PROVIDED": 0,
+    "NOT_CONFIGURED": 0,
+    "REQUIRES_HUMAN_CONFIRMATION": 0
+   },
+   "ABC-GHR-KB-47": {
+    "NOT_PROVIDED": 0,
+    "NOT_CONFIGURED": 1,
+    "REQUIRES_HUMAN_CONFIRMATION": 0
+   },
+   "ABC-GHR-KB-48": {
+    "NOT_PROVIDED": 0,
+    "NOT_CONFIGURED": 1,
+    "REQUIRES_HUMAN_CONFIRMATION": 2
+   },
+   "ABC-GHR-KB-49": {
+    "NOT_PROVIDED": 3,
+    "NOT_CONFIGURED": 0,
+    "REQUIRES_HUMAN_CONFIRMATION": 0
+   },
+   "ABC-GHR-KB-50": {
+    "NOT_PROVIDED": 0,
+    "NOT_CONFIGURED": 0,
+    "REQUIRES_HUMAN_CONFIRMATION": 0
+   },
+   "ABC-GHR-KB-51": {
+    "NOT_PROVIDED": 0,
+    "NOT_CONFIGURED": 0,
+    "REQUIRES_HUMAN_CONFIRMATION": 0
+   },
+   "ABC-GHR-KB-52": {
+    "NOT_PROVIDED": 0,
+    "NOT_CONFIGURED": 1,
+    "REQUIRES_HUMAN_CONFIRMATION": 0
+   },
+   "ABC-GHR-KB-53": {
+    "NOT_PROVIDED": 0,
+    "NOT_CONFIGURED": 0,
+    "REQUIRES_HUMAN_CONFIRMATION": 0
+   },
+   "ABC-GHR-KB-54": {
+    "NOT_PROVIDED": 5,
+    "NOT_CONFIGURED": 0,
+    "REQUIRES_HUMAN_CONFIRMATION": 0
+   },
+   "ABC-GHR-KB-55": {
+    "NOT_PROVIDED": 1,
+    "NOT_CONFIGURED": 0,
+    "REQUIRES_HUMAN_CONFIRMATION": 1
+   },
+   "ABC-GHR-KB-56": {
+    "NOT_PROVIDED": 1,
+    "NOT_CONFIGURED": 0,
+    "REQUIRES_HUMAN_CONFIRMATION": 1
+   },
+   "ABC-GHR-KB-57": {
+    "NOT_PROVIDED": 1,
+    "NOT_CONFIGURED": 1,
+    "REQUIRES_HUMAN_CONFIRMATION": 0
+   },
+   "ABC-GHR-KB-58": {
+    "NOT_PROVIDED": 0,
+    "NOT_CONFIGURED": 0,
+    "REQUIRES_HUMAN_CONFIRMATION": 0
+   },
+   "ABC-GHR-KB-59": {
+    "NOT_PROVIDED": 1,
+    "NOT_CONFIGURED": 0,
+    "REQUIRES_HUMAN_CONFIRMATION": 0
+   },
+   "ABC-GHR-KB-60": {
+    "NOT_PROVIDED": 0,
+    "NOT_CONFIGURED": 0,
+    "REQUIRES_HUMAN_CONFIRMATION": 0
+   },
+   "ABC-GHR-KB-61": {
+    "NOT_PROVIDED": 0,
+    "NOT_CONFIGURED": 0,
+    "REQUIRES_HUMAN_CONFIRMATION": 0
+   },
+   "ABC-GHR-KB-62": {
+    "NOT_PROVIDED": 0,
+    "NOT_CONFIGURED": 0,
+    "REQUIRES_HUMAN_CONFIRMATION": 0
+   },
+   "ABC-GHR-KB-63": {
+    "NOT_PROVIDED": 0,
+    "NOT_CONFIGURED": 0,
+    "REQUIRES_HUMAN_CONFIRMATION": 0
+   },
+   "ABC-GHR-KB-64": {
+    "NOT_PROVIDED": 1,
+    "NOT_CONFIGURED": 1,
+    "REQUIRES_HUMAN_CONFIRMATION": 1
+   },
+   "ABC-GHR-KB-65": {
+    "NOT_PROVIDED": 0,
+    "NOT_CONFIGURED": 0,
+    "REQUIRES_HUMAN_CONFIRMATION": 2
+   },
+   "ABC-GHR-KB-66": {
+    "NOT_PROVIDED": 1,
+    "NOT_CONFIGURED": 1,
+    "REQUIRES_HUMAN_CONFIRMATION": 3
+   },
+   "ABC-GHR-KB-67": {
+    "NOT_PROVIDED": 7,
+    "NOT_CONFIGURED": 0,
+    "REQUIRES_HUMAN_CONFIRMATION": 0
+   },
+   "ABC-GHR-KB-68": {
+    "NOT_PROVIDED": 2,
+    "NOT_CONFIGURED": 1,
+    "REQUIRES_HUMAN_CONFIRMATION": 2
+   },
+   "ABC-GHR-KB-69": {
+    "NOT_PROVIDED": 0,
+    "NOT_CONFIGURED": 1,
+    "REQUIRES_HUMAN_CONFIRMATION": 0
+   }
+  },
+  "unknown_marker_totals": {
+   "NOT_PROVIDED": 203,
+   "NOT_CONFIGURED": 64,
+   "REQUIRES_HUMAN_CONFIRMATION": 50
+  },
+  "synthetic_label_count": 165,
+  "kb_cross_references": 304,
+  "orphan_documents": [],
+  "top_similar_pairs": [
+   [
+    0.602,
+    "ABC-GHR-KB-28",
+    "ABC-GHR-KB-29"
+   ],
+   [
+    0.586,
+    "ABC-GHR-KB-15",
+    "ABC-GHR-KB-16"
+   ],
+   [
+    0.547,
+    "ABC-GHR-KB-08",
+    "ABC-GHR-KB-54"
+   ],
+   [
+    0.544,
+    "ABC-GHR-KB-62",
+    "ABC-GHR-KB-63"
+   ],
+   [
+    0.504,
+    "ABC-GHR-KB-33",
+    "ABC-GHR-KB-59"
+   ],
+   [
+    0.421,
+    "ABC-GHR-KB-16",
+    "ABC-GHR-KB-56"
+   ],
+   [
+    0.415,
+    "ABC-GHR-KB-31",
+    "ABC-GHR-KB-58"
+   ],
+   [
+    0.409,
+    "ABC-GHR-KB-28",
+    "ABC-GHR-KB-55"
+   ],
+   [
+    0.375,
+    "ABC-GHR-KB-22",
+    "ABC-GHR-KB-57"
+   ],
+   [
+    0.374,
+    "ABC-GHR-KB-27",
+    "ABC-GHR-KB-55"
+   ]
+  ],
+  "distinct_terms": {
+   "ABC-GHR-KB-01": [
+    "delivered",
+    "cin",
+    "gstin",
+    "identity",
+    "website",
+    "founded"
+   ],
+   "ABC-GHR-KB-02": [
+    "background",
+    "sell",
+    "historical",
+    "funding",
+    "history",
+    "brokers"
+   ],
+   "ABC-GHR-KB-03": [
+    "department",
+    "make",
+    "addresses",
+    "owns",
+    "sheets",
+    "headcount"
+   ],
+   "ABC-GHR-KB-04": [
+    "roles",
+    "responsibilities",
+    "executives",
+    "allocate",
+    "prepares",
+    "coordinator"
+   ],
+   "ABC-GHR-KB-05": [
+    "standards",
+    "honesty",
+    "responsiveness",
+    "voice",
+    "respect",
+    "scarcity"
+   ],
+   "ABC-GHR-KB-06": [
+    "whatsapp",
+    "browser",
+    "voice",
+    "confirmations",
+    "sms",
+    "screen"
+   ],
+   "ABC-GHR-KB-07": [
+    "overview",
+    "towers",
+    "approximately",
+    "brief",
+    "summarises",
+    "anchors"
+   ],
+   "ABC-GHR-KB-08": [
+    "directions",
+    "locality",
+    "pin",
+    "schools",
+    "travel",
+    "distance"
+   ],
+   "ABC-GHR-KB-09": [
+    "floors",
+    "plates",
+    "mix",
+    "facings",
+    "plans",
+    "units"
+   ],
+   "ABC-GHR-KB-10": [
+    "progress",
+    "foundation",
+    "slab",
+    "finishing",
+    "material",
+    "tests"
+   ],
+   "ABC-GHR-KB-11": [
+    "specification",
+    "tiles",
+    "doors",
+    "windows",
+    "kitchen",
+    "counter"
+   ],
+   "ABC-GHR-KB-12": [
+    "feature",
+    "savings",
+    "green",
+    "obtained",
+    "environmental",
+    "clearances"
+   ],
+   "ABC-GHR-KB-13": [
+    "utilities",
+    "internet",
+    "supply",
+    "gas",
+    "meters",
+    "piped"
+   ],
+   "ABC-GHR-KB-14": [
+    "fire",
+    "security",
+    "noc",
+    "cctv",
+    "safety",
+    "tier"
+   ],
+   "ABC-GHR-KB-15": [
+    "second",
+    "basis",
+    "kitchen",
+    "attached",
+    "bathrooms",
+    "balconies"
+   ],
+   "ABC-GHR-KB-16": [
+    "attached",
+    "pooja",
+    "niche",
+    "bathroom",
+    "budgets",
+    "bedrooms"
+   ],
+   "ABC-GHR-KB-17": [
+    "dimensions",
+    "feet",
+    "bedroom",
+    "sizes",
+    "room",
+    "dining"
+   ],
+   "ABC-GHR-KB-18": [
+    "loading",
+    "definitions",
+    "super",
+    "walls",
+    "another",
+    "uds"
+   ],
+   "ABC-GHR-KB-19": [
+    "wheeler",
+    "allotted",
+    "bays",
+    "visitor",
+    "basement",
+    "car"
+   ],
+   "ABC-GHR-KB-20": [
+    "customization",
+    "moving",
+    "structural",
+    "changes",
+    "limited",
+    "tile"
+   ],
+   "ABC-GHR-KB-21": [
+    "recreation",
+    "guests",
+    "games",
+    "guest",
+    "lounge",
+    "operational"
+   ],
+   "ABC-GHR-KB-22": [
+    "equipment",
+    "brands",
+    "pool",
+    "gym",
+    "badminton",
+    "terrace"
+   ],
+   "ABC-GHR-KB-23": [
+    "landscape",
+    "outdoor",
+    "tree",
+    "measurements",
+    "length",
+    "walking"
+   ],
+   "ABC-GHR-KB-24": [
+    "creche",
+    "supervision",
+    "schools",
+    "school",
+    "features",
+    "family"
+   ],
+   "ABC-GHR-KB-25": [
+    "bye",
+    "laws",
+    "festival",
+    "store",
+    "convenience",
+    "timings"
+   ],
+   "ABC-GHR-KB-26": [
+    "agency",
+    "fund",
+    "corpus",
+    "initial",
+    "operation",
+    "management"
+   ],
+   "ABC-GHR-KB-27": [
+    "qualifiers",
+    "inclusive",
+    "payable",
+    "ranges",
+    "validity",
+    "prices"
+   ],
+   "ABC-GHR-KB-28": [
+    "lowest",
+    "range",
+    "gst",
+    "taxes",
+    "deposit",
+    "lakh"
+   ],
+   "ABC-GHR-KB-29": [
+    "exclusions",
+    "range",
+    "fit",
+    "payable",
+    "rise",
+    "lakh"
+   ],
+   "ABC-GHR-KB-30": [
+    "slab",
+    "demand",
+    "instalments",
+    "milestone",
+    "due",
+    "reached"
+   ],
+   "ABC-GHR-KB-31": [
+    "token",
+    "reserves",
+    "involves",
+    "online",
+    "hold",
+    "against"
+   ],
+   "ABC-GHR-KB-32": [
+    "connections",
+    "tax",
+    "categories",
+    "gst",
+    "fee",
+    "rate"
+   ],
+   "ABC-GHR-KB-33": [
+    "formula",
+    "sanction",
+    "disbursement",
+    "emi",
+    "illustration",
+    "banks"
+   ],
+   "ABC-GHR-KB-34": [
+    "partner",
+    "tie",
+    "banks",
+    "apf",
+    "banking",
+    "lender"
+   ],
+   "ABC-GHR-KB-35": [
+    "concession",
+    "reasons",
+    "concessions",
+    "festive",
+    "case",
+    "competitor"
+   ],
+   "ABC-GHR-KB-36": [
+    "promotion",
+    "referral",
+    "offers",
+    "festive",
+    "special",
+    "end"
+   ],
+   "ABC-GHR-KB-37": [
+    "cancellation",
+    "refund",
+    "cancel",
+    "timelines",
+    "account",
+    "cancellations"
+   ],
+   "ABC-GHR-KB-38": [
+    "declared",
+    "website",
+    "validity",
+    "rera",
+    "telangana",
+    "registration"
+   ],
+   "ABC-GHR-KB-39": [
+    "title",
+    "certificate",
+    "litigation",
+    "sanction",
+    "noc",
+    "development"
+   ],
+   "ABC-GHR-KB-40": [
+    "sequence",
+    "clauses",
+    "deed",
+    "sign",
+    "draft",
+    "order"
+   ],
+   "ABC-GHR-KB-41": [
+    "disclosures",
+    "rights",
+    "case",
+    "disclosure",
+    "talking",
+    "grievances"
+   ],
+   "ABC-GHR-KB-42": [
+    "retention",
+    "delete",
+    "stored",
+    "audio",
+    "protection",
+    "traces"
+   ],
+   "ABC-GHR-KB-43": [
+    "speculate",
+    "decline",
+    "distress",
+    "title",
+    "allowed",
+    "routing"
+   ],
+   "ABC-GHR-KB-44": [
+    "workflow",
+    "turn",
+    "retrieved",
+    "enquiry",
+    "memory",
+    "implemented"
+   ],
+   "ABC-GHR-KB-45": [
+    "evidence",
+    "scoring",
+    "score",
+    "weights",
+    "scores",
+    "llm"
+   ],
+   "ABC-GHR-KB-46": [
+    "pipeline",
+    "lost",
+    "statuses",
+    "criteria",
+    "downstream",
+    "stages"
+   ],
+   "ABC-GHR-KB-47": [
+    "cadence",
+    "opt",
+    "stop",
+    "honoured",
+    "maximum",
+    "update"
+   ],
+   "ABC-GHR-KB-48": [
+    "sunday",
+    "ahead",
+    "default",
+    "sample",
+    "special",
+    "procedure"
+   ],
+   "ABC-GHR-KB-49": [
+    "competitor",
+    "objection",
+    "patterns",
+    "objections",
+    "concern",
+    "investment"
+   ],
+   "ABC-GHR-KB-50": [
+    "normal",
+    "day",
+    "high",
+    "trigger",
+    "priority",
+    "targets"
+   ],
+   "ABC-GHR-KB-51": [
+    "dialogues",
+    "scenario",
+    "scenarios",
+    "examples",
+    "shall",
+    "today"
+   ],
+   "ABC-GHR-KB-52": [
+    "performance",
+    "targets",
+    "becoming",
+    "aims",
+    "levels",
+    "escalations"
+   ],
+   "ABC-GHR-KB-53": [
+    "twenty",
+    "topic",
+    "more",
+    "faqs",
+    "deeper",
+    "compact"
+   ],
+   "ABC-GHR-KB-54": [
+    "travel",
+    "distance",
+    "nearby",
+    "western",
+    "distances",
+    "infrastructure"
+   ],
+   "ABC-GHR-KB-55": [
+    "include",
+    "crore",
+    "lakh",
+    "gst",
+    "totals",
+    "starting"
+   ],
+   "ABC-GHR-KB-56": [
+    "pooja",
+    "views",
+    "balconies",
+    "niche",
+    "corner",
+    "floors"
+   ],
+   "ABC-GHR-KB-57": [
+    "amenities",
+    "amenity",
+    "pool",
+    "swimming",
+    "bookable",
+    "party"
+   ],
+   "ABC-GHR-KB-58": [
+    "reserved",
+    "ahead",
+    "online",
+    "book",
+    "token",
+    "days"
+   ],
+   "ABC-GHR-KB-59": [
+    "benefits",
+    "emi",
+    "banks",
+    "financing",
+    "illustration",
+    "lender"
+   ],
+   "ABC-GHR-KB-60": [
+    "library",
+    "theme",
+    "hai",
+    "objection",
+    "objections",
+    "too"
+   ],
+   "ABC-GHR-KB-61": [
+    "glossary",
+    "romanised",
+    "entha",
+    "kal",
+    "translated",
+    "english"
+   ],
+   "ABC-GHR-KB-62": [
+    "mixed",
+    "english",
+    "telugu",
+    "natural",
+    "intact",
+    "literal"
+   ],
+   "ABC-GHR-KB-63": [
+    "hindi",
+    "english",
+    "preserve",
+    "moved",
+    "gender",
+    "neutral"
+   ],
+   "ABC-GHR-KB-64": [
+    "relationship",
+    "procedure",
+    "receipt",
+    "allotment",
+    "welcome",
+    "letter"
+   ],
+   "ABC-GHR-KB-65": [
+    "proof",
+    "passport",
+    "nri",
+    "applicant",
+    "card",
+    "aadhaar"
+   ],
+   "ABC-GHR-KB-66": [
+    "progress",
+    "update",
+    "photographs",
+    "updates",
+    "milestone",
+    "latest"
+   ],
+   "ABC-GHR-KB-67": [
+    "keys",
+    "december",
+    "inspect",
+    "procedure",
+    "occupancy",
+    "certificate"
+   ],
+   "ABC-GHR-KB-68": [
+    "manufacturer",
+    "defect",
+    "warranties",
+    "defects",
+    "liability",
+    "repair"
+   ],
+   "ABC-GHR-KB-69": [
+    "log",
+    "avenues",
+    "blame",
+    "aims",
+    "complain",
+    "complaint"
+   ]
+  },
+  "duplicate_long_sentences": [
+   [
+    2,
+    "Values are mastered in config/project_catalog.json and config/pricing_catalog.json ."
+   ],
+   [
+    2,
+    "Facts used: 3BHK ≈1,560 sq.ft built-up at ₹89.5–92 lakh and 2BHK ≈1,180 sq.ft built-up at ₹67.5–69 lakh (CANON"
+   ],
+   [
+    2,
+    "Additional charges, taxes and the final amount are NOT_PROVIDED / REQUIRES_HUMAN_CONFIRMATION ."
+   ]
+  ],
+  "duplicate_long_sentence_count": 3,
+  "evaluation_cases": {
+   "conflict_queries.jsonl": 10,
+   "factual_queries.jsonl": 15,
+   "multilingual_queries.jsonl": 12,
+   "paraphrase_queries.jsonl": 12,
+   "tool_routing_queries.jsonl": 10,
+   "unsupported_queries.jsonl": 10
+  },
+  "evaluation_total": 69,
+  "by_authority": {
+   "3": 36,
+   "2": 28,
+   "4": 5
+  },
+  "by_scope": {
+   "customer_facing": 53,
+   "agent_internal": 16
+  }
+ }
+}

@@ -44,7 +44,12 @@ export async function executeTool(ctx, name, rawArgs, reason) {
   const record = { tool: name, actor: ctx.actor, reason, args: rawArgs, validation: { ok: false, checks: [] } };
   const finish = async (status, extra, args) => {
     Object.assign(record, extra, { status, ok: status === 'success', durationMs: Date.now() - started });
-    if (ctx.tenantId) await audit(ctx, record, args ?? rawArgs);
+    if (ctx.tenantId) {
+      // The agent defers audit writes to the end of its turn (written in parallel with the final saves);
+      // staff actions write theirs immediately. Either way every attempt is audited.
+      const write = audit({ ...ctx }, record, args ?? rawArgs);
+      if (Array.isArray(ctx.deferredAudits)) ctx.deferredAudits.push(write); else await write;
+    }
     return record;
   };
   const reject = (code, message) => finish('rejected', { error: { code, message } });
@@ -62,6 +67,9 @@ export async function executeTool(ctx, name, rawArgs, reason) {
   record.validation.checks.push('actor authorized');
 
   for (const resource of def.scope) {
+    const idKey = resource === 'lead' ? 'leadId' : 'conversationId';
+    // Already loaded through a tenant-scoped query in this turn: no need for another round trip.
+    if (ctx.verified && ctx[idKey] && ctx.verified[idKey] === ctx[idKey]) continue;
     const r = await EXISTS[resource](ctx);
     if (!r || !r.rowCount) return reject('FORBIDDEN', `${resource} does not belong to this tenant`);
   }

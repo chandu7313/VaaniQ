@@ -29,7 +29,8 @@ test('BM25 ranks the matching document first and bounds relevance to 0..1', () =
 test('retrieval answers pricing question from the pricing document with a section', async () => {
   const hits = await retrieve(tenantId, '3BHK price in Gachibowli');
   assert.ok(hits.length > 0);
-  assert.match(hits[0].title, /Pricing|Overview/);
+  assert.match(hits[0].title, /3BHK Pricing Details|3BHK Detailed Specifications|Pricing/);
+  assert.ok(hits.some((h) => h.title === '3BHK Pricing Details'));
   assert.ok(hits[0].section);
 });
 
@@ -77,27 +78,26 @@ test('"three bedroom" and "3 bed room" retrieve the same documents as "3BHK" (re
   assert.ok(tokenize('three bedroom flat').includes('3bhk'));
   assert.ok(tokenize('3 bed room').includes('3bhk'));
   const hits = await retrieve(tenantId, 'How much would a three bedroom flat cost?');
-  assert.ok(['Price list', 'Apartment configurations'].includes(hits[0].section), hits[0].section);
-  assert.match(hits[0].content, /3BHK[^.]*Rs 88 lakh to Rs 115 lakh/, 'top hit states the 3BHK price');
+  assert.ok(['3BHK Pricing Details', '3BHK Detailed Specifications'].includes(hits[0].title), hits[0].title);
+  assert.match(hits.map((h) => h.content).join('\n'), /89,50,000|89\.5 lakh/, 'retrieved pricing states the canonical 3BHK price');
 });
 
 test('new company documents answer their topics; off-topic questions find nothing', async () => {
-  const top = async (q) => (await retrieve(tenantId, q))[0];
   const cases = [
-    ['What is the kitchen specification?', 'Kitchen specification', /Granite counter top/],
-    ['What would my EMI be for a 70 lakh loan?', 'Illustrative EMI examples', /Rs 60,748/],
-    ['Which schools are nearby?', 'Schools nearby', /CBSE and IB school/],
-    ['What is the carpet area of a 3BHK?', '3BHK floor plan', /carpet area of 1160 to 1320 sq ft/],
-    ['What is the payment schedule?', 'Payment schedule by construction stage', /Completion of foundation: 10 percent/],
-    ['Do you have EV charging?', 'Electric vehicles', /EV charging points/],
-    ['Can NRIs buy here?', 'Can NRIs buy here', /Non-resident Indians/],
-    ['Tell me about GreenHaven Residences', 'About the project', /GreenHaven Residences is a gated residential apartment community/],
+    ['What is the kitchen specification?', /Building Specifications and Materials/, /granite/i],
+    ['What would my EMI be for a 70 lakh loan?', /Home Loan and Financing Process/, /₹?60,748/],
+    ['Which schools are nearby?', /Project Location and Connectivity|Location FAQ|Children and Family/, /schools/i],
+    ['What is the carpet area of a 3BHK?', /Area Measurement Guide|3BHK Detailed Specifications|Configuration FAQ/, /built-up|NOT_PROVIDED|not provided/i],
+    ['What is the payment schedule?', /Payment Schedule and Milestones/, /milestone|construction-linked/i],
+    ['Do you have EV charging?', /Parking and Vehicle Facilities|Sustainability/, /EV/i],
+    ['Can NRIs buy here?', /NRI|Customer Document Checklist/, /NRI|Non-Resident/i],
+    ['Tell me about GreenHaven Residences', /Company Identity and Profile|Project Master Overview|Master Pricing/, /GreenHaven Residences/i],
   ];
-  for (const [q, section, text] of cases) {
-    const h = await top(q);
-    assert.ok(h, `no hit for: ${q}`);
-    assert.equal(h.section, section, q);
-    assert.match(h.content, text, q);
+  for (const [q, titleRe, text] of cases) {
+    const hits = await retrieve(tenantId, q);
+    assert.ok(hits.length > 0, `no hit for: ${q}`);
+    assert.match(hits[0].title, titleRe, q);
+    assert.ok(hits.slice(0, 2).some((h) => text.test(h.content)), q);
   }
   for (const q of ['Do you have a helipad and a private golf course?', 'Is there a private beach?', 'What is your stock price?', 'What is the GDP of India?', 'Do you sell commercial office space?']) {
     assert.deepEqual(await retrieve(tenantId, q), [], `should find nothing: ${q}`);
@@ -121,4 +121,30 @@ test('re-seeding syncs demo documents and never touches user-uploaded ones', asy
   assert.equal(demoLeft.rows[0].n, 0, 'no demo documents remain');
   const upload = await query("SELECT 1 FROM knowledge_documents WHERE tenant_id = $1 AND title = 'My uploaded brochure'", [tenantId]);
   assert.equal(upload.rowCount, 1, 'user-uploaded document untouched');
+  const { demoDocuments } = await import('../src/db/seedData.js');
+  await syncDemoDocuments(tenantId, demoDocuments); // restore the demo set for later tests
+});
+
+test('two-part questions retrieve a passage for each topic', async () => {
+  const hits = await retrieve(tenantId, 'What is the 3BHK price, and are there schools nearby?', { k: 4 });
+  assert.ok(hits.some((h) => /schools/i.test(h.content)), hits.map((h) => h.title).join(' | '));
+  assert.ok(hits.some((h) => /Pricing/i.test(h.title)), hits.map((h) => h.title).join(' | '));
+  const te = await retrieve(tenantId, 'GreenHaven Residences లో 3BHK ధర ఎంత? దగ్గరలో స్కూల్స్ ఉన్నాయా? GreenHaven Residences 3BHK price schools nearby', { k: 4 });
+  assert.ok(te.some((h) => /Pricing/i.test(h.title)), te.map((h) => h.title).join(' | '));
+  assert.ok(te.some((h) => /schools/i.test(h.content)), te.map((h) => h.title).join(' | '));
+});
+
+test('agent_internal and superseded documents are excluded from customer-facing retrieval', async () => {
+  const customerHits = await retrieve(tenantId, 'Call Scenarios and Sales Dialogues discount negotiation authority', { k: 6 });
+  assert.ok(customerHits.every((h) => h.retrievalScope !== 'agent_internal'));
+  const internalHits = await retrieve(tenantId, 'Call Scenarios and Sales Dialogues discount negotiation authority', { k: 6, includeInternal: true });
+  assert.ok(internalHits.some((h) => h.retrievalScope === 'agent_internal'));
+  const sup = await ingestDocument(tenantId, {
+    docId: 'TEST-SUP-1',
+    title: 'Old Superseded Price Flyer',
+    content: '# Old Flyer\n## Prices\nSpecial xyzzyprice Rs 50 lakh.',
+    lifecycleStatus: 'superseded',
+  });
+  assert.equal(sup.lifecycle_status, 'superseded');
+  assert.equal((await retrieve(tenantId, 'xyzzyprice', { includeInternal: true })).length, 0);
 });

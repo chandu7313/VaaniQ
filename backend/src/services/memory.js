@@ -17,17 +17,17 @@ export async function startConversation(tenantId, { leadId, language = 'en', cha
 }
 
 export async function loadSession(tenantId, conversationId) {
-  const { rows } = await query(
+  // Both queries are tenant-scoped and independent, so they run in parallel (one round trip, not two).
+  const [{ rows }, history] = await Promise.all([query(
     `SELECT id, lead_id, language, channel, status, state, started_at, ended_at FROM conversations WHERE tenant_id=$1 AND id=$2`,
     [tenantId, conversationId],
-  );
-  if (!rows[0]) throw notFound('Conversation');
-  const history = await query(
+  ), query(
     `SELECT role, content, sentiment, sentiment_confidence, created_at FROM (
        SELECT role, content, sentiment, sentiment_confidence, created_at FROM messages
         WHERE tenant_id=$1 AND conversation_id=$2 ORDER BY created_at DESC LIMIT $3) h ORDER BY created_at ASC`,
     [tenantId, conversationId, HISTORY_WINDOW],
-  );
+  )]);
+  if (!rows[0]) throw notFound('Conversation');
   return { conversation: rows[0], history: history.rows };
 }
 

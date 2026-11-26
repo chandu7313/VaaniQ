@@ -39,19 +39,19 @@ test('public overview resolves allowed slug only and hides internal policies', a
   assert.ok(ok.body.data.tenant.units.length >= 2);
   assert.ok(ok.body.data.availableSlots.length > 0);
   assert.ok(
-    !ok.body.data.highlights.some((h) => /sales and booking policies/i.test(h.title)),
+    !ok.body.data.highlights.some((h) => /sales and booking policies|escalation matrix|call scenarios|objection/i.test(h.title)),
     'internal policy documents must not be exposed publicly',
   );
 });
 
 test('public knowledge search excludes internal policies', async () => {
   const res = await req('POST', '/public/abc-developers/knowledge/search', {
-    query: 'cancellation refund token discount negotiation policy',
+    query: 'cancellation refund token discount negotiation policy call scenarios objection',
     k: 6,
   });
   assert.equal(res.status, 200);
   assert.ok(
-    !res.body.data.some((h) => /sales and booking policies/i.test(h.title)),
+    !res.body.data.some((h) => /sales and booking policies|escalation matrix|call scenarios|objection|negotiation authority/i.test(h.title)),
     'internal sales policy chunks must be filtered from public RAG search',
   );
 });

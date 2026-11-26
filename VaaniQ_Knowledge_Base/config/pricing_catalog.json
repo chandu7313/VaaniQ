@@ -1,0 +1,135 @@
+{
+  "schema_version": "1.0",
+  "file_id": "ABC-GHR-CFG-03",
+  "tenant_slug": "abc-developers",
+  "fictional_demo_data": true,
+  "authority_level": 1,
+  "last_updated": "2026-11-26",
+  "approval_status": "PENDING_REVIEW",
+  "retrievable_by_rag": true,
+  "currency": "INR",
+  "price_basis": {
+    "value": "Base price, before additional charges and taxes",
+    "status": "CANONICAL",
+    "source": "knowledge-base brief 2026-11-26 (canonical starting facts)"
+  },
+  "price_status": {
+    "value": "Indicative",
+    "status": "CANONICAL",
+    "source": "knowledge-base brief 2026-11-26 (canonical starting facts)",
+    "note": "Ranges are indicative. Final unit price comes from an approved cost sheet issued by the sales team."
+  },
+  "unit_pricing": {
+    "2BHK": {
+      "base_price_min_inr": {
+        "value": 6750000,
+        "status": "CANONICAL",
+        "source": "knowledge-base brief 2026-11-26 (canonical starting facts)"
+      },
+      "base_price_max_inr": {
+        "value": 6900000,
+        "status": "CANONICAL",
+        "source": "knowledge-base brief 2026-11-26 (canonical starting facts)"
+      },
+      "display": {
+        "value": "₹67,50,000 – ₹69,00,000",
+        "status": "CANONICAL",
+        "source": "knowledge-base brief 2026-11-26 (canonical starting facts)"
+      }
+    },
+    "3BHK": {
+      "base_price_min_inr": {
+        "value": 8950000,
+        "status": "CANONICAL",
+        "source": "knowledge-base brief 2026-11-26 (canonical starting facts)"
+      },
+      "base_price_max_inr": {
+        "value": 9200000,
+        "status": "CANONICAL",
+        "source": "knowledge-base brief 2026-11-26 (canonical starting facts)"
+      },
+      "display": {
+        "value": "₹89,50,000 – ₹92,00,000",
+        "status": "CANONICAL",
+        "source": "knowledge-base brief 2026-11-26 (canonical starting facts)"
+      }
+    }
+  },
+  "variation_factors": {
+    "value": [
+      "floor",
+      "facing",
+      "unit position"
+    ],
+    "status": "SYNTHETIC_DEMO_ASSUMPTION",
+    "source": "VaaniQ seed data (backend/src/db/seedData.js), carried forward as synthetic",
+    "note": "Explains why a range exists; amounts per factor are NOT_PROVIDED."
+  },
+  "floor_rise_charge": {
+    "value": null,
+    "status": "NOT_PROVIDED",
+    "source": ""
+  },
+  "preferred_location_charge": {
+    "value": null,
+    "status": "NOT_PROVIDED",
+    "source": ""
+  },
+  "car_parking_charge": {
+    "value": null,
+    "status": "NOT_PROVIDED",
+    "source": ""
+  },
+  "clubhouse_membership_charge": {
+    "value": null,
+    "status": "NOT_PROVIDED",
+    "source": ""
+  },
+  "maintenance_deposit": {
+    "value": null,
+    "status": "NOT_PROVIDED",
+    "source": ""
+  },
+  "corpus_fund": {
+    "value": null,
+    "status": "NOT_PROVIDED",
+    "source": ""
+  },
+  "gst": {
+    "value": null,
+    "status": "NOT_PROVIDED",
+    "source": "",
+    "note": "Taxes as per applicable law at the time of payment; never quote a rate or amount."
+  },
+  "stamp_duty_and_registration": {
+    "value": null,
+    "status": "NOT_PROVIDED",
+    "source": "",
+    "note": "Statutory; payable as per applicable law. Never quote amounts."
+  },
+  "final_payable_amount": {
+    "value": null,
+    "status": "REQUIRES_HUMAN_CONFIRMATION",
+    "source": "",
+    "note": "Only an approved cost sheet from the sales team states a final amount."
+  },
+  "price_validity": {
+    "value": null,
+    "status": "REQUIRES_HUMAN_CONFIRMATION",
+    "source": ""
+  },
+  "superseded_values": [
+    {
+      "field": "2BHK price range",
+      "old_value": "₹68–82 lakh",
+      "source": "seed / live tenant catalog",
+      "status": "SUPERSEDED_BY_CANONICAL"
+    },
+    {
+      "field": "3BHK price range",
+      "old_value": "₹88–115 lakh",
+      "source": "seed / live tenant catalog",
+      "status": "SUPERSEDED_BY_CANONICAL"
+    }
+  ]
+}

@@ -1,0 +1,131 @@
+{
+  "schema_version": "1.0",
+  "file_id": "ABC-GHR-CFG-06",
+  "tenant_slug": "abc-developers",
+  "fictional_demo_data": true,
+  "authority_level": 1,
+  "last_updated": "2026-11-26",
+  "approval_status": "PENDING_REVIEW",
+  "retrievable_by_rag": false,
+  "rules": [
+    {
+      "id": "ESC-01",
+      "trigger": "customer_requests_human",
+      "examples": [
+        "talk to a person",
+        "call me back"
+      ],
+      "route_to": "sales_executive",
+      "priority": "high",
+      "response_target": "within 1 business hour",
+      "ai_response": "Confirm a colleague will call; collect a preferred time."
+    },
+    {
+      "id": "ESC-02",
+      "trigger": "legal_or_regulatory_question",
+      "examples": [
+        "RERA number",
+        "title documents",
+        "approvals",
+        "litigation"
+      ],
+      "route_to": "legal_and_compliance_team",
+      "priority": "high",
+      "response_target": "within 1 business day",
+      "ai_response": "Say the information must come from an authorised representative; do not speculate."
+    },
+    {
+      "id": "ESC-03",
+      "trigger": "possession_or_handover_date",
+      "examples": [
+        "when will I get possession"
+      ],
+      "route_to": "project_team",
+      "priority": "normal",
+      "response_target": "within 1 business day",
+      "ai_response": "Say possession dates are confirmed only by the project team in writing."
+    },
+    {
+      "id": "ESC-04",
+      "trigger": "discount_or_negotiation_request",
+      "examples": [
+        "best price",
+        "any discount"
+      ],
+      "route_to": "sales_manager",
+      "priority": "normal",
+      "response_target": "within 1 business day",
+      "ai_response": "Explain the AI cannot negotiate; offer a callback from the sales manager."
+    },
+    {
+      "id": "ESC-05",
+      "trigger": "final_cost_or_taxes",
+      "examples": [
+        "final price including GST",
+        "registration charges"
+      ],
+      "route_to": "sales_executive",
+      "priority": "normal",
+      "response_target": "within 1 business day",
+      "ai_response": "Offer an approved cost sheet from the sales team."
+    },
+    {
+      "id": "ESC-06",
+      "trigger": "complaint_or_negative_sentiment",
+      "examples": [
+        "very unhappy",
+        "complaint"
+      ],
+      "route_to": "customer_care_lead",
+      "priority": "high",
+      "response_target": "within 4 business hours",
+      "ai_response": "Acknowledge, apologise for the experience, log the complaint, escalate."
+    },
+    {
+      "id": "ESC-07",
+      "trigger": "loan_approval_or_eligibility",
+      "examples": [
+        "will my loan be approved"
+      ],
+      "route_to": "sales_executive",
+      "priority": "normal",
+      "response_target": "within 1 business day",
+      "ai_response": "Explain approval is decided only by the lender."
+    },
+    {
+      "id": "ESC-08",
+      "trigger": "information_not_in_knowledge_base",
+      "examples": [
+        "unsupported question"
+      ],
+      "route_to": "sales_executive",
+      "priority": "low",
+      "response_target": "within 1 business day",
+      "ai_response": "Say verified information is not available; offer a follow-up."
+    },
+    {
+      "id": "ESC-09",
+      "trigger": "data_privacy_request",
+      "examples": [
+        "delete my data",
+        "stop calling me"
+      ],
+      "route_to": "data_protection_contact",
+      "priority": "high",
+      "response_target": "within 2 business days",
+      "ai_response": "Confirm the request is recorded; stop marketing contact."
+    },
+    {
+      "id": "ESC-10",
+      "trigger": "booking_cancellation_or_refund",
+      "examples": [
+        "cancel my booking",
+        "refund"
+      ],
+      "route_to": "crm_and_accounts",
+      "priority": "high",
+      "response_target": "within 1 business day",
+      "ai_response": "Explain terms follow the signed agreement; escalate."
+    }
+  ]
+}

@@ -182,8 +182,14 @@ export default function Settings() {
         <Card title="Browser voice diagnostics" subtitle="Detected live from Web Speech APIs">
           <div className="space-y-2">
             <Check ok={stt.supported}>
-              Speech-to-text (Web Speech recognition)
-              {!stt.supported && ': use Chrome or Edge, or type'}
+              Speech-to-text in the browser (Web Speech recognition)
+              {!stt.supported && ': not available in this browser'}
+            </Check>
+            <Check ok={Boolean(meta?.speech?.serverTranscription)}>
+              Server transcription fallback:{' '}
+              {meta?.speech?.serverTranscription
+                ? `available (${meta.speech.model}); used automatically when the browser cannot recognise speech or the selected language`
+                : 'not configured (needs LLM_PROVIDER=groq with an API key)'}
             </Check>
             <Check ok={permission === 'granted'} unknown={permission === 'unknown' || permission === 'prompt'}>
               Microphone permission:{' '}
@@ -202,15 +208,26 @@ export default function Settings() {
                   : 'not installed (text only)'}
               </Check>
             ))}
+            {Object.keys(LANG_LABEL).some((l) => !tts.hasVoice(BCP47[l])) && tts.supported && (
+              <div className="mt-3 rounded-lg border border-line p-3 text-[13px] leading-relaxed text-ink-muted">
+                <div className="mb-1 font-medium text-ink">How to install a missing voice (then restart the browser)</div>
+                <ul className="list-disc space-y-1 pl-4">
+                  <li><b>macOS:</b> System Settings → Accessibility → Spoken Content → System voice → Manage Voices → add <i>Lekha</i> (Hindi) or <i>Geeta</i> (Telugu).</li>
+                  <li><b>Windows:</b> Settings → Time &amp; language → Speech → Add voices (Hindi is available; Telugu depends on the Windows version).</li>
+                  <li><b>Android (Chrome):</b> Settings → Accessibility → Text-to-speech → Google speech engine → Install voice data → Hindi / Telugu.</li>
+                </ul>
+                <div className="mt-1">Spoken replies need a voice on this device; without one, replies are still shown as text.</div>
+              </div>
+            )}
             <p className="pt-3 text-[13px] leading-relaxed text-ink-muted">
-              Recognition accuracy for Hindi and Telugu depends on browser speech services. Sentiment is computed strictly from transcript text.
+              Recognition accuracy for Hindi and Telugu depends on the browser's speech service; if it cannot handle a language, the server fallback is used. Sentiment is computed strictly from transcript text.
             </p>
           </div>
 
           <div className="mt-5 flex items-start gap-3 rounded-lg border border-success-border bg-success-soft p-3.5 text-[13px] leading-relaxed text-success">
             <ShieldCheck className="mt-0.5 size-4.5 shrink-0" />
             <span>
-              No voice audio is recorded or stored by VaaniQ. Only recognised text transcripts are transmitted to the server.
+              VaaniQ never stores voice audio. In the browser mode only the recognised text is sent; in the server-transcription fallback the short clip is sent once, transcribed in memory by Groq Whisper, and discarded.
             </span>
           </div>
         </Card>

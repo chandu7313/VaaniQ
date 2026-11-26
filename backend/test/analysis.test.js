@@ -76,7 +76,7 @@ test('lead score for the scenario is explainable and lists missing info', () => 
   assert.equal(s.total, 74);
   assert.equal(s.classification, 'warm');
   assert.ok(s.missing.includes('decisionMaker'));
-  assert.match(s.factors[0].reason, /3BHK range ₹88–115 lakh/);
+  assert.match(s.factors[0].reason, /3BHK range ₹89\.5–92 lakh/);
 });
 
 test('empty profile scores 0 and booking adds full appointment points', () => {
@@ -87,8 +87,10 @@ test('empty profile scores 0 and booking adds full appointment points', () => {
 });
 
 test('budget below range earns partial points', () => {
-  const s = scoreLead({ bedrooms: 3, budgetMax: 8000000 }, { catalog: demoTenantSettings.catalog });
-  assert.equal(s.factors[0].points, 18); // 80L is 9% below 88L
+  const s = scoreLead({ bedrooms: 3, budgetMax: 8200000 }, { catalog: demoTenantSettings.catalog });
+  assert.equal(s.factors[0].points, 18); // 82L is 8.4% below 89.5L
+  const sLower = scoreLead({ bedrooms: 3, budgetMax: 8000000 }, { catalog: demoTenantSettings.catalog });
+  assert.equal(sLower.factors[0].points, 10); // 80L is 10.6% below 89.5L
 });
 
 test('"I\'m <Name>" is a name, "I am looking" is not (regression)', () => {
@@ -113,7 +115,7 @@ test('every factor lists its evidence; no evidence means no points; next action 
   const s = scoreLead(p, { catalog: demoTenantSettings.catalog, scoring: demoTenantSettings.scoring });
   const by = Object.fromEntries(s.factors.map((f) => [f.key, f]));
   assert.deepEqual(by.budget.evidence.map((e) => e.field), ['budgetMax', 'priceRangeLakh']);
-  assert.equal(by.budget.evidence[1].value, '3BHK 88-115');
+  assert.equal(by.budget.evidence[1].value, '3BHK 89.5-92');
   assert.deepEqual(by.requirements.evidence.map((e) => e.field), ['bedrooms', 'location']);
   assert.deepEqual(by.authority.evidence, []);
   assert.equal(by.authority.points, 0);

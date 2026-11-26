@@ -1,0 +1,396 @@
+{
+  "schema_version": "1.0",
+  "file_id": "ABC-GHR-CFG-04",
+  "tenant_slug": "abc-developers",
+  "fictional_demo_data": true,
+  "authority_level": 1,
+  "last_updated": "2026-11-26",
+  "approval_status": "PENDING_REVIEW",
+  "retrievable_by_rag": true,
+  "amenities": [
+    {
+      "id": "AM-01",
+      "name": "Clubhouse (approx. 25,000 sq.ft)",
+      "category": "clubhouse",
+      "location": "Central podium",
+      "operating_status": {
+        "value": "Planned, part of the project",
+        "status": "SYNTHETIC_DEMO_ASSUMPTION",
+        "source": "VaaniQ seed data (backend/src/db/seedData.js), carried forward as synthetic"
+      },
+      "operational_from": {
+        "value": null,
+        "status": "NOT_PROVIDED",
+        "source": ""
+      },
+      "operating_hours": {
+        "value": "06:00–22:00",
+        "status": "SYNTHETIC_DEMO_ASSUMPTION",
+        "source": ""
+      },
+      "usage_charges": {
+        "value": null,
+        "status": "NOT_CONFIGURED",
+        "source": ""
+      },
+      "restrictions": {
+        "value": "Residents and registered guests",
+        "status": "SYNTHETIC_DEMO_ASSUMPTION",
+        "source": ""
+      },
+      "documented_in": "ABC-GHR-KB-21"
+    },
+    {
+      "id": "AM-02",
+      "name": "Swimming pool",
+      "category": "fitness",
+      "location": "Clubhouse",
+      "operating_status": {
+        "value": "Planned, part of the project",
+        "status": "SYNTHETIC_DEMO_ASSUMPTION",
+        "source": "VaaniQ seed data (backend/src/db/seedData.js), carried forward as synthetic"
+      },
+      "operational_from": {
+        "value": null,
+        "status": "NOT_PROVIDED",
+        "source": ""
+      },
+      "operating_hours": {
+        "value": "06:00–21:00",
+        "status": "SYNTHETIC_DEMO_ASSUMPTION",
+        "source": ""
+      },
+      "usage_charges": {
+        "value": null,
+        "status": "NOT_CONFIGURED",
+        "source": ""
+      },
+      "restrictions": {
+        "value": "Children under 12 with an adult; swimwear required",
+        "status": "SYNTHETIC_DEMO_ASSUMPTION",
+        "source": ""
+      },
+      "documented_in": "ABC-GHR-KB-22"
+    },
+    {
+      "id": "AM-03",
+      "name": "Gymnasium",
+      "category": "fitness",
+      "location": "Clubhouse",
+      "operating_status": {
+        "value": "Planned, part of the project",
+        "status": "SYNTHETIC_DEMO_ASSUMPTION",
+        "source": "VaaniQ seed data (backend/src/db/seedData.js), carried forward as synthetic"
+      },
+      "operational_from": {
+        "value": null,
+        "status": "NOT_PROVIDED",
+        "source": ""
+      },
+      "operating_hours": {
+        "value": "05:30–22:00",
+        "status": "SYNTHETIC_DEMO_ASSUMPTION",
+        "source": ""
+      },
+      "usage_charges": {
+        "value": null,
+        "status": "NOT_CONFIGURED",
+        "source": ""
+      },
+      "restrictions": {
+        "value": "Minimum age 16 without supervision",
+        "status": "SYNTHETIC_DEMO_ASSUMPTION",
+        "source": ""
+      },
+      "documented_in": "ABC-GHR-KB-22"
+    },
+    {
+      "id": "AM-04",
+      "name": "Yoga deck",
+      "category": "fitness",
+      "location": "Clubhouse terrace",
+      "operating_status": {
+        "value": "Planned, part of the project",
+        "status": "SYNTHETIC_DEMO_ASSUMPTION",
+        "source": "VaaniQ seed data (backend/src/db/seedData.js), carried forward as synthetic"
+      },
+      "operational_from": {
+        "value": null,
+        "status": "NOT_PROVIDED",
+        "source": ""
+      },
+      "operating_hours": {
+        "value": "05:30–20:00",
+        "status": "SYNTHETIC_DEMO_ASSUMPTION",
+        "source": ""
+      },
+      "usage_charges": {
+        "value": null,
+        "status": "NOT_CONFIGURED",
+        "source": ""
+      },
+      "restrictions": {
+        "value": null,
+        "status": "NOT_CONFIGURED",
+        "source": ""
+      },
+      "documented_in": "ABC-GHR-KB-22"
+    },
+    {
+      "id": "AM-05",
+      "name": "Indoor games room",
+      "category": "clubhouse",
+      "location": "Clubhouse",
+      "operating_status": {
+        "value": "Planned, part of the project",
+        "status": "SYNTHETIC_DEMO_ASSUMPTION",
+        "source": "VaaniQ seed data (backend/src/db/seedData.js), carried forward as synthetic"
+      },
+      "operational_from": {
+        "value": null,
+        "status": "NOT_PROVIDED",
+        "source": ""
+      },
+      "operating_hours": {
+        "value": "08:00–22:00",
+        "status": "SYNTHETIC_DEMO_ASSUMPTION",
+        "source": ""
+      },
+      "usage_charges": {
+        "value": null,
+        "status": "NOT_CONFIGURED",
+        "source": ""
+      },
+      "restrictions": {
+        "value": null,
+        "status": "NOT_CONFIGURED",
+        "source": ""
+      },
+      "documented_in": "ABC-GHR-KB-21"
+    },
+    {
+      "id": "AM-06",
+      "name": "Badminton court",
+      "category": "fitness",
+      "location": "Clubhouse",
+      "operating_status": {
+        "value": "Planned, part of the project",
+        "status": "SYNTHETIC_DEMO_ASSUMPTION",
+        "source": "VaaniQ seed data (backend/src/db/seedData.js), carried forward as synthetic"
+      },
+      "operational_from": {
+        "value": null,
+        "status": "NOT_PROVIDED",
+        "source": ""
+      },
+      "operating_hours": {
+        "value": "06:00–22:00",
+        "status": "SYNTHETIC_DEMO_ASSUMPTION",
+        "source": ""
+      },
+      "usage_charges": {
+        "value": null,
+        "status": "NOT_CONFIGURED",
+        "source": ""
+      },
+      "restrictions": {
+        "value": "Advance slot booking at the facility desk",
+        "status": "SYNTHETIC_DEMO_ASSUMPTION",
+        "source": ""
+      },
+      "documented_in": "ABC-GHR-KB-22"
+    },
+    {
+      "id": "AM-07",
+      "name": "Jogging track",
+      "category": "outdoor",
+      "location": "Landscaped periphery",
+      "operating_status": {
+        "value": "Planned, part of the project",
+        "status": "SYNTHETIC_DEMO_ASSUMPTION",
+        "source": "VaaniQ seed data (backend/src/db/seedData.js), carried forward as synthetic"
+      },
+      "operational_from": {
+        "value": null,
+        "status": "NOT_PROVIDED",
+        "source": ""
+      },
+      "operating_hours": {
+        "value": "05:00–22:00",
+        "status": "SYNTHETIC_DEMO_ASSUMPTION",
+        "source": ""
+      },
+      "usage_charges": {
+        "value": null,
+        "status": "NOT_CONFIGURED",
+        "source": ""
+      },
+      "restrictions": {
+        "value": null,
+        "status": "NOT_CONFIGURED",
+        "source": ""
+      },
+      "documented_in": "ABC-GHR-KB-23"
+    },
+    {
+      "id": "AM-08",
+      "name": "Landscaped gardens",
+      "category": "outdoor",
+      "location": "Open areas",
+      "operating_status": {
+        "value": "Planned, part of the project",
+        "status": "SYNTHETIC_DEMO_ASSUMPTION",
+        "source": "VaaniQ seed data (backend/src/db/seedData.js), carried forward as synthetic"
+      },
+      "operational_from": {
+        "value": null,
+        "status": "NOT_PROVIDED",
+        "source": ""
+      },
+      "operating_hours": {
+        "value": null,
+        "status": "NOT_CONFIGURED",
+        "source": ""
+      },
+      "usage_charges": {
+        "value": null,
+        "status": "NOT_CONFIGURED",
+        "source": ""
+      },
+      "restrictions": {
+        "value": null,
+        "status": "NOT_CONFIGURED",
+        "source": ""
+      },
+      "documented_in": "ABC-GHR-KB-23"
+    },
+    {
+      "id": "AM-09",
+      "name": "Children's play area",
+      "category": "family",
+      "location": "Central lawn",
+      "operating_status": {
+        "value": "Planned, part of the project",
+        "status": "SYNTHETIC_DEMO_ASSUMPTION",
+        "source": "VaaniQ seed data (backend/src/db/seedData.js), carried forward as synthetic"
+      },
+      "operational_from": {
+        "value": null,
+        "status": "NOT_PROVIDED",
+        "source": ""
+      },
+      "operating_hours": {
+        "value": "07:00–20:00",
+        "status": "SYNTHETIC_DEMO_ASSUMPTION",
+        "source": ""
+      },
+      "usage_charges": {
+        "value": null,
+        "status": "NOT_CONFIGURED",
+        "source": ""
+      },
+      "restrictions": {
+        "value": "Children under 10 with adult supervision",
+        "status": "SYNTHETIC_DEMO_ASSUMPTION",
+        "source": ""
+      },
+      "documented_in": "ABC-GHR-KB-24"
+    },
+    {
+      "id": "AM-10",
+      "name": "Senior citizens' park",
+      "category": "family",
+      "location": "Garden zone",
+      "operating_status": {
+        "value": "Planned, part of the project",
+        "status": "SYNTHETIC_DEMO_ASSUMPTION",
+        "source": "VaaniQ seed data (backend/src/db/seedData.js), carried forward as synthetic"
+      },
+      "operational_from": {
+        "value": null,
+        "status": "NOT_PROVIDED",
+        "source": ""
+      },
+      "operating_hours": {
+        "value": "05:00–21:00",
+        "status": "SYNTHETIC_DEMO_ASSUMPTION",
+        "source": ""
+      },
+      "usage_charges": {
+        "value": null,
+        "status": "NOT_CONFIGURED",
+        "source": ""
+      },
+      "restrictions": {
+        "value": null,
+        "status": "NOT_CONFIGURED",
+        "source": ""
+      },
+      "documented_in": "ABC-GHR-KB-24"
+    },
+    {
+      "id": "AM-11",
+      "name": "Convenience store",
+      "category": "community",
+      "location": "Inside the campus",
+      "operating_status": {
+        "value": "Planned, part of the project",
+        "status": "SYNTHETIC_DEMO_ASSUMPTION",
+        "source": "VaaniQ seed data (backend/src/db/seedData.js), carried forward as synthetic"
+      },
+      "operational_from": {
+        "value": null,
+        "status": "NOT_PROVIDED",
+        "source": ""
+      },
+      "operating_hours": {
+        "value": null,
+        "status": "NOT_CONFIGURED",
+        "source": ""
+      },
+      "usage_charges": {
+        "value": null,
+        "status": "NOT_CONFIGURED",
+        "source": ""
+      },
+      "restrictions": {
+        "value": "Operated by a third party, timings NOT_CONFIGURED",
+        "status": "SYNTHETIC_DEMO_ASSUMPTION",
+        "source": ""
+      },
+      "documented_in": "ABC-GHR-KB-25"
+    },
+    {
+      "id": "AM-12",
+      "name": "Multipurpose hall",
+      "category": "community",
+      "location": "Clubhouse",
+      "operating_status": {
+        "value": "Planned, part of the project",
+        "status": "SYNTHETIC_DEMO_ASSUMPTION",
+        "source": "VaaniQ seed data (backend/src/db/seedData.js), carried forward as synthetic"
+      },
+      "operational_from": {
+        "value": null,
+        "status": "NOT_PROVIDED",
+        "source": ""
+      },
+      "operating_hours": {
+        "value": null,
+        "status": "NOT_CONFIGURED",
+        "source": ""
+      },
+      "usage_charges": {
+        "value": null,
+        "status": "NOT_CONFIGURED",
+        "source": ""
+      },
+      "restrictions": {
+        "value": "Advance booking via the facility desk",
+        "status": "SYNTHETIC_DEMO_ASSUMPTION",
+        "source": ""
+      },
+      "documented_in": "ABC-GHR-KB-25"
+    }
+  ]
+}

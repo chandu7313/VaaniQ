@@ -30,16 +30,36 @@ export function useMicPermission() {
   return state;
 }
 
-export function useSpeechRecognition({ lang, onFinal }) {
+const canRecord = () => typeof window !== 'undefined' && typeof window.MediaRecorder !== 'undefined' && Boolean(navigator.mediaDevices?.getUserMedia);
+const RECORD_TYPES = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg'];
+// Browser recognition errors after which the server (Whisper) path is a better choice.
+const SWITCH_TO_SERVER = new Set(['language-not-supported', 'network', 'service-not-allowed']);
+const MAX_RECORDING_MS = 30000;
+
+/**
+ * Voice input with two engines:
+ *  - 'browser': the Web Speech API (live interim transcript), when available;
+ *  - 'server':  record with MediaRecorder and send the clip to `transcribe(blob, 'en'|'hi'|'te')` (Groq Whisper).
+ *    Used when the browser has no recognition, or switches automatically after language/network errors.
+ * The recording lives only in memory and is discarded after transcription.
+ */
+export function useSpeechRecognition({ lang, onFinal, transcribe }) {
+  const serverPossible = Boolean(transcribe) && canRecord();
+  const [mode, setMode] = useState(Recognition ? 'browser' : serverPossible ? 'server' : 'none');
   const [listening, setListening] = useState(false);
+  const [transcribing, setTranscribing] = useState(false);
   const [interim, setInterim] = useState('');
   const [error, setError] = useState(null);
   const recRef = useRef(null);
+  const mediaRef = useRef(null);
+  const timerRef = useRef(null);
   const onFinalRef = useRef(onFinal);
-  useEffect(() => { onFinalRef.current = onFinal; }, [onFinal]);
+  const transcribeRef = useRef(transcribe);
+  useEffect(() => { onFinalRef.current = onFinal; transcribeRef.current = transcribe; }, [onFinal, transcribe]);
+  // A page may learn about server transcription after the first render (capabilities load asynchronously).
+  useEffect(() => { if (mode === 'none' && serverPossible) setMode('server'); }, [mode, serverPossible]);
 
-  const start = useCallback(() => {
-    if (!Recognition) return;
+  const startBrowser = useCallback(() => {
     recRef.current?.abort();
     const rec = new Recognition();
     rec.lang = lang;
@@ -57,19 +77,72 @@ export function useSpeechRecognition({ lang, onFinal }) {
       if (finalText.trim()) onFinalRef.current(finalText.trim());
     };
     rec.onerror = (e) => {
+      if (SWITCH_TO_SERVER.has(e.error) && serverPossible) {
+        setMode('server');
+        setError({ code: e.error, message: 'Browser speech recognition is unavailable for this language here, so VaaniQ switched to server transcription. Press the mic and speak again.', retryable: true });
+        return;
+      }
       const message = ERRORS[e.error] === undefined ? `Speech recognition error: ${e.error}` : ERRORS[e.error];
       if (message) setError({ code: e.error, message, retryable: RETRYABLE.has(e.error) });
     };
     rec.onend = () => { setListening(false); setInterim(''); };
     recRef.current = rec;
-    setError(null);
     try { rec.start(); setListening(true); } catch (err) { setError({ code: 'start-failed', message: err.message, retryable: true }); }
+  }, [lang, serverPossible]);
+
+  const startServer = useCallback(async () => {
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (err) {
+      setError(err.name === 'NotAllowedError'
+        ? { code: 'not-allowed', message: ERRORS['not-allowed'], retryable: true }
+        : { code: 'audio-capture', message: ERRORS['audio-capture'], retryable: true });
+      return;
+    }
+    const mimeType = RECORD_TYPES.find((t) => window.MediaRecorder.isTypeSupported?.(t));
+    const recorder = new window.MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+    const chunks = [];
+    recorder.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
+    recorder.onstop = async () => {
+      clearTimeout(timerRef.current);
+      stream.getTracks().forEach((t) => t.stop());
+      setListening(false);
+      const blob = new Blob(chunks, { type: (recorder.mimeType || mimeType || 'audio/webm').split(';')[0] });
+      if (blob.size < 1000) { setInterim(''); setError({ code: 'no-speech', message: ERRORS['no-speech'], retryable: true }); return; }
+      setTranscribing(true); setInterim('Transcribing…');
+      try {
+        const text = await transcribeRef.current(blob, lang.slice(0, 2));
+        if (text?.trim()) onFinalRef.current(text.trim());
+      } catch (err) {
+        setError({ code: err.code || 'stt-failed', message: err.message || 'Transcription failed. Please type instead.', retryable: true });
+      } finally {
+        setTranscribing(false); setInterim('');
+      }
+    };
+    mediaRef.current = recorder;
+    recorder.start();
+    setListening(true);
+    setInterim('Recording… press the mic again to send');
+    timerRef.current = setTimeout(() => { if (recorder.state === 'recording') recorder.stop(); }, MAX_RECORDING_MS);
   }, [lang]);
 
-  const stop = useCallback(() => recRef.current?.stop(), []);
+  const start = useCallback(() => {
+    setError(null);
+    if (mode === 'browser') startBrowser();
+    else if (mode === 'server') startServer();
+  }, [mode, startBrowser, startServer]);
+
+  const stop = useCallback(() => {
+    if (mode === 'server') { if (mediaRef.current?.state === 'recording') mediaRef.current.stop(); } else recRef.current?.stop();
+  }, [mode]);
   const clearError = useCallback(() => setError(null), []);
-  useEffect(() => () => recRef.current?.abort(), []);
-  return { supported: Boolean(Recognition), listening, interim, error, start, stop, retry: start, clearError };
+  useEffect(() => () => {
+    recRef.current?.abort();
+    clearTimeout(timerRef.current);
+    if (mediaRef.current?.state === 'recording') mediaRef.current.stop();
+  }, []);
+  return { supported: mode !== 'none', mode, listening, transcribing, interim, error, start, stop, retry: start, clearError };
 }
 
 export function useSpeechSynthesis() {

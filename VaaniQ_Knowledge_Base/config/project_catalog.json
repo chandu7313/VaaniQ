@@ -1,0 +1,214 @@
+{
+  "schema_version": "1.0",
+  "file_id": "ABC-GHR-CFG-02",
+  "tenant_slug": "abc-developers",
+  "fictional_demo_data": true,
+  "authority_level": 1,
+  "last_updated": "2026-11-26",
+  "approval_status": "PENDING_REVIEW",
+  "retrievable_by_rag": true,
+  "project": {
+    "name": {
+      "value": "GreenHaven Residences",
+      "status": "CANONICAL",
+      "source": "knowledge-base brief 2026-11-26 (canonical starting facts)"
+    },
+    "developer": {
+      "value": "ABC Developers",
+      "status": "CANONICAL",
+      "source": "knowledge-base brief 2026-11-26 (canonical starting facts)"
+    },
+    "locality": {
+      "value": "Gachibowli",
+      "status": "CANONICAL",
+      "source": "knowledge-base brief 2026-11-26 (canonical starting facts)"
+    },
+    "city": {
+      "value": "Hyderabad",
+      "status": "CANONICAL",
+      "source": "knowledge-base brief 2026-11-26 (canonical starting facts)"
+    },
+    "state": {
+      "value": "Telangana",
+      "status": "CANONICAL",
+      "source": "knowledge-base brief 2026-11-26 (canonical starting facts)"
+    },
+    "country": {
+      "value": "India",
+      "status": "CANONICAL",
+      "source": "knowledge-base brief 2026-11-26 (canonical starting facts)"
+    },
+    "type": {
+      "value": "Gated residential apartment community",
+      "status": "SYNTHETIC_DEMO_ASSUMPTION",
+      "source": "VaaniQ seed data (backend/src/db/seedData.js), carried forward as synthetic"
+    },
+    "towers": {
+      "value": [
+        "Tower A",
+        "Tower B"
+      ],
+      "status": "CANONICAL",
+      "source": "knowledge-base brief 2026-11-26 (canonical starting facts)",
+      "note": "Fictional sample towers."
+    },
+    "floors_per_tower": {
+      "value": 18,
+      "status": "SYNTHETIC_DEMO_ASSUMPTION",
+      "source": "VaaniQ seed data (backend/src/db/seedData.js), carried forward as synthetic"
+    },
+    "total_apartments": {
+      "value": 264,
+      "status": "SYNTHETIC_DEMO_ASSUMPTION",
+      "source": "VaaniQ seed data (backend/src/db/seedData.js), carried forward as synthetic"
+    },
+    "apartments_per_tower": {
+      "value": {
+        "2BHK": 66,
+        "3BHK": 66
+      },
+      "status": "SYNTHETIC_DEMO_ASSUMPTION",
+      "source": "VaaniQ seed data (backend/src/db/seedData.js), carried forward as synthetic"
+    },
+    "land_area": {
+      "value": 4.2,
+      "status": "SYNTHETIC_DEMO_ASSUMPTION",
+      "source": "VaaniQ seed data (backend/src/db/seedData.js), carried forward as synthetic",
+      "unit": "acres"
+    },
+    "open_space_share": {
+      "value": 70,
+      "status": "SYNTHETIC_DEMO_ASSUMPTION",
+      "source": "VaaniQ seed data (backend/src/db/seedData.js), carried forward as synthetic",
+      "unit": "percent"
+    },
+    "configurations": {
+      "value": [
+        "2BHK",
+        "3BHK"
+      ],
+      "status": "CANONICAL",
+      "source": "knowledge-base brief 2026-11-26 (canonical starting facts)"
+    },
+    "construction_status": {
+      "value": null,
+      "status": "REQUIRES_HUMAN_CONFIRMATION",
+      "source": "",
+      "note": "Seed text described slab progress; treat as unverified. Live updates come from the project team."
+    },
+    "rera_registration_number": {
+      "value": null,
+      "status": "NOT_PROVIDED",
+      "source": "",
+      "note": "Never invent. Escalate to an authorised representative."
+    },
+    "possession_date": {
+      "value": null,
+      "status": "NOT_PROVIDED",
+      "source": "",
+      "note": "Never invent or estimate. Escalate."
+    },
+    "approvals": {
+      "value": null,
+      "status": "NOT_PROVIDED",
+      "source": ""
+    },
+    "land_title_status": {
+      "value": null,
+      "status": "NOT_PROVIDED",
+      "source": ""
+    },
+    "exact_landmark_distances": {
+      "value": null,
+      "status": "NOT_PROVIDED",
+      "source": "",
+      "note": "Do not quote distances; describe the locality qualitatively."
+    },
+    "unit_types": {
+      "2BHK": {
+        "bedrooms": {
+          "value": 2,
+          "status": "CANONICAL",
+          "source": "knowledge-base brief 2026-11-26 (canonical starting facts)"
+        },
+        "bathrooms": {
+          "value": 2,
+          "status": "SYNTHETIC_DEMO_ASSUMPTION",
+          "source": "VaaniQ seed data (backend/src/db/seedData.js), carried forward as synthetic"
+        },
+        "balconies": {
+          "value": 2,
+          "status": "SYNTHETIC_DEMO_ASSUMPTION",
+          "source": "VaaniQ seed data (backend/src/db/seedData.js), carried forward as synthetic"
+        },
+        "built_up_area_sqft": {
+          "value": 1180,
+          "status": "CANONICAL",
+          "source": "knowledge-base brief 2026-11-26 (canonical starting facts)",
+          "unit": "sq.ft",
+          "note": "Approximate built-up area."
+        },
+        "carpet_area_sqft": {
+          "value": null,
+          "status": "NOT_PROVIDED",
+          "source": "",
+          "note": "Not provided. Must not be derived from built-up area."
+        },
+        "super_built_up_area_sqft": {
+          "value": null,
+          "status": "NOT_PROVIDED",
+          "source": ""
+        },
+        "covered_parking_slots": {
+          "value": 1,
+          "status": "SYNTHETIC_DEMO_ASSUMPTION",
+          "source": "VaaniQ seed data (backend/src/db/seedData.js), carried forward as synthetic"
+        }
+      },
+      "3BHK": {
+        "bedrooms": {
+          "value": 3,
+          "status": "CANONICAL",
+          "source": "knowledge-base brief 2026-11-26 (canonical starting facts)"
+        },
+        "bathrooms": {
+          "value": 3,
+          "status": "SYNTHETIC_DEMO_ASSUMPTION",
+          "source": "VaaniQ seed data (backend/src/db/seedData.js), carried forward as synthetic"
+        },
+        "balconies": {
+          "value": 3,
+          "status": "SYNTHETIC_DEMO_ASSUMPTION",
+          "source": "VaaniQ seed data (backend/src/db/seedData.js), carried forward as synthetic"
+        },
+        "built_up_area_sqft": {
+          "value": 1560,
+          "status": "CANONICAL",
+          "source": "knowledge-base brief 2026-11-26 (canonical starting facts)",
+          "unit": "sq.ft",
+          "note": "Approximate built-up area."
+        },
+        "carpet_area_sqft": {
+          "value": null,
+          "status": "NOT_PROVIDED",
+          "source": "",
+          "note": "Not provided. Must not be derived from built-up area."
+        },
+        "super_built_up_area_sqft": {
+          "value": null,
+          "status": "NOT_PROVIDED",
+          "source": ""
+        },
+        "covered_parking_slots": {
+          "value": 2,
+          "status": "SYNTHETIC_DEMO_ASSUMPTION",
+          "source": "VaaniQ seed data (backend/src/db/seedData.js), carried forward as synthetic"
+        }
+      }
+    },
+    "live_data_sources": {
+      "unit_availability": "live inventory database (NOT_CONFIGURED in the current app: see reports)",
+      "appointment_slots": "live appointments service (GET /api/appointments/availability)"
+    }
+  }
+}

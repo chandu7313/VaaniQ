@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { analyzeMessage } from '../nlu.js';
+import { analyzeMessage, isLoanQuestion } from '../nlu.js';
 import { analyzeSentiment } from '../sentiment.js';
 import { log } from '../../lib/logger.js';
 
@@ -60,6 +60,8 @@ export async function analyze({ text, state, history, provider, now, trace }) {
 
     const flags = new Set([rules.intent, ...rules.secondary].filter((f) => f !== 'other'));
     llm.intents.filter((i) => LLM_INTENTS.includes(i)).forEach((i) => flags.add(i));
+    // Same rule as the rules engine: a loan amount is not a budget, whoever extracted it.
+    if (isLoanQuestion(text)) delete llm.entities.budgetMax;
     for (const k of PROFILE_KEYS) {
       if (result.entities[k] === undefined && llm.entities[k] !== undefined) {
         result.entities[k] = k === 'budgetMax' ? Math.round(llm.entities[k]) : llm.entities[k];

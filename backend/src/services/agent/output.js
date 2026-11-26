@@ -26,7 +26,7 @@ export const structuredOutputSchema = z.object({
   entities: z.record(z.string(), z.unknown()),
   sentiment: z.object({ label: z.enum(['positive', 'neutral', 'negative']), confidence: z.number().min(0).max(1), evidence: z.array(z.object({ phrase: z.string() }).passthrough()), method: z.string(), basis: z.literal('transcript_text') }),
   leadQualification: z.object({ total: z.number().int().min(0).max(100), classification: z.enum(['hot', 'warm', 'cold']), factors: z.array(factorSchema).length(5), missing: z.array(z.string()), recommendedNextAction: z.object({ type: z.string(), text: z.string(), field: z.string().optional() }) }),
-  sources: z.array(sourceSchema).max(3),
+  sources: z.array(sourceSchema).max(4),
   suggestedAction: suggestedActionSchema,
   explanation: z.string().min(1).max(600),
   outcome: z.string(),

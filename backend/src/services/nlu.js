@@ -35,6 +35,11 @@ const matchesAny = (text, patterns) => patterns.some((re) => re.test(text));
 const includesAny = (text, terms) => terms.some((t) => text.includes(t));
 
 /** "90 lakh", "1.2 crore", "Rs 90,00,000", "90 लाख", "కోటి" -> rupees. */
+/** "EMI for a 70 lakh loan" / "70 लाख के लोन पर EMI": the amount is a loan amount, not the customer's budget. */
+export function isLoanQuestion(text) {
+  return /\b(loan|emi|emis)\b|लोन|ऋण|ईएमआई|లోన్|రుణ/iu.test(text) && !/budget|afford|spend|बजट|బడ్జెట్/iu.test(text);
+}
+
 export function parseBudget(text) {
   const t = text.toLowerCase().replace(/,/g, '');
   let m = /(\d+(?:\.\d+)?)\s*(crore|crores|cr\b|करोड़|करोड|కోటి|కోట్లు)/u.exec(t);
@@ -177,7 +182,7 @@ export function extractEntities(text, now = new Date()) {
     bedrooms, location, purpose,
     preferences: preferences.length ? preferences : undefined,
     // An amount in a loan/EMI question ("EMI for a 70 lakh loan") is a loan amount, not the customer's budget.
-    ...(/\b(loan|emi)\b/i.test(text) && !/budget|afford|spend/i.test(text) ? {} : parseBudget(text)),
+    ...(isLoanQuestion(text) ? {} : parseBudget(text)),
     timelineMonths: parseTimeline(text),
     decisionMaker: parseDecisionMaker(text),
     fullName: parseName(text),

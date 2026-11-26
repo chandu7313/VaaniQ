@@ -1,0 +1,92 @@
+{
+  "schema_version": "1.0",
+  "file_id": "ABC-GHR-CFG-07",
+  "tenant_slug": "abc-developers",
+  "fictional_demo_data": true,
+  "authority_level": 1,
+  "last_updated": "2026-11-26",
+  "approval_status": "APPROVED",
+  "retrievable_by_rag": false,
+  "note": "Deterministic application configuration mirrored from backend/src/services/leadScoring.js and tenant settings. Not an LLM instruction.",
+  "weights": {
+    "budget": 25,
+    "requirements": 25,
+    "timeline": 20,
+    "authority": 15,
+    "appointment": 15
+  },
+  "thresholds": {
+    "hot": 75,
+    "warm": 50
+  },
+  "factor_rules": {
+    "budget": [
+      {
+        "condition": "budget >= lowest price of the stated configuration",
+        "fraction": 1.0
+      },
+      {
+        "condition": "up to 10% below",
+        "fraction": 0.7
+      },
+      {
+        "condition": "10-20% below",
+        "fraction": 0.4
+      },
+      {
+        "condition": "more than 20% below",
+        "fraction": 0.15
+      },
+      {
+        "condition": "not stated",
+        "fraction": 0
+      }
+    ],
+    "requirements": {
+      "subweights_of_25": {
+        "bedrooms": 9,
+        "location": 8,
+        "purpose": 4,
+        "preferences": 4
+      }
+    },
+    "timeline": [
+      {
+        "condition": "<= 1 month",
+        "fraction": 1.0
+      },
+      {
+        "condition": "<= 3 months",
+        "fraction": 0.7
+      },
+      {
+        "condition": "<= 6 months",
+        "fraction": 0.4
+      },
+      {
+        "condition": "> 6 months",
+        "fraction": 0.15
+      },
+      {
+        "condition": "unknown",
+        "fraction": 0
+      }
+    ],
+    "authority": {
+      "self": 1.0,
+      "joint": 0.67,
+      "other": 0.33,
+      "unknown": 0
+    },
+    "appointment": {
+      "visit_booked": 1.0,
+      "visit_requested": 0.8,
+      "none": 0
+    }
+  },
+  "rules": [
+    "Unknown information scores 0.",
+    "Points require evidence from customer-stated facts or system records.",
+    "Price comparisons use pricing_catalog.json."
+  ]
+}

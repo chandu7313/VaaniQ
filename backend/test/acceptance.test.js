@@ -40,8 +40,8 @@ test('A. collects missing information turn by turn', async () => {
 test('B. retrieves relevant documents with sources', async () => {
   const t = await say(state.conv, 'What does a 3BHK cost here?');
   assert.equal(t.outcome, 'info_provided');
-  assert.equal(t.sources[0].section, 'Price list');
-  assert.match(t.reply, /3BHK: Rs 88 lakh to Rs 115 lakh/);
+  assert.equal(t.sources[0].title, '3BHK Pricing Details');
+  assert.match(t.reply, /89,50,000.*92,00,000|89\.5 lakh to ₹?92 lakh/);
 });
 
 test('C. qualifies the customer and shows an explainable score', async () => {

@@ -3,6 +3,8 @@ import { t } from './templates.js';
 import { tokenize } from '../rag/bm25.js';
 import { expandQuery } from '../rag/knowledge.js';
 
+const OFFERS_VISIT = /\bI(?:'ll| will| can| could| would be happy to)\b[^.!?]*\b(?:visit|book|arrange|schedule)\b|मैं[^।?!]*(?:विजिट|बुक)|నేను[^.?!]*(?:విజిట్|బుక్)/iu;
+
 const LANG_NAME = { en: 'English', hi: 'Hindi', te: 'Telugu' };
 
 const SYSTEM = (lang) => `You are VaaniQ, a polite sales assistant for ABC Developers (a fictional demo company).
@@ -34,13 +36,21 @@ export function extractiveAnswer(lang, hits, question = '') {
   const all = pool.flatMap((h, rank) => {
     // A section heading such as "Price list" or "Kitchen specification" says what every sentence under it answers.
     const sectionOnTopic = tokenize(h.section || '').some((w) => topic.has(w));
-    return h.content.replace(/\n+/g, ' ').split(/(?<=[.!?])\s+/).filter(Boolean).map((s, i) => {
+    const isCustomerSection = /customer-facing explanation/i.test(h.section || '');
+    const cleaned = h.content
+      .replace(/^>\s*/gm, '')
+      .replace(/\*\*(.+?)\*\*/g, '$1')
+      .replace(/\|?[-:]+\|[-|:\s]*/g, ' ')
+      .replace(/\n+/g, ' ');
+    return cleaned.split(/(?<=[.!?])\s+/).filter(Boolean).map((s, i) => {
+      if (/\b(?:reconciliation item|superseded|placeholder number)\b/i.test(s)) return null;
       const words = tokenize(s);
-      return { s, rank, i, otherUnit: aboutOtherUnit(words), onTopic: sectionOnTopic || words.some((w) => topic.has(w)),
+      return { s: s.replace(/^"|"$/g, '').trim(), section: h.section, rank, i, otherUnit: aboutOtherUnit(words), onTopic: sectionOnTopic || words.some((w) => topic.has(w)),
         score: words.filter((w) => q.has(w)).reduce((n, w) => n + (/\d/.test(w) ? 2 : 1), 0)
           + (sectionOnTopic ? 1 : 0) // the section is about what was asked
+          + (isCustomerSection ? 1.5 : 0) // prefer customer-facing prose over raw tables/meta notes
           + (rank === 0 ? 0.5 : 0) }; // ties prefer the most relevant source
-    });
+    }).filter(Boolean);
   });
   const relevant = all.filter((c) => !c.otherUnit);
   const onTopic = relevant.filter((c) => c.onTopic);
@@ -64,8 +74,11 @@ export function extractiveAnswer(lang, hits, question = '') {
   }
   // Lead with the sentence that best answers the question; supporting sentences follow in reading order.
   const [lead, ...rest] = chosen;
+  if (!lead) return t(lang, 'no_info');
   rest.sort((a, b) => a.rank - b.rank || a.i - b.i);
-  return `${t(lang, 'info_intro')} ${[lead, ...rest].map((c) => c.s).join(' ')}`;
+  const body = [lead, ...rest].map((c) => c.s).join(' ');
+  const prefix = lead?.s?.startsWith('|') && lead.section ? `${lead.section.replace(/^\d+(?:\.\d+)?\s*/, '')}: ` : '';
+  return `${t(lang, 'info_intro')} ${prefix}${body}`;
 }
 
 // Native Devanagari/Telugu digits are normalised so the numeric check cannot be bypassed by script.
@@ -95,7 +108,10 @@ export async function answerFromKnowledge({ lang, question, hits, provider, trac
     if (invented.length) throw new Error(`LLM answer contained figures not in the sources (${invented.join(', ')})`);
     // One spoken paragraph: models often add line breaks that read badly in TTS.
     // One spoken paragraph without markdown (TTS would read "**" and list markers aloud).
-    const plain = text.replace(/\*\*(.+?)\*\*/g, '$1').replace(/^\s*[-*•]\s+/gm, '').replace(/\s*\n+\s*/g, ' ');
+    const plain = text.replace(/\*\*(.+?)\*\*/g, '$1').replace(/^\s*[-*•]\s+/gm, '').replace(/\s*\n+\s*/g, ' ')
+      // The booking flow makes visit offers itself; drop the model's own first-person offers to avoid duplicates.
+      .split(/(?<=[.!?।])\s+/).filter((sent) => !OFFERS_VISIT.test(sent)).join(' ').trim();
+    if (!plain) throw new Error('LLM answer contained only a booking offer');
     return { text: plain, method: 'llm_grounded' };
   } catch (err) {
     log.warn('llm_answer_fallback', { reason: err.message });

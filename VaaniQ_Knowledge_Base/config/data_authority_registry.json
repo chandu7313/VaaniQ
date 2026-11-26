@@ -1,0 +1,68 @@
+{
+  "schema_version": "1.0",
+  "file_id": "ABC-GHR-CFG-08",
+  "tenant_slug": "abc-developers",
+  "fictional_demo_data": true,
+  "authority_level": 1,
+  "last_updated": "2026-11-26",
+  "approval_status": "APPROVED",
+  "retrievable_by_rag": false,
+  "hierarchy": [
+    {
+      "rank": 1,
+      "source": "live_inventory_database",
+      "governs": "current unit availability",
+      "status": "NOT_CONFIGURED",
+      "note": "No unit-inventory table exists in the current app; never answer availability from documents."
+    },
+    {
+      "rank": 1,
+      "source": "live_appointment_service",
+      "governs": "available site-visit slots and bookings",
+      "status": "ACTIVE",
+      "endpoint": "GET /api/appointments/availability"
+    },
+    {
+      "rank": 2,
+      "source": "config/pricing_catalog.json",
+      "governs": "price lookup"
+    },
+    {
+      "rank": 2,
+      "source": "config/sales_policy.json",
+      "governs": "business commitments, booking rules, discount authority"
+    },
+    {
+      "rank": 2,
+      "source": "config/escalation_matrix.json",
+      "governs": "escalation routes"
+    },
+    {
+      "rank": 2,
+      "source": "config/lead_scoring_rules.json",
+      "governs": "lead score (deterministic)"
+    },
+    {
+      "rank": 3,
+      "source": "config/company_facts.json, config/project_catalog.json, config/amenity_catalog.json",
+      "governs": "company, project, unit and amenity facts"
+    },
+    {
+      "rank": 4,
+      "source": "Markdown knowledge documents (authority_level 2-3)",
+      "governs": "explanations; approved policy text at level 2"
+    },
+    {
+      "rank": 5,
+      "source": "Sales guidance, dialogues and examples (authority_level 4)",
+      "governs": "tone and handling only; never facts"
+    }
+  ],
+  "conflict_rule": "If two sources of the same rank disagree, or a lower-rank source disagrees with a higher one, do not choose a value: flag the conflict, answer with the higher-ranked value only if it is CANONICAL, otherwise escalate for human review.",
+  "unknown_markers": [
+    "NOT_PROVIDED",
+    "NOT_CONFIGURED",
+    "REQUIRES_HUMAN_CONFIRMATION"
+  ],
+  "synthetic_marker": "SYNTHETIC_DEMO_ASSUMPTION"
+}

@@ -1,0 +1,107 @@
+{
+  "schema_version": "1.0",
+  "file_id": "ABC-GHR-CFG-05",
+  "tenant_slug": "abc-developers",
+  "fictional_demo_data": true,
+  "authority_level": 1,
+  "last_updated": "2026-11-26",
+  "approval_status": "PENDING_REVIEW",
+  "retrievable_by_rag": false,
+  "policies": {
+    "site_visit_hours": {
+      "value": {
+        "days": [
+          "Mon",
+          "Tue",
+          "Wed",
+          "Thu",
+          "Fri",
+          "Sat"
+        ],
+        "start": "10:00",
+        "end": "18:00",
+        "slot_minutes": 60,
+        "timezone": "Asia/Kolkata"
+      },
+      "status": "SYNTHETIC_DEMO_ASSUMPTION",
+      "source": "VaaniQ seed data (backend/src/db/seedData.js), carried forward as synthetic",
+      "note": "Must match tenant booking settings."
+    },
+    "site_visit_min_lead_hours": {
+      "value": 2,
+      "status": "SYNTHETIC_DEMO_ASSUMPTION",
+      "source": "VaaniQ seed data (backend/src/db/seedData.js), carried forward as synthetic"
+    },
+    "site_visit_booking_window_days": {
+      "value": 7,
+      "status": "SYNTHETIC_DEMO_ASSUMPTION",
+      "source": "VaaniQ seed data (backend/src/db/seedData.js), carried forward as synthetic"
+    },
+    "booking_requires_explicit_customer_confirmation": {
+      "value": true,
+      "status": "CANONICAL",
+      "source": "VaaniQ architecture rule"
+    },
+    "token_amount_inr": {
+      "value": 100000,
+      "status": "SYNTHETIC_DEMO_ASSUMPTION",
+      "source": "VaaniQ seed data (backend/src/db/seedData.js), carried forward as synthetic",
+      "note": "Blocks a unit for 7 days; adjusted against the booking amount."
+    },
+    "token_hold_days": {
+      "value": 7,
+      "status": "SYNTHETIC_DEMO_ASSUMPTION",
+      "source": "VaaniQ seed data (backend/src/db/seedData.js), carried forward as synthetic"
+    },
+    "booking_amount_percent": {
+      "value": 10,
+      "status": "SYNTHETIC_DEMO_ASSUMPTION",
+      "source": "VaaniQ seed data (backend/src/db/seedData.js), carried forward as synthetic"
+    },
+    "cancellation_terms": {
+      "value": null,
+      "status": "REQUIRES_HUMAN_CONFIRMATION",
+      "source": "",
+      "note": "Seed text stated a 2% charge after agreement; refund terms are governed by the sale agreement and applicable law. Escalate."
+    },
+    "discount_authority": {
+      "value": {
+        "ai_agent": "none",
+        "sales_executive": "none",
+        "sales_manager": "case-by-case, written approval",
+        "head_of_sales": "final authority"
+      },
+      "status": "SYNTHETIC_DEMO_ASSUMPTION",
+      "source": "",
+      "note": "The AI never offers, promises or estimates discounts."
+    },
+    "active_offers": {
+      "value": null,
+      "status": "NOT_CONFIGURED",
+      "source": "",
+      "note": "No offer is configured. The seed's ₹2 lakh festive discount is superseded and must not be quoted."
+    },
+    "quotation_validity_days": {
+      "value": null,
+      "status": "REQUIRES_HUMAN_CONFIRMATION",
+      "source": ""
+    },
+    "accepted_payment_modes": {
+      "value": [
+        "bank transfer",
+        "cheque"
+      ],
+      "status": "SYNTHETIC_DEMO_ASSUMPTION",
+      "source": "VaaniQ seed data (backend/src/db/seedData.js), carried forward as synthetic",
+      "note": "No cash."
+    },
+    "agent_operating_rules": [
+      "Answer only from approved documents and structured records; never invent facts.",
+      "Never quote RERA numbers, approvals, title status, possession dates, taxes or final payable amounts.",
+      "Never offer, promise or estimate discounts, loan approval or price reductions.",
+      "Book appointments only after the customer explicitly confirms the exact slot.",
+      "Read availability from live systems; never from documents.",
+      "Escalate legal, complaint, negotiation and unknown-information requests per the escalation matrix."
+    ]
+  }
+}

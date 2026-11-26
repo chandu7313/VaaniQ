@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PhoneCall, PhoneOff, Settings2, Sparkles } from 'lucide-react';
 import { api } from '../lib/api';
+import { useAuth } from '../context/AuthContext';
 import { LANG_LABEL, BCP47 } from '../lib/format';
 import { useSpeechRecognition, useSpeechSynthesis, useMicPermission } from '../hooks/useSpeech';
 import { useSettings } from '../context/SettingsContext';
@@ -96,7 +97,10 @@ export default function Agent() {
     [conv, sending, lang, autoSay],
   );
 
-  const speech = useSpeechRecognition({ lang: bcp47, onFinal: send });
+  const { meta } = useAuth();
+  // Server (Whisper) transcription is offered only when the backend reports it is configured.
+  const transcribe = useCallback(async (blob, language) => (await api(`/speech/transcribe?language=${language}`, { method: 'POST', rawBody: blob })).text, []);
+  const speech = useSpeechRecognition({ lang: bcp47, onFinal: send, transcribe: meta?.speech?.serverTranscription ? transcribe : undefined });
   useEffect(() => {
     if (speech.listening) tts.cancel();
   }, [speech.listening, tts]);
@@ -122,7 +126,7 @@ export default function Agent() {
   };
 
   const ended = summary || conv?.status === 'ended';
-  const voiceState = speech.listening ? 'listening' : sending ? 'thinking' : tts.speaking ? 'speaking' : 'idle';
+  const voiceState = speech.listening ? 'listening' : sending || speech.transcribing ? 'thinking' : tts.speaking ? 'speaking' : 'idle';
   const hasVoice = tts.hasVoice(bcp47);
 
   return (
@@ -199,6 +203,7 @@ export default function Agent() {
                   ttsSupported={tts.supported}
                   hasVoice={hasVoice}
                   muted={!settings.autoSpeak}
+                  sttMode={speech.mode}
                   onDark
                 />
               </div>

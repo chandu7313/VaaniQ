@@ -14,14 +14,15 @@ export class ApiError extends Error {
 let onUnauthorized = () => {};
 export const setUnauthorizedHandler = (fn) => { onUnauthorized = fn; };
 
-export async function api(path, { method = 'GET', body, signal } = {}) {
+/** rawBody: send a Blob as-is (e.g. recorded audio) with its own content type instead of JSON. */
+export async function api(path, { method = 'GET', body, rawBody, signal } = {}) {
   const token = tokenStore.get();
   let res;
   try {
     res = await fetch(`/api${path}`, {
       method, signal,
-      headers: { ...(body ? { 'content-type': 'application/json' } : {}), ...(token ? { authorization: `Bearer ${token}` } : {}) },
-      body: body ? JSON.stringify(body) : undefined,
+      headers: { ...(rawBody ? { 'content-type': rawBody.type } : body ? { 'content-type': 'application/json' } : {}), ...(token ? { authorization: `Bearer ${token}` } : {}) },
+      body: rawBody ?? (body ? JSON.stringify(body) : undefined),
     });
   } catch (err) {
     if (err.name === 'AbortError') throw err;

@@ -1,0 +1,1361 @@
+{
+ "generated_at": "2026-11-26T03:30:23.000Z",
+ "k": 4,
+ "min_relevance": 0.2,
+ "documents": 69,
+ "excluded_authority_levels": [],
+ "chunks": 915,
+ "summary": {
+  "conflict": {
+   "cases": 10,
+   "scored": 10,
+   "hit_at_4": 10,
+   "top1": 8,
+   "top1_eligible": 10
+  },
+  "factual": {
+   "cases": 15,
+   "scored": 15,
+   "hit_at_4": 15,
+   "top1": 12,
+   "top1_eligible": 15
+  },
+  "multilingual": {
+   "cases": 12,
+   "scored": 12,
+   "hit_at_4": 12,
+   "top1": 10,
+   "top1_eligible": 12
+  },
+  "paraphrase": {
+   "cases": 12,
+   "scored": 12,
+   "hit_at_4": 12,
+   "top1": 12,
+   "top1_eligible": 12
+  },
+  "tool_routing": {
+   "cases": 10,
+   "scored": 1,
+   "hit_at_4": 1,
+   "top1": 0,
+   "top1_eligible": 1
+  },
+  "unsupported": {
+   "cases": 10,
+   "scored": 10,
+   "hit_at_4": 10,
+   "top1": 6,
+   "top1_eligible": 7
+  }
+ },
+ "overall": {
+  "scored_cases": 60,
+  "routing_cases_not_scored": 9,
+  "hit_at_4": 60
+ },
+ "results": [
+  {
+   "id": "CONF-01",
+   "set": "conflict",
+   "language": "en",
+   "query": "Your website said the 2BHK is ₹68 to 82 lakh. Which is right?",
+   "expected": [
+    "ABC-GHR-KB-27",
+    "ABC-GHR-KB-28"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-55",
+    "ABC-GHR-KB-27",
+    "ABC-GHR-KB-15"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": false,
+   "top_section": "6. Exceptions",
+   "top_relevance": 0.272
+  },
+  {
+   "id": "CONF-02",
+   "set": "conflict",
+   "language": "en",
+   "query": "I read the 3BHK is 1,620 to 1,840 sq ft. Is that right?",
+   "expected": [
+    "ABC-GHR-KB-16",
+    "ABC-GHR-KB-18"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-16"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": true,
+   "top_section": "6. Exceptions",
+   "top_relevance": 0.285
+  },
+  {
+   "id": "CONF-03",
+   "set": "conflict",
+   "language": "en",
+   "query": "Is the carpet area of the 2BHK 820 sq ft?",
+   "expected": [
+    "ABC-GHR-KB-18",
+    "ABC-GHR-KB-15"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-18",
+    "ABC-GHR-KB-56",
+    "ABC-GHR-KB-15"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": true,
+   "top_section": "4. Customer-facing explanation",
+   "top_relevance": 0.394
+  },
+  {
+   "id": "CONF-04",
+   "set": "conflict",
+   "language": "en",
+   "query": "Is possession in December 2027?",
+   "expected": [
+    "ABC-GHR-KB-67"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-67"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": true,
+   "top_section": "7. Common customer questions",
+   "top_relevance": 0.421
+  },
+  {
+   "id": "CONF-05",
+   "set": "conflict",
+   "language": "en",
+   "query": "Is the ₹2 lakh festive discount still on?",
+   "expected": [
+    "ABC-GHR-KB-36",
+    "ABC-GHR-KB-35"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-35",
+    "ABC-GHR-KB-36",
+    "ABC-GHR-KB-51"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": true,
+   "top_section": "2. Business context",
+   "top_relevance": 0.345
+  },
+  {
+   "id": "CONF-06",
+   "set": "conflict",
+   "language": "en",
+   "query": "Is the project pre-approved by Deccan Housing Bank?",
+   "expected": [
+    "ABC-GHR-KB-34",
+    "ABC-GHR-KB-33"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-34",
+    "ABC-GHR-KB-33",
+    "ABC-GHR-KB-59"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": true,
+   "top_section": "Banking Partner Information",
+   "top_relevance": 0.416
+  },
+  {
+   "id": "CONF-07",
+   "set": "conflict",
+   "language": "en",
+   "query": "Is maintenance ₹3 per square foot?",
+   "expected": [
+    "ABC-GHR-KB-26",
+    "ABC-GHR-KB-32"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-55",
+    "ABC-GHR-KB-26",
+    "ABC-GHR-KB-27",
+    "ABC-GHR-KB-15"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": false,
+   "top_section": "3. Questions and answers",
+   "top_relevance": 0.283
+  },
+  {
+   "id": "CONF-08",
+   "set": "conflict",
+   "language": "en",
+   "query": "How many units are still available in Tower A?",
+   "expected": [
+    "ABC-GHR-KB-09"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-09"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": true,
+   "top_section": "2. Business context",
+   "top_relevance": 0.466
+  },
+  {
+   "id": "CONF-09",
+   "set": "conflict",
+   "language": "en",
+   "query": "The cancellation charge is 2%, right?",
+   "expected": [
+    "ABC-GHR-KB-37"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-37"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": true,
+   "top_section": "2. Business context",
+   "top_relevance": 0.471
+  },
+  {
+   "id": "CONF-10",
+   "set": "conflict",
+   "language": "en",
+   "query": "Your RERA number is P00000000000, correct?",
+   "expected": [
+    "ABC-GHR-KB-38"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-38"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": true,
+   "top_section": "Project Registration and RERA Information",
+   "top_relevance": 0.334
+  },
+  {
+   "id": "FACT-01",
+   "set": "factual",
+   "language": "en",
+   "query": "What is the price of a 3BHK?",
+   "expected": [
+    "ABC-GHR-KB-29",
+    "ABC-GHR-KB-27",
+    "ABC-GHR-KB-55"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-29",
+    "ABC-GHR-KB-16"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": true,
+   "top_section": "3BHK Pricing Details",
+   "top_relevance": 0.699
+  },
+  {
+   "id": "FACT-02",
+   "set": "factual",
+   "language": "en",
+   "query": "What is the price of a 2BHK?",
+   "expected": [
+    "ABC-GHR-KB-28",
+    "ABC-GHR-KB-27",
+    "ABC-GHR-KB-55"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-28",
+    "ABC-GHR-KB-62",
+    "ABC-GHR-KB-63"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": true,
+   "top_section": "2BHK Pricing Details",
+   "top_relevance": 0.699
+  },
+  {
+   "id": "FACT-03",
+   "set": "factual",
+   "language": "en",
+   "query": "How big is the 2BHK?",
+   "expected": [
+    "ABC-GHR-KB-15",
+    "ABC-GHR-KB-18",
+    "ABC-GHR-KB-56"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-17",
+    "ABC-GHR-KB-56",
+    "ABC-GHR-KB-53"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": false,
+   "top_section": "3.1 2BHK (built-up approximately 1,180 sq.ft, CANONICAL)",
+   "top_relevance": 0.417
+  },
+  {
+   "id": "FACT-04",
+   "set": "factual",
+   "language": "en",
+   "query": "How big is the 3BHK?",
+   "expected": [
+    "ABC-GHR-KB-16",
+    "ABC-GHR-KB-18",
+    "ABC-GHR-KB-56"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-17",
+    "ABC-GHR-KB-56",
+    "ABC-GHR-KB-53"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": false,
+   "top_section": "3.2 3BHK (built-up approximately 1,560 sq.ft, CANONICAL)",
+   "top_relevance": 0.416
+  },
+  {
+   "id": "FACT-05",
+   "set": "factual",
+   "language": "en",
+   "query": "Where is GreenHaven Residences located?",
+   "expected": [
+    "ABC-GHR-KB-08",
+    "ABC-GHR-KB-07",
+    "ABC-GHR-KB-54"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-01",
+    "ABC-GHR-KB-41",
+    "ABC-GHR-KB-27",
+    "ABC-GHR-KB-07"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": false,
+   "top_section": "6. Exceptions",
+   "top_relevance": 0.263
+  },
+  {
+   "id": "FACT-06",
+   "set": "factual",
+   "language": "en",
+   "query": "What amenities do you have?",
+   "expected": [
+    "ABC-GHR-KB-21",
+    "ABC-GHR-KB-22",
+    "ABC-GHR-KB-57"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-57"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": true,
+   "top_section": "Amenities FAQ",
+   "top_relevance": 0.808
+  },
+  {
+   "id": "FACT-07",
+   "set": "factual",
+   "language": "en",
+   "query": "What amenities like gym",
+   "expected": [
+    "ABC-GHR-KB-22",
+    "ABC-GHR-KB-57"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-22",
+    "ABC-GHR-KB-57"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": true,
+   "top_section": "2. Business context",
+   "top_relevance": 0.39
+  },
+  {
+   "id": "FACT-08",
+   "set": "factual",
+   "language": "en",
+   "query": "How many towers and floors are there?",
+   "expected": [
+    "ABC-GHR-KB-09",
+    "ABC-GHR-KB-56"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-09",
+    "ABC-GHR-KB-56"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": true,
+   "top_section": "3.2 Typical floor (SYNTHETIC_DEMO_ASSUMPTION)",
+   "top_relevance": 0.676
+  },
+  {
+   "id": "FACT-09",
+   "set": "factual",
+   "language": "en",
+   "query": "How many car parking slots come with a 3BHK?",
+   "expected": [
+    "ABC-GHR-KB-19",
+    "ABC-GHR-KB-16"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-19"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": true,
+   "top_section": "4. Customer-facing explanation",
+   "top_relevance": 0.379
+  },
+  {
+   "id": "FACT-10",
+   "set": "factual",
+   "language": "en",
+   "query": "What is the payment schedule?",
+   "expected": [
+    "ABC-GHR-KB-30",
+    "ABC-GHR-KB-58"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-30"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": true,
+   "top_section": "3. Construction-linked payment schedule and instalments (SYNTHETIC_DEMO_ASSUMPTION)",
+   "top_relevance": 0.7
+  },
+  {
+   "id": "FACT-11",
+   "set": "factual",
+   "language": "en",
+   "query": "How much is the token amount to block a flat?",
+   "expected": [
+    "ABC-GHR-KB-31",
+    "ABC-GHR-KB-58"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-31"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": true,
+   "top_section": "7. Common customer questions",
+   "top_relevance": 0.401
+  },
+  {
+   "id": "FACT-12",
+   "set": "factual",
+   "language": "en",
+   "query": "What are the site visit timings?",
+   "expected": [
+    "ABC-GHR-KB-48",
+    "ABC-GHR-KB-58"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-58",
+    "ABC-GHR-KB-48"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": true,
+   "top_section": "3.1 Site visits",
+   "top_relevance": 0.469
+  },
+  {
+   "id": "FACT-13",
+   "set": "factual",
+   "language": "en",
+   "query": "What is the difference between carpet area and built-up area?",
+   "expected": [
+    "ABC-GHR-KB-18"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-18",
+    "ABC-GHR-KB-56"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": true,
+   "top_section": "2. Business context",
+   "top_relevance": 0.257
+  },
+  {
+   "id": "FACT-14",
+   "set": "factual",
+   "language": "en",
+   "query": "How big is the clubhouse?",
+   "expected": [
+    "ABC-GHR-KB-21",
+    "ABC-GHR-KB-57"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-21"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": true,
+   "top_section": "Clubhouse and Recreation",
+   "top_relevance": 0.475
+  },
+  {
+   "id": "FACT-15",
+   "set": "factual",
+   "language": "en",
+   "query": "Can I make changes to the apartment layout?",
+   "expected": [
+    "ABC-GHR-KB-20"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-20",
+    "ABC-GHR-KB-56",
+    "ABC-GHR-KB-17"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": true,
+   "top_section": "2. Business context",
+   "top_relevance": 0.316
+  },
+  {
+   "id": "MULT-01",
+   "set": "multilingual",
+   "language": "hi",
+   "query": "3BHK की कीमत क्या है",
+   "expected": [
+    "ABC-GHR-KB-29",
+    "ABC-GHR-KB-63",
+    "ABC-GHR-KB-55"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-63",
+    "ABC-GHR-KB-29"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": true,
+   "top_section": "3.3 2BHK price",
+   "top_relevance": 0.725
+  },
+  {
+   "id": "MULT-02",
+   "set": "multilingual",
+   "language": "hi",
+   "query": "क्या पार्किंग है?",
+   "expected": [
+    "ABC-GHR-KB-19",
+    "ABC-GHR-KB-63"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-61",
+    "ABC-GHR-KB-19"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": false,
+   "top_section": "3. Glossary",
+   "top_relevance": 1
+  },
+  {
+   "id": "MULT-03",
+   "set": "multilingual",
+   "language": "hi",
+   "query": "कार्पेट एरिया कितना है?",
+   "expected": [
+    "ABC-GHR-KB-18",
+    "ABC-GHR-KB-63"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-63",
+    "ABC-GHR-KB-61",
+    "ABC-GHR-KB-18"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": true,
+   "top_section": "3.2 Carpet area (unknown)",
+   "top_relevance": 1
+  },
+  {
+   "id": "MULT-04",
+   "set": "multilingual",
+   "language": "hi",
+   "query": "कोई डिस्काउंट मिलेगा?",
+   "expected": [
+    "ABC-GHR-KB-35",
+    "ABC-GHR-KB-36",
+    "ABC-GHR-KB-63"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-63",
+    "ABC-GHR-KB-35",
+    "ABC-GHR-KB-36"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": true,
+   "top_section": "3.4 Discount",
+   "top_relevance": 1
+  },
+  {
+   "id": "MULT-05",
+   "set": "multilingual",
+   "language": "hi",
+   "query": "मुझे गाचीबोवली में 3BHK चाहिए, बजट 90 लाख",
+   "expected": [
+    "ABC-GHR-KB-29",
+    "ABC-GHR-KB-63"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-63",
+    "ABC-GHR-KB-61",
+    "ABC-GHR-KB-16"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": true,
+   "top_section": "3.1 3BHK enquiry and site visit",
+   "top_relevance": 1
+  },
+  {
+   "id": "MULT-06",
+   "set": "multilingual",
+   "language": "te",
+   "query": "GreenHaven Residences లో 3BHK ధర ఎంత? దగ్గరలో స్కూల్స్ ఉన్నాయా?",
+   "expected": [
+    "ABC-GHR-KB-29",
+    "ABC-GHR-KB-62",
+    "ABC-GHR-KB-54"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-61",
+    "ABC-GHR-KB-62"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": false,
+   "top_section": "7. Common customer questions",
+   "top_relevance": 0.462
+  },
+  {
+   "id": "MULT-07",
+   "set": "multilingual",
+   "language": "te",
+   "query": "2BHK ధర ఎంత?",
+   "expected": [
+    "ABC-GHR-KB-28",
+    "ABC-GHR-KB-62"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-62",
+    "ABC-GHR-KB-61"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": true,
+   "top_section": "3.3 2BHK price",
+   "top_relevance": 1
+  },
+  {
+   "id": "MULT-08",
+   "set": "multilingual",
+   "language": "te",
+   "query": "కార్పెట్ ఏరియా ఎంత?",
+   "expected": [
+    "ABC-GHR-KB-18",
+    "ABC-GHR-KB-62"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-62",
+    "ABC-GHR-KB-61",
+    "ABC-GHR-KB-18"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": true,
+   "top_section": "3.2 Carpet area (unknown)",
+   "top_relevance": 1
+  },
+  {
+   "id": "MULT-09",
+   "set": "multilingual",
+   "language": "te",
+   "query": "RERA నంబర్ ఏమిటి?",
+   "expected": [
+    "ABC-GHR-KB-38",
+    "ABC-GHR-KB-62"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-62",
+    "ABC-GHR-KB-38"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": true,
+   "top_section": "3.5 RERA, possession, loan",
+   "top_relevance": 1
+  },
+  {
+   "id": "MULT-10",
+   "set": "multilingual",
+   "language": "te",
+   "query": "నాకు లోన్ వస్తుందా?",
+   "expected": [
+    "ABC-GHR-KB-33",
+    "ABC-GHR-KB-59",
+    "ABC-GHR-KB-62"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-62",
+    "ABC-GHR-KB-33",
+    "ABC-GHR-KB-59"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": true,
+   "top_section": "3.5 RERA, possession, loan",
+   "top_relevance": 1
+  },
+  {
+   "id": "MULT-11",
+   "set": "multilingual",
+   "language": "te",
+   "query": "3BHK flat ki price entha?",
+   "expected": [
+    "ABC-GHR-KB-29",
+    "ABC-GHR-KB-61"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-61",
+    "ABC-GHR-KB-29",
+    "ABC-GHR-KB-16"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": true,
+   "top_section": "2. Business context",
+   "top_relevance": 0.41
+  },
+  {
+   "id": "MULT-12",
+   "set": "multilingual",
+   "language": "hi",
+   "query": "स्विमिंग पूल है क्या?",
+   "expected": [
+    "ABC-GHR-KB-22",
+    "ABC-GHR-KB-57"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-57",
+    "ABC-GHR-KB-61",
+    "ABC-GHR-KB-22"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": true,
+   "top_section": "3. Questions and answers",
+   "top_relevance": 1
+  },
+  {
+   "id": "PARA-01",
+   "set": "paraphrase",
+   "language": "en",
+   "query": "How much would a three bedroom flat cost?",
+   "expected": [
+    "ABC-GHR-KB-29",
+    "ABC-GHR-KB-55"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-29",
+    "ABC-GHR-KB-16",
+    "ABC-GHR-KB-27"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": true,
+   "top_section": "1. Purpose",
+   "top_relevance": 0.622
+  },
+  {
+   "id": "PARA-02",
+   "set": "paraphrase",
+   "language": "en",
+   "query": "3 bhk rate kya hai",
+   "expected": [
+    "ABC-GHR-KB-29",
+    "ABC-GHR-KB-55"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-29",
+    "ABC-GHR-KB-16"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": true,
+   "top_section": "3BHK Pricing Details",
+   "top_relevance": 0.699
+  },
+  {
+   "id": "PARA-03",
+   "set": "paraphrase",
+   "language": "en",
+   "query": "What's the cheapest home you have?",
+   "expected": [
+    "ABC-GHR-KB-28",
+    "ABC-GHR-KB-55"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-28",
+    "ABC-GHR-KB-24",
+    "ABC-GHR-KB-18",
+    "ABC-GHR-KB-59"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": true,
+   "top_section": "7. Common customer questions",
+   "top_relevance": 0.295
+  },
+  {
+   "id": "PARA-04",
+   "set": "paraphrase",
+   "language": "en",
+   "query": "Tell me about the 3BHK apartments",
+   "expected": [
+    "ABC-GHR-KB-16",
+    "ABC-GHR-KB-29"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-29",
+    "ABC-GHR-KB-56",
+    "ABC-GHR-KB-16"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": true,
+   "top_section": "1. Purpose",
+   "top_relevance": 0.604
+  },
+  {
+   "id": "PARA-05",
+   "set": "paraphrase",
+   "language": "en",
+   "query": "And what about the size of those apartments?",
+   "expected": [
+    "ABC-GHR-KB-16",
+    "ABC-GHR-KB-15",
+    "ABC-GHR-KB-17",
+    "ABC-GHR-KB-56"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-56",
+    "ABC-GHR-KB-17",
+    "ABC-GHR-KB-21"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": true,
+   "top_section": "Apartment Configuration FAQ",
+   "top_relevance": 0.26
+  },
+  {
+   "id": "PARA-06",
+   "set": "paraphrase",
+   "language": "en",
+   "query": "Is there anywhere to work out?",
+   "expected": [
+    "ABC-GHR-KB-22"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-22",
+    "ABC-GHR-KB-05"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": true,
+   "top_section": "7. Common customer questions",
+   "top_relevance": 0.316
+  },
+  {
+   "id": "PARA-07",
+   "set": "paraphrase",
+   "language": "en",
+   "query": "How many cars can I park with a two bedroom?",
+   "expected": [
+    "ABC-GHR-KB-19",
+    "ABC-GHR-KB-15"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-19"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": true,
+   "top_section": "4. Customer-facing explanation",
+   "top_relevance": 0.457
+  },
+  {
+   "id": "PARA-08",
+   "set": "paraphrase",
+   "language": "en",
+   "query": "What else will I have to pay apart from the flat price?",
+   "expected": [
+    "ABC-GHR-KB-32",
+    "ABC-GHR-KB-55"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-32",
+    "ABC-GHR-KB-55"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": true,
+   "top_section": "7. Common customer questions",
+   "top_relevance": 0.369
+  },
+  {
+   "id": "PARA-09",
+   "set": "paraphrase",
+   "language": "en",
+   "query": "Can my kids play safely there?",
+   "expected": [
+    "ABC-GHR-KB-24"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-24"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": true,
+   "top_section": "1. Purpose",
+   "top_relevance": 0.283
+  },
+  {
+   "id": "PARA-10",
+   "set": "paraphrase",
+   "language": "en",
+   "query": "How do installments work?",
+   "expected": [
+    "ABC-GHR-KB-30"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-30",
+    "ABC-GHR-KB-68",
+    "ABC-GHR-KB-19",
+    "ABC-GHR-KB-45"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": true,
+   "top_section": "7. Common customer questions",
+   "top_relevance": 0.336
+  },
+  {
+   "id": "PARA-11",
+   "set": "paraphrase",
+   "language": "en",
+   "query": "What is the 3BHK price, and are there schools nearby?",
+   "expected": [
+    "ABC-GHR-KB-29",
+    "ABC-GHR-KB-24",
+    "ABC-GHR-KB-54"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-24",
+    "ABC-GHR-KB-54",
+    "ABC-GHR-KB-08"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": true,
+   "top_section": "2. Business context",
+   "top_relevance": 0.356
+  },
+  {
+   "id": "PARA-12",
+   "set": "paraphrase",
+   "language": "en",
+   "query": "Is the project far from the IT corridor?",
+   "expected": [
+    "ABC-GHR-KB-54",
+    "ABC-GHR-KB-08"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-54",
+    "ABC-GHR-KB-08"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": true,
+   "top_section": "3. Questions and answers",
+   "top_relevance": 0.248
+  },
+  {
+   "id": "TOOL-01",
+   "set": "tool_routing",
+   "language": "en",
+   "query": "I want a 3BHK in Gachibowli, budget 90 lakhs",
+   "expected": [
+    "ABC-GHR-KB-29"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-16",
+    "ABC-GHR-KB-51",
+    "ABC-GHR-KB-45",
+    "ABC-GHR-KB-29"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": false,
+   "top_section": "2. Business context",
+   "top_relevance": 0.486
+  },
+  {
+   "id": "TOOL-02",
+   "set": "tool_routing",
+   "language": "en",
+   "query": "Can I visit on Saturday morning?",
+   "expected": [
+    "ABC-GHR-KB-48"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-51",
+    "ABC-GHR-KB-58",
+    "ABC-GHR-KB-31",
+    "ABC-GHR-KB-48"
+   ],
+   "scored": false,
+   "pass": true,
+   "top1": false,
+   "top_section": "3.1 Scenario A — qualified 3BHK buyer (the assessment scenario)",
+   "top_relevance": 0.304
+  },
+  {
+   "id": "TOOL-03",
+   "set": "tool_routing",
+   "language": "en",
+   "query": "Please arrange a site visit. My name is Asha Rao and my number is 9811122233",
+   "expected": [
+    "ABC-GHR-KB-48"
+   ],
+   "retrieved": [],
+   "scored": false,
+   "pass": false,
+   "top1": false,
+   "top_section": null,
+   "top_relevance": null
+  },
+  {
+   "id": "TOOL-04",
+   "set": "tool_routing",
+   "language": "en",
+   "query": "Yes please, book the second one",
+   "expected": [
+    "ABC-GHR-KB-48"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-15",
+    "ABC-GHR-KB-08",
+    "ABC-GHR-KB-04",
+    "ABC-GHR-KB-19"
+   ],
+   "scored": false,
+   "pass": false,
+   "top1": false,
+   "top_section": "3.1 Inside the apartment (SYNTHETIC_DEMO_ASSUMPTION)",
+   "top_relevance": 0.233
+  },
+  {
+   "id": "TOOL-05",
+   "set": "tool_routing",
+   "language": "en",
+   "query": "Maybe, let me think",
+   "expected": [
+    "ABC-GHR-KB-48"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-48"
+   ],
+   "scored": false,
+   "pass": true,
+   "top1": true,
+   "top_section": "5. Important conditions",
+   "top_relevance": 0.267
+  },
+  {
+   "id": "TOOL-06",
+   "set": "tool_routing",
+   "language": "en",
+   "query": "Cancel my visit tomorrow",
+   "expected": [
+    "ABC-GHR-KB-48"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-37",
+    "ABC-GHR-KB-48",
+    "ABC-GHR-KB-58"
+   ],
+   "scored": false,
+   "pass": true,
+   "top1": false,
+   "top_section": "7. Common customer questions",
+   "top_relevance": 0.462
+  },
+  {
+   "id": "TOOL-07",
+   "set": "tool_routing",
+   "language": "en",
+   "query": "Book a flat for me right now",
+   "expected": [
+    "ABC-GHR-KB-31",
+    "ABC-GHR-KB-58"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-09",
+    "ABC-GHR-KB-31",
+    "ABC-GHR-KB-41"
+   ],
+   "scored": false,
+   "pass": true,
+   "top1": false,
+   "top_section": "4. Customer-facing explanation",
+   "top_relevance": 0.274
+  },
+  {
+   "id": "TOOL-08",
+   "set": "tool_routing",
+   "language": "en",
+   "query": "I want to talk to a person",
+   "expected": [
+    "ABC-GHR-KB-50"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-41",
+    "ABC-GHR-KB-50"
+   ],
+   "scored": false,
+   "pass": true,
+   "top1": false,
+   "top_section": "7. Common customer questions",
+   "top_relevance": 0.405
+  },
+  {
+   "id": "TOOL-09",
+   "set": "tool_routing",
+   "language": "en",
+   "query": "Please delete my phone number and stop calling me",
+   "expected": [
+    "ABC-GHR-KB-42"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-42",
+    "ABC-GHR-KB-47"
+   ],
+   "scored": false,
+   "pass": true,
+   "top1": true,
+   "top_section": "4. Customer-facing explanation",
+   "top_relevance": 0.25
+  },
+  {
+   "id": "TOOL-10",
+   "set": "tool_routing",
+   "language": "en",
+   "query": "I'm very unhappy, nobody called me back",
+   "expected": [
+    "ABC-GHR-KB-69",
+    "ABC-GHR-KB-50"
+   ],
+   "retrieved": [],
+   "scored": false,
+   "pass": false,
+   "top1": false,
+   "top_section": null,
+   "top_relevance": null
+  },
+  {
+   "id": "UNSU-01",
+   "set": "unsupported",
+   "language": "en",
+   "query": "Do you have a helipad?",
+   "expected": [],
+   "retrieved": [],
+   "scored": true,
+   "pass": true,
+   "top1": null,
+   "top_section": null,
+   "top_relevance": null
+  },
+  {
+   "id": "UNSU-02",
+   "set": "unsupported",
+   "language": "en",
+   "query": "quantum chromodynamics lagrangian",
+   "expected": [],
+   "retrieved": [],
+   "scored": true,
+   "pass": true,
+   "top1": null,
+   "top_section": null,
+   "top_relevance": null
+  },
+  {
+   "id": "UNSU-03",
+   "set": "unsupported",
+   "language": "en",
+   "query": "zebracorn",
+   "expected": [],
+   "retrieved": [],
+   "scored": true,
+   "pass": true,
+   "top1": null,
+   "top_section": null,
+   "top_relevance": null
+  },
+  {
+   "id": "UNSU-04",
+   "set": "unsupported",
+   "language": "en",
+   "query": "What is the RERA registration number?",
+   "expected": [
+    "ABC-GHR-KB-38"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-38"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": true,
+   "top_section": "Project Registration and RERA Information",
+   "top_relevance": 0.675
+  },
+  {
+   "id": "UNSU-05",
+   "set": "unsupported",
+   "language": "en",
+   "query": "When will I get possession?",
+   "expected": [
+    "ABC-GHR-KB-67"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-67",
+    "ABC-GHR-KB-16"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": true,
+   "top_section": "4. Customer-facing explanation",
+   "top_relevance": 0.561
+  },
+  {
+   "id": "UNSU-06",
+   "set": "unsupported",
+   "language": "en",
+   "query": "What is the exact carpet area of the 3BHK?",
+   "expected": [
+    "ABC-GHR-KB-18",
+    "ABC-GHR-KB-16"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-18",
+    "ABC-GHR-KB-56",
+    "ABC-GHR-KB-16"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": true,
+   "top_section": "4. Customer-facing explanation",
+   "top_relevance": 0.388
+  },
+  {
+   "id": "UNSU-07",
+   "set": "unsupported",
+   "language": "en",
+   "query": "What is the total cost including GST and registration?",
+   "expected": [
+    "ABC-GHR-KB-32"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-55",
+    "ABC-GHR-KB-32",
+    "ABC-GHR-KB-28"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": false,
+   "top_section": "3. Questions and answers",
+   "top_relevance": 0.408
+  },
+  {
+   "id": "UNSU-08",
+   "set": "unsupported",
+   "language": "en",
+   "query": "Will my loan for ₹70 lakh be approved?",
+   "expected": [
+    "ABC-GHR-KB-33",
+    "ABC-GHR-KB-59"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-33",
+    "ABC-GHR-KB-59",
+    "ABC-GHR-KB-28"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": true,
+   "top_section": "7. Common customer questions",
+   "top_relevance": 0.411
+  },
+  {
+   "id": "UNSU-09",
+   "set": "unsupported",
+   "language": "en",
+   "query": "How far is the airport from the project?",
+   "expected": [
+    "ABC-GHR-KB-54",
+    "ABC-GHR-KB-08"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-08",
+    "ABC-GHR-KB-54"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": true,
+   "top_section": "7. Common customer questions",
+   "top_relevance": 0.372
+  },
+  {
+   "id": "UNSU-10",
+   "set": "unsupported",
+   "language": "en",
+   "query": "Is the land title clear and are all approvals in place?",
+   "expected": [
+    "ABC-GHR-KB-39"
+   ],
+   "retrieved": [
+    "ABC-GHR-KB-39"
+   ],
+   "scored": true,
+   "pass": true,
+   "top1": true,
+   "top_section": "5. Important conditions",
+   "top_relevance": 0.372
+  }
+ ]
+}

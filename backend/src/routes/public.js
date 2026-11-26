@@ -1,4 +1,6 @@
 import { Router } from 'express';
+import { audioBody, sttLimiter, sttQuery } from './speech.js';
+import { transcribeAudio } from '../controllers/speech.controller.js';
 import { z } from 'zod';
 import { config } from '../config.js';
 import { limiter } from '../middleware/rateLimit.js';
@@ -67,6 +69,7 @@ r.get('/:slug/conversations/:id', validate({ params: slugIdParams }), ah(p.resol
 r.post('/:slug/conversations/:id/messages', messageLimiter, validate({ params: slugIdParams, body: messageBody }), ah(p.resolvePublicTenant), requireCustomerSession, ah(p.sendPublicMessage));
 r.post('/:slug/conversations/:id/select-slot', messageLimiter, validate({ params: slugIdParams, body: slotBody }), ah(p.resolvePublicTenant), requireCustomerSession, ah(p.selectPublicSlot));
 r.post('/:slug/conversations/:id/contact', messageLimiter, validate({ params: slugIdParams, body: contactBody }), ah(p.resolvePublicTenant), requireCustomerSession, ah(p.savePublicContact));
+r.post('/:slug/conversations/:id/transcribe', sttLimiter, audioBody, validate({ params: slugIdParams, query: sttQuery }), ah(p.resolvePublicTenant), requireCustomerSession, ah(transcribeAudio));
 r.post('/:slug/conversations/:id/end', validate({ params: slugIdParams }), ah(p.resolvePublicTenant), requireCustomerSession, ah(p.endPublicConversation));
 
 export default r;
