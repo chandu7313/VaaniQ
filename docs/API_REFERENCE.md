@@ -106,7 +106,7 @@ Body `{ text: string (1..1000), language?: "en"|"hi"|"te" }`
     "messageId": "uuid",
     "outcome": "slots_offered",
     "language": "en",
-    "sources": [{ "documentId": "uuid", "title": "ABC Heights - Project Overview", "section": "Apartment configurations", "relevance": 0.42 }],
+    "sources": [{ "documentId": "uuid", "title": "GreenHaven Residences - Project Overview", "section": "Apartment configurations", "relevance": 0.42 }],
     "analysis": {
       "source": "rules",
       "intent": "request_visit",

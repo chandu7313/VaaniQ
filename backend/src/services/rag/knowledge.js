@@ -55,6 +55,38 @@ export async function reindexDocuments(tenantId) {
   return { documents: rows.length, chunks: chunkTotal };
 }
 
+/**
+ * Keeps the tenant's DEMO documents identical to the given set: adds missing ones, re-chunks changed
+ * ones, deletes demo documents no longer in the set. Documents uploaded by users (is_demo = false)
+ * are never touched. Returns counts for logging.
+ */
+export async function syncDemoDocuments(tenantId, docs) {
+  const { rows } = await query('SELECT id, title, content FROM knowledge_documents WHERE tenant_id = $1 AND is_demo', [tenantId]);
+  const existing = new Map(rows.map((r) => [r.title, r]));
+  const wanted = new Set(docs.map((d) => d.title));
+  const result = { added: 0, updated: 0, removed: 0, unchanged: 0 };
+  for (const d of docs) {
+    const cur = existing.get(d.title);
+    if (!cur) { await ingestDocument(tenantId, { ...d, isDemo: true }); result.added++; continue; }
+    if (cur.content === d.content) { result.unchanged++; continue; }
+    const chunks = chunkDocument(d.title, d.content);
+    await withTransaction(async (c) => {
+      await c.query('UPDATE knowledge_documents SET content = $3 WHERE tenant_id = $1 AND id = $2', [tenantId, cur.id, d.content]);
+      await c.query('DELETE FROM knowledge_chunks WHERE document_id = $1', [cur.id]);
+      for (const ch of chunks) {
+        await c.query('INSERT INTO knowledge_chunks (tenant_id, document_id, chunk_index, section, content, flagged) VALUES ($1,$2,$3,$4,$5,$6)',
+          [tenantId, cur.id, ch.chunkIndex, ch.section, ch.content, ch.flagged]);
+      }
+    });
+    result.updated++;
+  }
+  for (const r of rows) {
+    if (!wanted.has(r.title)) { await query('DELETE FROM knowledge_documents WHERE tenant_id = $1 AND id = $2 AND is_demo', [tenantId, r.id]); result.removed++; }
+  }
+  invalidate(tenantId);
+  return result;
+}
+
 export async function listDocuments(tenantId) {
   const { rows } = await query(
     `SELECT d.id, d.title, d.source_type, d.is_demo, d.created_at,
@@ -112,8 +144,12 @@ export function expandQuery(text) {
  */
 export async function retrieve(tenantId, queryText, { k = 4, minRelevance = 0.2 } = {}) {
   const { byId, bm25 } = await loadIndex(tenantId);
+  let q = expandQuery(queryText);
+  // "Tell me about GreenHaven Residences": the name is in every document title, so it cannot pick a
+  // document. A question made only of such ubiquitous words is asking for the overview.
+  if (bm25.isGenericQuery(q)) q = `${q} project overview about`;
   return bm25
-    .search(expandQuery(queryText), k)
+    .search(q, k)
     .filter((h) => h.relevance >= minRelevance)
     .map((h) => {
       const r = byId.get(h.id);

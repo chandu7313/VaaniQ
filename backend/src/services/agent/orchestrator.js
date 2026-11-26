@@ -195,7 +195,7 @@ async function runTurn({ tenantId, conversationId, text, language, now = new Dat
     trace.proposal = { tool: 'escalateToHuman', args: { reason }, requiresConfirmation: false };
     const rec = await run('escalateToHuman', { reason }, reason);
     delete state.pendingProposal;
-    reply.push(rec.ok ? t(lang, 'escalated') : t(lang, 'fallback'));
+    reply.push(rec.ok ? t(lang, 'escalated') : t(lang, 'fallback', { project: settings.catalog.project }));
     outcome = rec.ok ? 'escalated' : 'escalation_failed';
     if (rec.ok) convStatus = 'escalated';
     asksQuestion = true;
@@ -207,7 +207,7 @@ async function runTurn({ tenantId, conversationId, text, language, now = new Dat
     delete state.pendingProposal;
     delete state.offeredSlots;
     if (rec.ok) {
-      reply.push(t(lang, 'booked', { slot: slotLabel(rec.result.starts_at.toISOString?.() ?? rec.result.starts_at, lang), ref: rec.result.id.slice(0, 8).toUpperCase() }));
+      reply.push(t(lang, 'booked', { slot: slotLabel(rec.result.starts_at.toISOString?.() ?? rec.result.starts_at, lang), ref: rec.result.id.slice(0, 8).toUpperCase(), project: settings.catalog.project }));
       outcome = 'appointment_booked';
     } else if (rec.error.code === 'SLOT_TAKEN') {
       reply.push(t(lang, 'slot_taken'));
@@ -264,7 +264,7 @@ async function runTurn({ tenantId, conversationId, text, language, now = new Dat
   if (!asksQuestion) {
     const next = FOLLOW_UP_ORDER.find((k) => score.missing.includes(k));
     if (next) reply.push(t(lang, `ask_${next}`));
-    else if (!reply.length) reply.push(t(lang, 'fallback'));
+    else if (!reply.length) reply.push(t(lang, 'fallback', { project: settings.catalog.project }));
   }
 
   const replyText = reply.join(' ');

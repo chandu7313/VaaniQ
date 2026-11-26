@@ -25,7 +25,7 @@ const TODAY = ['today', 'aaj', 'आज', 'ఈరోజు', 'ఈ రోజు'];
 
 const CONFIRM = [/\b(yes|yeah|yep|yup|sure|ok|okay|confirm|confirmed|correct|go ahead|book it|please book|sounds good|that works)\b/i, /(हाँ|हां|ठीक है|कन्फर्म|जी हाँ|पक्का)/, /(అవును|సరే|ఓకే|నిర్ధారించు|బుక్ చేయండి)/];
 const DECLINE = [/\b(no|nope|nah|cancel|don't|dont|do not|not now|different time|another time|change it)\b/i, /(नहीं|ना |रद्द|कोई और)/, /(వద్దు|కాదు|లేదు|రద్దు|వేరే)/];
-const VISIT = [/\b(site visit|visit|see the (flat|apartment|property|site|project)|arrange.*(visit|tour)|schedule|appointment|tour)\b/i, /(विजिट|देखने|साइट|दौरा)/, /(విజిట్|చూడాలి|సందర్శన|చూడటానికి)/];
+const VISIT = [/\b(site visit|visit|see the (flat|apartment|property|site|project)|arrange.*(visit|tour)|schedule (?:a |the |my )?(?:site )?(?:visit|tour|appointment|meeting)|appointment|tour)\b/i, /(विजिट|देखने|साइट|दौरा)/, /(విజిట్|చూడాలి|సందర్శన|చూడటానికి)/];
 const ASK = [/\?/, /\b(what|which|how|tell me|details|information|about|price|cost|rate|amenit|location|possession|loan|rera|parking|available|where|when|does|do you|is there|are there)\b/i,
   /(क्या|कितना|कितनी|बताइए|बताओ|जानकारी|कीमत|सुविधा|कब|कहाँ)/, /(ఏమిటి|ఎంత|చెప్పండి|సమాచారం|ధర|సౌకర్యాలు|ఎప్పుడు|ఎక్కడ)/];
 const GREETING = /^\s*(hi|hello|hey|good (morning|afternoon|evening)|namaste|नमस्ते|नमस्कार|నమస్తే|హలో)[\s!.,]*$/i;
@@ -176,7 +176,8 @@ export function extractEntities(text, now = new Date()) {
   return dropUndefined({
     bedrooms, location, purpose,
     preferences: preferences.length ? preferences : undefined,
-    ...parseBudget(text),
+    // An amount in a loan/EMI question ("EMI for a 70 lakh loan") is a loan amount, not the customer's budget.
+    ...(/\b(loan|emi)\b/i.test(text) && !/budget|afford|spend/i.test(text) ? {} : parseBudget(text)),
     timelineMonths: parseTimeline(text),
     decisionMaker: parseDecisionMaker(text),
     fullName: parseName(text),

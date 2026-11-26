@@ -101,7 +101,7 @@ export async function generateCallSummary(tenantId, conversationId, { end = true
   };
 
   const facts = [
-    `${summary.customerProfile.name || 'The customer'} enquired about ${[summary.requirements.configuration, summary.requirements.location && `in ${summary.requirements.location}`].filter(Boolean).join(' ') || 'ABC Heights'}`,
+    `${summary.customerProfile.name || 'The customer'} enquired about ${[summary.requirements.configuration, summary.requirements.location && `in ${summary.requirements.location}`].filter(Boolean).join(' ') || 'the project'}`,
     summary.requirements.budget && `with a budget around ${summary.requirements.budget}`,
     summary.requirements.timeline && `planning to buy within ${summary.requirements.timeline}`,
   ].filter(Boolean).join(', ');

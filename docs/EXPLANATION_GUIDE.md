@@ -62,7 +62,7 @@ Next turns: *"the first one"* + name and phone → a **proposal** (not a booking
 1. **Config** (`config.js`): `node --env-file` loads `.env`; Zod validates every variable. The process refuses to start without `DATABASE_URL` or a 32+ character `JWT_SECRET`. DEMO_MODE is decided here (no key or model means demo).
 2. **Pool** (`db/pool.js`): one `pg.Pool` (size `DB_POOL_MAX`, optional TLS via `DATABASE_SSL`). Every query goes through it with `$1` parameters; `withTransaction()` wraps multi-statement work.
 3. **Migrations** (`npm run migrate`): each `migrations/*.sql` runs once inside a transaction and is recorded in `schema_migrations`, so it is safe to re-run.
-4. **Seed** (`npm run seed`): an idempotent upsert of the fictional tenant, admin user (scrypt hash), 10 knowledge documents (chunked on ingest) and 4 demo leads whose scores come from the real scoring model.
+4. **Seed** (`npm run seed`): an idempotent upsert of the fictional tenant, the admin user (scrypt hash), and a **sync** of the 18 demo knowledge documents (added, re-chunked when changed, removed when retired; user-uploaded documents are never touched) and 4 demo leads whose scores come from the real scoring model.
 5. **App** (`app.js`): request id → Helmet → CORS allow-list → JSON body limit → rate limit → routes. Routes stay thin (path + middleware + Zod schema), **controllers** translate HTTP to service calls, and **services** hold the business logic and SQL. Errors flow to one handler that returns `{ error: { code, message, requestId } }`.
 6. **Server** (`server.js`): listens, checks the database once and logs `database_connected` or `database_unreachable` with a plain reason, and drains the pool on SIGTERM.
 7. **Frontend** (`main.jsx`): `AuthProvider` restores the session (`/auth/me` + `/meta`) → `Layout` (sidebar, demo banner, DEMO_MODE badge) → lazy-loaded pages. Vite proxies `/api` to port 4000, so there is one origin and no keys in the browser.
@@ -351,19 +351,39 @@ node --env-file-if-exists=../.env.test --test --test-concurrency=1 --test-name-p
 ### B8. Knowledge base and chunking
 - **What / why:** turns company documents into citeable chunks and keeps unsafe text out of retrieval.
 - **Input → output:** `{ title, content }` → document + chunks `{ section, content, flagged }` (heading-aware, ~110 words, injection-like text flagged and excluded).
-- **Files:** `services/rag/chunker.js`, `services/rag/knowledge.js`, `db/seedData.js` (10 fictional documents), `db/reindex.js`.
+- **Files:** `services/rag/chunker.js`, `services/rag/knowledge.js`, `db/seedData.js` (18 fictional documents, synced by `npm run setup`), `db/reindex.js`.
 - **Example:** a chunk containing "ignore all previous instructions" is stored with `flagged = true` and never retrieved.
-- **Debug:** Knowledge Base page → open a document to see its chunks; after changing chunking rules run `npm run kb:reindex`.
+- **Debug:** Knowledge Base page → open a document to see its chunks; after changing chunking rules run `npm run kb:reindex`; after editing `seedData.js` run `npm run setup` (prints added/updated/removed counts).
+- **The 18 demo documents** (all fictional, project *GreenHaven Residences* by *ABC Developers*):
+
+  | Document | Answers questions about |
+  |---|---|
+  | Project Overview | the project, towers, configurations, construction status |
+  | Pricing and Payment Plans | price list, payment plan, loan support, offers |
+  | Construction-Linked Payment Schedule | the 10 instalment stages, taxes, how to pay |
+  | Floor Plans and Carpet Areas | super built-up vs carpet area, room sizes |
+  | Specifications and Finishes | structure, flooring, kitchen, bathrooms, doors, electrical, lifts |
+  | Inventory and Availability | units per tower, units available, facings |
+  | Amenities | clubhouse, pool, gym, children's and senior areas |
+  | Green and Safety Features | solar, STP, EV charging, fire safety, security |
+  | Location and Connectivity · Neighbourhood Guide | workplaces, schools, hospitals, shopping, metro |
+  | Possession, RERA and Legal | possession dates, RERA (fictional number) |
+  | Home Loans and EMI Guide | partner lenders, RBI loan-to-value norms, illustrative EMIs, documents |
+  | Sales and Booking Policies | token amount, cancellation and refunds, discounts, quotations |
+  | Site Visit Policy and FAQs · Frequently Asked Questions | visit hours, Sundays, pets, water, parking, maintenance |
+  | Maintenance, Society and After-Sales | maintenance, corpus fund, owners' association, defect liability |
+  | NRI Buyer Guide | eligibility, payments, documents, video visits |
+  | Company Profile | ABC Developers, sales office |
 
 ### B9. RAG retrieval (BM25)
-- **What / why:** finds the most relevant verified chunks with explainable scores.
+- **What / why:** finds the most relevant verified chunks with explainable scores. Everyday words are normalised to the documents' vocabulary ("flat" → apartment, "cost" → price, "three bedroom" → 3bhk), conversational filler is ignored, and English topic words the knowledge base has never seen ("helipad", "beach") lower relevance, so off-topic questions get the honest fallback instead of an unrelated passage.
 - **Input → output:** query → top 3 `{ title, section, content, score, relevance (0..1) }`; relevance below 0.20 is dropped.
 - **Files:** `services/rag/bm25.js` (tokenizer, stemmer, BM25 k1 = 1.5, b = 0.75), `services/rag/knowledge.js#retrieve`, `expandQuery` (HI/TE keywords → English).
 - **Example:** "How much would a three bedroom flat cost?" → "3bhk" + "price" → *Pricing › Price list*. "Do you have a helipad?" → no hits → explicit fallback.
 - **Debug:** Knowledge Base → *Retrieval tester* or `POST /api/knowledge/search { "query": "…" }` (shows hits under the threshold too).
 
 ### B10. Response generation and grounding guard
-- **What / why:** writes the answer from retrieved chunks only.
+- **What / why:** writes the answer from retrieved chunks only. In DEMO_MODE it quotes the best 1–3 sentences from the top, nearly-equal sections: it prefers sentences whose text or section heading matches the question's topic, skips sentences about a different configuration (2BHK vs 3BHK), and drops repeated figures.
 - **Input → output:** question + hits (+ last 4 turns) → `{ text, method: llm_grounded | extractive | no_source }`.
 - **Files:** `services/agent/responder.js` (prompt rules, `ungroundedNumbers` guard, markdown/newline cleanup), `services/agent/templates.js` (EN/HI/TE fragments for all business statements).
 - **Example:** the model writes "Rs 86–113 lakh after discount" → 86 and 113 are not in the sources → the verbatim source sentence is used instead, with the reason in `trace.errors[]`.

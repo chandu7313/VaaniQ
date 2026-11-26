@@ -140,7 +140,7 @@ export default function CustomerVoiceConsole({
                           className="inline-flex items-center gap-1 rounded-md border border-[#DCE9DD] bg-[#EDEFE7] px-2 py-0.5 text-[11px] font-medium text-[#244D3C]"
                         >
                           <FileText className="size-3" />
-                          {s.title.replace(/^ABC (Heights|Developers) - /, '')} › {s.section}
+                          {s.title.replace(/^[^-]+ - /, '')} › {s.section}
                         </span>
                       ))}
                     {m.failed && <span className="text-xs text-[#A93B3B]">Failed: {m.failed}</span>}

@@ -17,7 +17,7 @@ export function ProductBrand({ size = 'md', surface = 'auto', compact = false, c
         />
       </div>
       {!compact && (
-        <div className="flex flex-col">
+        <div className="flex flex-col items-center text-center">
           <div className={`font-bold leading-none tracking-tight ${isSm ? 'text-[16px]' : isLg ? 'text-[24px]' : 'text-[19px]'}`}>
             <span className={isDarkSurface ? 'text-[#F3F6F4]' : 'text-[var(--vq-wordmark)]'}>Vaani</span>
             <span className="text-[#F16704]">Q</span>

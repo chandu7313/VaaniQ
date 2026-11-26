@@ -146,3 +146,22 @@ test('memory never turns an unsupported question into an answer about the previo
   const t3 = await say(id, 'And what about the size of those apartments?');
   assert.ok(t3.trace.retrieval.contextAdded.length > 0, 'explicit back-reference does use memory');
 });
+
+test('a loan amount is not mistaken for a budget; "payment schedule" is not a visit request (regressions)', async () => {
+  const t1 = await say(await newSession(), 'What would my EMI be for a 70 lakh loan?');
+  assert.equal(t1.lead.profile.budgetMax, undefined, 'loan amount not stored as budget');
+  assert.match(t1.reply, /Rs 60,748/);
+  const t2 = await say(await newSession(), 'What is the payment schedule?');
+  assert.notEqual(t2.outcome, 'slots_offered');
+  assert.match(t2.reply, /construction-linked/);
+  const t3 = await say(await newSession(), 'Can I schedule a site visit for Saturday?');
+  assert.equal(t3.outcome, 'slots_offered', 'a real scheduling request still offers slots');
+});
+
+test('demo-mode answer combines the most relevant sentences across close sections', async () => {
+  const t = await say(await newSession(), 'Which schools and hospitals are nearby?');
+  assert.match(t.reply, /CBSE and IB school/);
+  assert.match(t.reply, /multi-speciality hospital/);
+  const p = await say(await newSession(), 'What is the price of a 3BHK?');
+  assert.equal((p.reply.match(/Rs 88 lakh to Rs 115 lakh/g) || []).length, 1, 'same price not repeated from two documents');
+});

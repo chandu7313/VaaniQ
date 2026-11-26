@@ -78,7 +78,7 @@ export function InlineResidenceCards({ units = [], budgetLakh, sources = [] }) {
           <span>
             Source:{' '}
             {sources
-              .map((s) => `${s.title.replace(/^ABC (Heights|Developers) - /, '')} › ${s.section}`)
+              .map((s) => `${s.title.replace(/^[^-]+ - /, '')} › ${s.section}`)
               .join(' · ')}
           </span>
         </div>

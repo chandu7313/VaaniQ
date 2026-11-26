@@ -2,7 +2,7 @@ import { randomBytes } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { pool, query } from './pool.js';
 import { hashPassword } from '../lib/password.js';
-import { ingestDocument } from '../services/rag/knowledge.js';
+import { syncDemoDocuments } from '../services/rag/knowledge.js';
 import { demoDocuments, demoLeads, demoTenantSettings } from './seedData.js';
 import { scoreLead } from '../services/leadScoring.js';
 
@@ -27,9 +27,8 @@ export async function seed({ adminPassword } = {}) {
       [tenantId, DEMO_ADMIN_EMAIL, await hashPassword(password)]);
   } else generated = false;
 
-  const existing = await query('SELECT title FROM knowledge_documents WHERE tenant_id = $1', [tenantId]);
-  const have = new Set(existing.rows.map((r) => r.title));
-  for (const d of demoDocuments) if (!have.has(d.title)) await ingestDocument(tenantId, { ...d, isDemo: true });
+  // Demo documents are kept in sync with seedData.js (user-uploaded documents are never touched).
+  const knowledge = await syncDemoDocuments(tenantId, demoDocuments);
 
   for (const l of demoLeads) {
     const score = scoreLead(l.profile, { catalog: demoTenantSettings.catalog, scoring: demoTenantSettings.scoring });
@@ -44,13 +43,14 @@ export async function seed({ adminPassword } = {}) {
       [tenantId, l.full_name, l.phone, l.status, score.total, score, l.profile],
     );
   }
-  return { tenantId, generatedPassword: generated ? password : null };
+  return { tenantId, generatedPassword: generated ? password : null, knowledge };
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   seed()
     .then((r) => {
       console.log(`Seeded tenant ${r.tenantId}. Admin: ${DEMO_ADMIN_EMAIL}`);
+      console.log(`Knowledge base: ${r.knowledge.added} added, ${r.knowledge.updated} updated, ${r.knowledge.removed} removed, ${r.knowledge.unchanged} unchanged`);
       if (r.generatedPassword) console.log(`Generated admin password (shown once): ${r.generatedPassword}`);
       return pool.end();
     })

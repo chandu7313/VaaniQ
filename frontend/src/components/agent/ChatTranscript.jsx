@@ -97,7 +97,7 @@ export default function ChatTranscript({
                 {m.sources?.map((s) => (
                   <Badge key={`${s.documentId}${s.section}`} tone="sky" title={`relevance ${s.relevance}`}>
                     <FileText className="size-3.5" />
-                    {s.title.replace(/^ABC (Heights|Developers) - /, '')} › {s.section}
+                    {s.title.replace(/^[^-]+ - /, '')} › {s.section}
                   </Badge>
                 ))}
 

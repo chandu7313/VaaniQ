@@ -32,6 +32,7 @@ export default function App() {
         <Route path="/demo/:slug" element={<CustomerExperience />} />
 
         {/* Authorized Business Admin Console routes */}
+        <Route path="/admin" element={<Navigate to="/" replace />} />
         <Route element={<AdminShell />}>
           <Route index element={<Dashboard />} />
           <Route path="agent" element={<Agent />} />

@@ -20,12 +20,52 @@ Do not ask follow-up questions, do not offer or confirm bookings, and do not men
  * so "price of a 3BHK" quotes the 3BHK line rather than the 2BHK line above it.
  */
 export function extractiveAnswer(lang, hits, question = '') {
-  const best = hits.find((h) => h.content.length > 60) ?? hits[0];
-  const sentences = best.content.replace(/\n+/g, ' ').split(/(?<=[.!?])\s+/).filter(Boolean);
+  // Candidate chunks: the top hit plus any hit almost as relevant (a question about "schools and
+  // hospitals" spans several sections). Very short chunks (headings only) are skipped.
+  const usable = hits.filter((h) => h.content.length > 60);
+  const pool = (usable.length ? usable : hits).filter((h, i, arr) => i === 0 || h.relevance >= arr[0].relevance * 0.8).slice(0, 3);
   const q = new Set(tokenize(expandQuery(question)));
-  const scored = sentences.map((s, i) => ({ s, i, score: tokenize(s).filter((w) => q.has(w)).reduce((n, w) => n + (/\d/.test(w) ? 2 : 1), 0) }));
-  const chosen = [...scored].sort((a, b) => b.score - a.score || a.i - b.i).slice(0, 2).sort((a, b) => a.i - b.i);
-  return `${t(lang, 'info_intro')} ${chosen.map((c) => c.s).join(' ')}`;
+  // Topic words (e.g. "price", "school") as opposed to entities like "3bhk": a sentence that matches only
+  // the entity ("…2 covered parking slots for 3BHK…") does not answer a price question.
+  const topic = new Set([...q].filter((w) => !/\d/.test(w)));
+  // Asked about a 3BHK? Then a sentence only about a 2BHK is a different product: leave it out.
+  const askedUnits = [...q].filter((w) => /^\dbhk$/.test(w));
+  const aboutOtherUnit = (words) => askedUnits.length > 0 && words.some((w) => /^\dbhk$/.test(w)) && !words.some((w) => askedUnits.includes(w));
+  const all = pool.flatMap((h, rank) => {
+    // A section heading such as "Price list" or "Kitchen specification" says what every sentence under it answers.
+    const sectionOnTopic = tokenize(h.section || '').some((w) => topic.has(w));
+    return h.content.replace(/\n+/g, ' ').split(/(?<=[.!?])\s+/).filter(Boolean).map((s, i) => {
+      const words = tokenize(s);
+      return { s, rank, i, otherUnit: aboutOtherUnit(words), onTopic: sectionOnTopic || words.some((w) => topic.has(w)),
+        score: words.filter((w) => q.has(w)).reduce((n, w) => n + (/\d/.test(w) ? 2 : 1), 0)
+          + (sectionOnTopic ? 1 : 0) // the section is about what was asked
+          + (rank === 0 ? 0.5 : 0) }; // ties prefer the most relevant source
+    });
+  });
+  const relevant = all.filter((c) => !c.otherUnit);
+  const onTopic = relevant.filter((c) => c.onTopic);
+  const candidates = topic.size && onTopic.length ? onTopic : relevant.length ? relevant : all;
+  const numbers = (s) => new Set(s.match(/\d[\d,.]*/g) || []);
+  const chosen = [];
+  for (const c of [...candidates].sort((a, b) => b.score - a.score || a.rank - b.rank || a.i - b.i)) {
+    if (chosen.length && c.score < 1) break;
+    if (chosen.some((x) => x.s === c.s)) continue; // the same sentence can appear in two chunks
+    // Skip a sentence that restates figures already chosen (the same price appears in two documents).
+    const n = numbers(c.s);
+    if (chosen.some((x) => [...numbers(x.s)].filter((v) => n.has(v)).length >= 2)) continue;
+    if (chosen.length && chosen.reduce((len, x) => len + x.s.length, 0) + c.s.length > 380) continue;
+    chosen.push(c);
+    if (chosen.length === 3) break;
+  }
+  // A single matching sentence reads like a fragment: continue with the next sentence of the same passage.
+  if (chosen.length === 1) {
+    const next = all.find((c) => c.rank === chosen[0].rank && c.i === chosen[0].i + 1 && !c.otherUnit);
+    if (next && chosen[0].s.length + next.s.length <= 380) chosen.push(next);
+  }
+  // Lead with the sentence that best answers the question; supporting sentences follow in reading order.
+  const [lead, ...rest] = chosen;
+  rest.sort((a, b) => a.rank - b.rank || a.i - b.i);
+  return `${t(lang, 'info_intro')} ${[lead, ...rest].map((c) => c.s).join(' ')}`;
 }
 
 // Native Devanagari/Telugu digits are normalised so the numeric check cannot be bypassed by script.

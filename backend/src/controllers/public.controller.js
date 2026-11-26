@@ -108,7 +108,7 @@ export async function overview(req, res) {
       tenant: {
         slug: tenant.slug,
         companyName: tenant.name.replace(/\s*\(fictional demo\)\s*/i, '').trim(),
-        projectName: tenant.slug === 'abc-developers' ? 'GreenHaven Residences' : catalog.project,
+        projectName: catalog.publicProject || catalog.project,
         catalogProjectName: catalog.project,
         location: catalog.location,
         isDemo: tenant.is_demo,

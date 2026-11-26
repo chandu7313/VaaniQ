@@ -2,7 +2,8 @@
 
 export const demoTenantSettings = {
   catalog: {
-    project: 'ABC Heights',
+    // One project name everywhere (UI, documents, agent replies), so retrieval and answers agree.
+    project: 'GreenHaven Residences',
     location: 'Gachibowli, Hyderabad',
     units: [
       { type: '2BHK', bedrooms: 2, sizeSqft: [1150, 1290], priceLakh: [68, 82] },
@@ -22,8 +23,8 @@ const fmtPrice = (u) => `Rs ${u.priceLakh[0]} lakh to Rs ${u.priceLakh[1]} lakh`
 
 export const demoDocuments = [
   {
-    title: 'ABC Heights - Project Overview',
-    content: `# ABC Heights - Project Overview
+    title: 'GreenHaven Residences - Project Overview',
+    content: `# GreenHaven Residences - Project Overview
 (FICTIONAL DEMO DATA - ABC Developers is not a real company.)
 
 ## About the project
@@ -37,8 +38,8 @@ All apartments are vastu compliant with 2 covered parking slots for 3BHK and 1 f
 Tower A is at the 11th floor slab stage and Tower B is at the 8th floor slab stage as of the demonstration data date.`,
   },
   {
-    title: 'ABC Heights - Pricing and Payment Plans',
-    content: `# ABC Heights - Pricing and Payment Plans
+    title: 'GreenHaven Residences - Pricing and Payment Plans',
+    content: `# GreenHaven Residences - Pricing and Payment Plans
 (FICTIONAL DEMO DATA)
 
 ## Price list
@@ -54,8 +55,8 @@ ABC Developers has tie-ups with three fictional partner banks. Pre-approved loan
 A festive discount of Rs 2 lakh applies on 3BHK bookings made after a site visit, valid for the demonstration period only.`,
   },
   {
-    title: 'ABC Heights - Amenities',
-    content: `# ABC Heights - Amenities
+    title: 'GreenHaven Residences - Amenities',
+    content: `# GreenHaven Residences - Amenities
 (FICTIONAL DEMO DATA)
 
 ## Clubhouse and sports
@@ -68,8 +69,8 @@ A children's play area, senior citizen park, jogging track, and a convenience st
 24x7 security with CCTV, power backup for common areas and lifts, rainwater harvesting and a sewage treatment plant.`,
   },
   {
-    title: 'ABC Heights - Location and Connectivity',
-    content: `# ABC Heights - Location and Connectivity
+    title: 'GreenHaven Residences - Location and Connectivity',
+    content: `# GreenHaven Residences - Location and Connectivity
 (FICTIONAL DEMO DATA)
 
 ## Neighbourhood
@@ -79,8 +80,8 @@ ${project} is located in ${location}, close to the financial district and major 
 Schools, hospitals and shopping malls are within 3 km. The nearest metro station is planned at about 2.5 km (planned, not operational).`,
   },
   {
-    title: 'ABC Heights - Possession, RERA and Legal',
-    content: `# ABC Heights - Possession, RERA and Legal
+    title: 'GreenHaven Residences - Possession, RERA and Legal',
+    content: `# GreenHaven Residences - Possession, RERA and Legal
 (FICTIONAL DEMO DATA)
 
 ## Possession timeline
@@ -115,18 +116,18 @@ Yes. Family members and co-decision makers are welcome on the visit.`,
 ABC Developers is a Hyderabad-based residential developer founded in 2009. It has delivered 6 residential projects with over 1,800 homes in western Hyderabad, all fictional for this demonstration.
 
 ## Current project
-The company's current project is ABC Heights. Configurations, prices and availability are described in the ABC Heights project documents.
+The company's current project is GreenHaven Residences. Configurations, prices and availability are described in the GreenHaven Residences project documents.
 
 ## Sales office
-The sales office at the ABC Heights site is open Monday to Saturday, 10 AM to 6 PM. A human sales executive can call back customers who prefer to speak with a person.`,
+The sales office at the GreenHaven Residences site is open Monday to Saturday, 10 AM to 6 PM. A human sales executive can call back customers who prefer to speak with a person.`,
   },
   {
-    title: 'ABC Heights - Inventory and Availability',
-    content: `# ABC Heights - Inventory and Availability
+    title: 'GreenHaven Residences - Inventory and Availability',
+    content: `# GreenHaven Residences - Inventory and Availability
 (FICTIONAL DEMO DATA)
 
 ## Total inventory
-ABC Heights has 264 apartments in 2 towers: each tower has 66 2BHK and 66 3BHK apartments.
+GreenHaven Residences has 264 apartments in 2 towers: each tower has 66 2BHK and 66 3BHK apartments.
 
 ## Units available
 As of the demonstration data date: 2BHK apartments available: 49 (18 in Tower A and 31 in Tower B). 3BHK apartments available: 33 (11 in Tower A and 22 in Tower B).
@@ -158,8 +159,8 @@ Prices may change. A written quotation is valid for 15 days from its date.
 Buyers need PAN, Aadhaar and two passport-size photographs to book. NRI buyers are welcome and need a valid passport.`,
   },
   {
-    title: 'ABC Heights - Frequently Asked Questions',
-    content: `# ABC Heights - Frequently Asked Questions
+    title: 'GreenHaven Residences - Frequently Asked Questions',
+    content: `# GreenHaven Residences - Frequently Asked Questions
 (FICTIONAL DEMO DATA)
 
 ## What are the maintenance charges
@@ -176,6 +177,152 @@ Site visits are not available on Sundays. Visits run Monday to Saturday, 10 AM t
 
 ## Is car parking included
 Each 3BHK includes 2 covered parking slots and each 2BHK includes 1 covered parking slot.`,
+  },
+  {
+    title: 'GreenHaven Residences - Floor Plans and Carpet Areas',
+    content: `# GreenHaven Residences - Floor Plans and Carpet Areas
+(FICTIONAL DEMO DATA)
+
+## 2BHK floor plan
+2BHK apartments have a super built-up area of 1150 to 1290 sq ft and a carpet area of 820 to 920 sq ft. Each has a living and dining area, two bedrooms, two bathrooms, a kitchen with a utility area, and two balconies.
+
+## 3BHK floor plan
+3BHK apartments have a super built-up area of 1620 to 1840 sq ft and a carpet area of 1160 to 1320 sq ft. Each has a living and dining area, three bedrooms, three bathrooms, a kitchen with a utility area, a pooja niche, and three balconies.
+
+## Room sizes
+Master bedroom: 13 ft x 14 ft in 3BHK and 12 ft x 13 ft in 2BHK. Living room: 12 ft x 20 ft in 3BHK and 11 ft x 17 ft in 2BHK. Kitchen: 9 ft x 10 ft in both configurations.
+
+## Carpet area versus super built-up area
+Carpet area is the usable floor area inside the apartment walls. Super built-up area adds the wall thickness, balconies and a proportionate share of common areas such as lobbies, staircases and the clubhouse. Prices are quoted on super built-up area.`,
+  },
+  {
+    title: 'GreenHaven Residences - Specifications and Finishes',
+    content: `# GreenHaven Residences - Specifications and Finishes
+(FICTIONAL DEMO DATA)
+
+## Structure
+RCC framed structure designed for seismic zone II, with solid concrete block walls.
+
+## Flooring
+800 mm x 800 mm vitrified tiles in the living, dining and bedrooms. Laminated wooden flooring in the master bedroom of 3BHK apartments. Anti-skid ceramic tiles in bathrooms, balconies and the utility area.
+
+## Kitchen specification
+Granite counter top with a stainless steel sink, ceramic wall tiles up to 2 ft above the counter, and provisions for a water purifier, a chimney, a microwave and a washing machine in the utility area. Kitchen cabinets are not included.
+
+## Bathrooms
+Wall tiles up to 7 ft, wall-mounted EWC, chrome-plated fittings, and provision for a geyser in every bathroom.
+
+## Doors and windows
+Teak wood frame main door, UPVC sliding windows with mosquito mesh, and UPVC sliding doors to the balconies.
+
+## Electrical and power
+Concealed copper wiring with modular switches. Each apartment has a 5 kW connection for 2BHK and 7 kW for 3BHK, with 100 percent DG power backup for common areas and 2 kW backup per apartment.
+
+## Lifts
+Three high-speed lifts per tower, including one service lift.`,
+  },
+  {
+    title: 'GreenHaven Residences - Construction-Linked Payment Schedule',
+    content: `# GreenHaven Residences - Construction-Linked Payment Schedule
+(FICTIONAL DEMO DATA)
+
+## Payment schedule by construction stage
+The payment schedule for every apartment is construction-linked, paid in 10 instalments of 10 percent each:
+Booking: 10 percent. Completion of foundation: 10 percent. Completion of the 2nd slab: 10 percent. Completion of the 5th slab: 10 percent. Completion of the 8th slab: 10 percent. Completion of the 11th slab: 10 percent. Completion of the 14th slab: 10 percent. Completion of the top (18th) slab: 10 percent. Completion of flooring and finishing: 10 percent. Possession: 10 percent.
+
+## Taxes and charges
+GST, registration, stamp duty and the maintenance deposit are payable in addition to the instalments, as per applicable rules at the time of payment.
+
+## How to pay
+Payments are accepted by bank transfer or cheque in favour of the project escrow account only. ABC Developers does not accept cash payments.`,
+  },
+  {
+    title: 'ABC Developers - Home Loans and EMI Guide',
+    content: `# ABC Developers - Home Loans and EMI Guide
+(FICTIONAL DEMO DATA. Interest rates and EMIs are illustrative, not an offer.)
+
+## Partner banks
+GreenHaven Residences is pre-approved by three fictional partner lenders: Deccan Housing Bank, Charminar Finance and Godavari Home Loans. Buyers may also use any other bank.
+
+## Loan eligibility
+Under RBI loan-to-value norms, lenders can finance up to 80 percent of the property value for loans from Rs 30 lakh to Rs 75 lakh, and up to 75 percent for loans above Rs 75 lakh, subject to income, credit score and the lender's own assessment. Loan tenure can be up to 30 years.
+
+## Illustrative EMI examples
+At an illustrative interest rate of 8.5 percent for 20 years: a loan of Rs 50 lakh has an EMI of about Rs 43,391; a loan of Rs 70 lakh has an EMI of about Rs 60,748; and a loan of Rs 80 lakh has an EMI of about Rs 69,426. Actual EMIs depend on the lender's rate on the day of sanction.
+
+## Documents for a home loan
+PAN, Aadhaar, the last 6 months of salary slips or 2 years of income tax returns for self-employed buyers, 6 months of bank statements, and the allotment letter from ABC Developers.`,
+  },
+  {
+    title: 'GreenHaven Residences - Neighbourhood Guide',
+    content: `# GreenHaven Residences - Neighbourhood Guide
+(FICTIONAL DEMO DATA. Distances are approximate.)
+
+## Schools nearby
+An international CBSE and IB school at about 1.8 km, a state-board school at about 2.2 km, and two pre-schools within 1 km.
+
+## Hospitals nearby
+A 300-bed multi-speciality hospital at about 2.6 km and a 24x7 clinic and pharmacy at about 900 m.
+
+## Shopping and daily needs
+A large shopping mall at about 2.9 km, two supermarkets within 1.5 km, and a convenience store inside the campus.
+
+## Workplaces
+The Financial District and major IT parks are about 10 minutes away by road.`,
+  },
+  {
+    title: 'GreenHaven Residences - Green and Safety Features',
+    content: `# GreenHaven Residences - Green and Safety Features
+(FICTIONAL DEMO DATA)
+
+## Energy and water
+Solar panels power the common-area lighting. A sewage treatment plant recycles water for landscaping, and rainwater harvesting pits recharge groundwater. Treated water is used for flushing.
+
+## Electric vehicles
+Each tower has shared EV charging points in the basement, and every 3BHK parking slot has provision for a private charger.
+
+## Fire and life safety
+Automatic sprinklers and smoke detectors in common areas, fire hydrants on every floor, and two staircases per tower.
+
+## Security
+Three-tier security with a manned gate, CCTV in common areas and an intercom from every apartment to the security desk.
+
+## Certification status
+The project is designed to green-building guidelines, but no green-building certification has been obtained.`,
+  },
+  {
+    title: 'ABC Developers - Maintenance, Society and After-Sales',
+    content: `# ABC Developers - Maintenance, Society and After-Sales
+(FICTIONAL DEMO DATA)
+
+## Maintenance charges
+Maintenance is Rs 3 per sq ft per month, collected from possession. A one-time corpus fund of Rs 50 per sq ft is collected at possession.
+
+## Owners' association
+ABC Developers manages the facilities for the first 12 months after possession, after which the registered owners' association takes over.
+
+## Defect liability
+Structural defects reported within 5 years of possession are rectified by ABC Developers at no cost, as required under RERA.
+
+## Customer care
+The customer care desk is open Monday to Saturday, 10 AM to 6 PM. Service requests can be raised at the site office or by email to the sales team.`,
+  },
+  {
+    title: 'ABC Developers - NRI Buyer Guide',
+    content: `# ABC Developers - NRI Buyer Guide
+(FICTIONAL DEMO DATA. General guidance only, not legal or tax advice.)
+
+## Can NRIs buy here
+Non-resident Indians can buy residential apartments at GreenHaven Residences. The ABC Developers sales team assists NRI buyers remotely.
+
+## Payments for NRI buyers
+NRI payments must come from an NRE, NRO or FCNR account in India, or by inward remittance through normal banking channels.
+
+## Documents for NRI buyers
+A valid passport, an overseas address proof, PAN, and passport-size photographs. A power of attorney can be used if the buyer cannot be present for registration.
+
+## Site visits for NRI buyers
+NRI buyers can join a video site visit with a sales executive during visiting hours, Monday to Saturday, 10 AM to 6 PM.`,
   },
 ];
 

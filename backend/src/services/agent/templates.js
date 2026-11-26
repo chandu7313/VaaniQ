@@ -21,14 +21,14 @@ const T = {
     ask_contact_name: 'To book the visit, may I have your name?',
     ask_contact_phone: 'To book the visit, may I have your 10-digit mobile number?',
     confirm_request: 'Shall I book your site visit for {slot}? Please say yes to confirm, or no to pick another time.',
-    booked: 'Your site visit is confirmed for {slot}. Reference: {ref}. Our sales executive will meet you at ABC Heights.',
+    booked: 'Your site visit is confirmed for {slot}. Reference: {ref}. Our sales executive will meet you at {project}.',
     slot_taken: 'Sorry, that slot was just taken by another customer.',
     already_booked: 'You already have a site visit booked for {slot}. Our team can help if you need to reschedule.',
     booking_error: 'I could not complete the booking ({reason}). Nothing has been booked.',
     declined: 'No problem, I have not booked anything. Would you like a different day or time?',
     escalated: 'I am handing this over to a member of our sales team. A human colleague will contact you shortly.',
     goodbye: 'Thank you for speaking with ABC Developers. Have a great day!',
-    fallback: 'I can help with ABC Heights project details, pricing, amenities, and arranging a site visit. What would you like to know?',
+    fallback: 'I can help with {project} project details, pricing, amenities, and arranging a site visit. What would you like to know?',
     ask_budget: 'What budget range do you have in mind?',
     ask_bedrooms: 'Are you looking for a 2BHK or a 3BHK?',
     ask_location: 'Which area do you prefer?',
@@ -55,14 +55,14 @@ const T = {
     ask_contact_name: 'विजिट बुक करने के लिए कृपया अपना नाम बताइए।',
     ask_contact_phone: 'विजिट बुक करने के लिए कृपया अपना 10 अंकों का मोबाइल नंबर बताइए।',
     confirm_request: 'क्या मैं आपकी साइट विजिट {slot} के लिए बुक कर दूँ? पुष्टि के लिए "हाँ" कहें, या दूसरा समय चुनने के लिए "नहीं"।',
-    booked: 'आपकी साइट विजिट {slot} के लिए पक्की हो गई है। रेफरेंस: {ref}। हमारे सेल्स एग्जीक्यूटिव आपसे ABC Heights पर मिलेंगे।',
+    booked: 'आपकी साइट विजिट {slot} के लिए पक्की हो गई है। रेफरेंस: {ref}। हमारे सेल्स एग्जीक्यूटिव आपसे {project} पर मिलेंगे।',
     slot_taken: 'क्षमा करें, वह स्लॉट अभी किसी और ग्राहक ने बुक कर लिया।',
     already_booked: 'आपकी साइट विजिट पहले से {slot} के लिए बुक है। समय बदलने के लिए हमारी टीम मदद करेगी।',
     booking_error: 'बुकिंग पूरी नहीं हो सकी ({reason})। कुछ भी बुक नहीं हुआ है।',
     declined: 'कोई बात नहीं, मैंने कुछ भी बुक नहीं किया है। क्या आप कोई और दिन या समय चाहेंगे?',
     escalated: 'मैं यह बातचीत हमारी सेल्स टीम को सौंप रही हूँ। हमारे सहयोगी जल्द ही आपसे संपर्क करेंगे।',
     goodbye: 'ABC Developers से बात करने के लिए धन्यवाद। आपका दिन शुभ हो!',
-    fallback: 'मैं ABC Heights की जानकारी, कीमत, सुविधाओं और साइट विजिट में मदद कर सकती हूँ। आप क्या जानना चाहेंगे?',
+    fallback: 'मैं {project} की जानकारी, कीमत, सुविधाओं और साइट विजिट में मदद कर सकती हूँ। आप क्या जानना चाहेंगे?',
     ask_budget: 'आपका बजट लगभग कितना है?',
     ask_bedrooms: 'आप 2BHK देख रहे हैं या 3BHK?',
     ask_location: 'आप कौन सा इलाका पसंद करेंगे?',
@@ -89,14 +89,14 @@ const T = {
     ask_contact_name: 'విజిట్ బుక్ చేయడానికి దయచేసి మీ పేరు చెప్పండి.',
     ask_contact_phone: 'విజిట్ బుక్ చేయడానికి దయచేసి మీ 10 అంకెల మొబైల్ నంబర్ చెప్పండి.',
     confirm_request: '{slot}కి మీ సైట్ విజిట్ బుక్ చేయమంటారా? నిర్ధారించడానికి "అవును" అనండి, వేరే సమయం కోసం "వద్దు" అనండి.',
-    booked: 'మీ సైట్ విజిట్ {slot}కి నిర్ధారించబడింది. రిఫరెన్స్: {ref}. మా సేల్స్ ఎగ్జిక్యూటివ్ ABC Heights వద్ద మిమ్మల్ని కలుస్తారు.',
+    booked: 'మీ సైట్ విజిట్ {slot}కి నిర్ధారించబడింది. రిఫరెన్స్: {ref}. మా సేల్స్ ఎగ్జిక్యూటివ్ {project} వద్ద మిమ్మల్ని కలుస్తారు.',
     slot_taken: 'క్షమించండి, ఆ స్లాట్‌ను ఇప్పుడే మరొక కస్టమర్ బుక్ చేశారు.',
     already_booked: 'మీకు ఇప్పటికే {slot}కి సైట్ విజిట్ బుక్ అయి ఉంది. మార్చాలంటే మా బృందం సహాయం చేస్తుంది.',
     booking_error: 'బుకింగ్ పూర్తి కాలేదు ({reason}). ఏదీ బుక్ కాలేదు.',
     declined: 'పర్వాలేదు, నేను ఏదీ బుక్ చేయలేదు. వేరే రోజు లేదా సమయం కావాలా?',
     escalated: 'ఈ సంభాషణను మా సేల్స్ బృందానికి అప్పగిస్తున్నాను. మా సహోద్యోగి త్వరలో మిమ్మల్ని సంప్రదిస్తారు.',
     goodbye: 'ABC Developers తో మాట్లాడినందుకు ధన్యవాదాలు. శుభదినం!',
-    fallback: 'ABC Heights వివరాలు, ధరలు, సౌకర్యాలు మరియు సైట్ విజిట్‌లో నేను సహాయం చేయగలను. మీరు ఏమి తెలుసుకోవాలనుకుంటున్నారు?',
+    fallback: '{project} వివరాలు, ధరలు, సౌకర్యాలు మరియు సైట్ విజిట్‌లో నేను సహాయం చేయగలను. మీరు ఏమి తెలుసుకోవాలనుకుంటున్నారు?',
     ask_budget: 'మీ బడ్జెట్ సుమారు ఎంత?',
     ask_bedrooms: 'మీరు 2BHK చూస్తున్నారా లేదా 3BHK?',
     ask_location: 'మీకు ఏ ప్రాంతం ఇష్టం?',
@@ -108,8 +108,11 @@ const T = {
 };
 
 export const LOCALES = { en: 'en-IN', hi: 'hi-IN', te: 'te-IN' };
+const DEFAULT_PROJECT = { en: 'our project', hi: 'हमारी परियोजना', te: 'మా ప్రాజెక్ట్' };
 
 export function t(lang, key, params = {}) {
+  // {project} comes from the tenant's catalog; a neutral default keeps a reply readable if a caller omits it.
+  params = { project: DEFAULT_PROJECT[lang] || DEFAULT_PROJECT.en, ...params };
   const table = T[lang] || T.en;
   const tpl = table[key] ?? T.en[key];
   if (typeof tpl !== 'string') throw new Error(`Template ${key} is not a string`);

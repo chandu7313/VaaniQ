@@ -8,7 +8,7 @@ export const DEFAULT_SETTINGS = {
   autoSpeak: true,
   rate: 1,
   voices: { en: '', hi: '', te: '' },
-  theme: 'light',
+  theme: 'dark',
 };
 
 function load() {

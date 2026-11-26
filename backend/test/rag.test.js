@@ -77,5 +77,48 @@ test('"three bedroom" and "3 bed room" retrieve the same documents as "3BHK" (re
   assert.ok(tokenize('three bedroom flat').includes('3bhk'));
   assert.ok(tokenize('3 bed room').includes('3bhk'));
   const hits = await retrieve(tenantId, 'How much would a three bedroom flat cost?');
-  assert.equal(hits[0].section, 'Price list');
+  assert.ok(['Price list', 'Apartment configurations'].includes(hits[0].section), hits[0].section);
+  assert.match(hits[0].content, /3BHK[^.]*Rs 88 lakh to Rs 115 lakh/, 'top hit states the 3BHK price');
+});
+
+test('new company documents answer their topics; off-topic questions find nothing', async () => {
+  const top = async (q) => (await retrieve(tenantId, q))[0];
+  const cases = [
+    ['What is the kitchen specification?', 'Kitchen specification', /Granite counter top/],
+    ['What would my EMI be for a 70 lakh loan?', 'Illustrative EMI examples', /Rs 60,748/],
+    ['Which schools are nearby?', 'Schools nearby', /CBSE and IB school/],
+    ['What is the carpet area of a 3BHK?', '3BHK floor plan', /carpet area of 1160 to 1320 sq ft/],
+    ['What is the payment schedule?', 'Payment schedule by construction stage', /Completion of foundation: 10 percent/],
+    ['Do you have EV charging?', 'Electric vehicles', /EV charging points/],
+    ['Can NRIs buy here?', 'Can NRIs buy here', /Non-resident Indians/],
+    ['Tell me about GreenHaven Residences', 'About the project', /GreenHaven Residences is a gated residential apartment community/],
+  ];
+  for (const [q, section, text] of cases) {
+    const h = await top(q);
+    assert.ok(h, `no hit for: ${q}`);
+    assert.equal(h.section, section, q);
+    assert.match(h.content, text, q);
+  }
+  for (const q of ['Do you have a helipad and a private golf course?', 'Is there a private beach?', 'What is your stock price?', 'What is the GDP of India?', 'Do you sell commercial office space?']) {
+    assert.deepEqual(await retrieve(tenantId, q), [], `should find nothing: ${q}`);
+  }
+});
+
+test('re-seeding syncs demo documents and never touches user-uploaded ones', async () => {
+  const { syncDemoDocuments } = await import('../src/services/rag/knowledge.js');
+  const { query } = await import('./helpers.js');
+  await ingestDocument(tenantId, { title: 'My uploaded brochure', content: '# Brochure\n## Notes\nUploaded by staff and must survive every re-seed of demo data.' });
+  const docs = [{ title: 'Demo A', content: '# Demo A\n## S\nFirst version of demo text for the sync test.' }];
+  let r = await syncDemoDocuments(tenantId, docs);
+  assert.equal(r.added, 1);
+  r = await syncDemoDocuments(tenantId, [{ title: 'Demo A', content: '# Demo A\n## S\nSecond version of demo text for the sync test.' }]);
+  assert.deepEqual([r.updated, r.added], [1, 0]);
+  const chunk = await query("SELECT c.content FROM knowledge_chunks c JOIN knowledge_documents d ON d.id = c.document_id WHERE d.title = 'Demo A'");
+  assert.match(chunk.rows[0].content, /Second version/, 'changed content was re-chunked');
+  r = await syncDemoDocuments(tenantId, []);
+  assert.ok(r.removed >= 1, 'stale demo documents removed');
+  const demoLeft = await query('SELECT COUNT(*)::int n FROM knowledge_documents WHERE tenant_id = $1 AND is_demo', [tenantId]);
+  assert.equal(demoLeft.rows[0].n, 0, 'no demo documents remain');
+  const upload = await query("SELECT 1 FROM knowledge_documents WHERE tenant_id = $1 AND title = 'My uploaded brochure'", [tenantId]);
+  assert.equal(upload.rowCount, 1, 'user-uploaded document untouched');
 });

@@ -2,7 +2,7 @@
 
 **An autonomous AI sales agent (MVP).** VaaniQ talks to customers by voice or text in **English, Hindi and Telugu**. It answers only from verified company documents (RAG with citations), qualifies leads with an explainable 100-point score, and books site visits through validated backend tools, **only after the customer explicitly confirms**. Everything is saved in PostgreSQL, and every decision is shown on an auditable **Agent Decision Trace**.
 
-> **All business data is fictional.** "ABC Developers", the *ABC Heights* project in Gachibowli, Hyderabad, its prices, inventory, RERA number and every seeded customer are demonstration data, labelled `DEMO` in the UI.
+> **All business data is fictional.** "ABC Developers", the *GreenHaven Residences* project in Gachibowli, Hyderabad, its prices, inventory, RERA number and every seeded customer are demonstration data, labelled `DEMO` in the UI.
 
 **Docs:** [Project report](docs/PROJECT_REPORT.md) · [Architecture](docs/ARCHITECTURE.md) · [Explanation guide](docs/EXPLANATION_GUIDE.md) · [API reference](docs/API_REFERENCE.md) · [Technical Q&A](docs/TECHNICAL_QA.md) · [Demo script (5 min)](docs/DEMO_SCRIPT.md) · [Scalability & security](docs/SCALABILITY_AND_SECURITY.md) · [QA report](docs/QA_REPORT.md) · [Test results](docs/TEST_RESULTS.md)
 
@@ -17,7 +17,7 @@
 | English / Hindi / Telugu | Implemented · **Partial** in DEMO_MODE | DEMO_MODE understanding is keyword-based and quotes English documents |
 | LLM provider abstraction | Implemented | **Groq verified live**; Gemini adapter-tested only |
 | DEMO_MODE (no API key) | **Mocked/Demo** | rule-based NLU + verbatim extractive answers; shown in the header badge and every trace |
-| RAG: ingestion, chunking, BM25 top-3, threshold, citations, injection flagging | Implemented | embeddings / pgvector **Planned** |
+| RAG: 18 fictional company documents, ingestion, chunking, BM25 top-3, threshold, citations, injection flagging | Implemented | embeddings / pgvector **Planned** |
 | Numeric grounding guard on LLM answers | Implemented | figures not in the sources trigger a verbatim fallback |
 | Conversation memory, follow-ups, session isolation | Implemented | turn serialization is per process (multi-instance lock **Planned**) |
 | Intent and entity extraction, sentiment (text-based) | Implemented | not acoustic emotion detection |
@@ -61,7 +61,7 @@ Useful scripts (from `backend/`):
 | `npm run setup` | migrate + idempotent seed |
 | `npm run db:reset -- --yes` | **dev only, deletes all data**, then re-seeds the demo |
 | `npm run kb:reindex` | re-chunk stored documents (CRM data untouched) |
-| `npm test` | 96 tests (unit, PostgreSQL integration, HTTP end-to-end) |
+| `npm test` | 105 tests (unit, PostgreSQL integration, HTTP end-to-end) |
 | `npm run lint` | syntax check of every source file |
 
 ## Docker Compose
@@ -101,7 +101,7 @@ Tests use the database in `.env.test`, whose name must contain `_test`; the help
 ```bash
 node --env-file-if-exists=../.env.test --test --test-concurrency=1 --test-name-pattern="concurrent bookings" test/booking.test.js
 ```
-Latest results: [docs/TEST_RESULTS.md](docs/TEST_RESULTS.md) (96/96 passing).
+Latest results: [docs/TEST_RESULTS.md](docs/TEST_RESULTS.md) (105/105 passing).
 
 ## Repository layout
 
@@ -141,7 +141,7 @@ git diff --cached | grep -nE "gsk_[A-Za-z0-9]{20,}|AIza[0-9A-Za-z_-]{30,}|sk-[A-
 ## Submission checklist
 
 - [ ] `.env.example` contains placeholders only (no real keys or passwords)
-- [ ] `cd backend && npm test` → 96/96 passing
+- [ ] `cd backend && npm test` → 105/105 passing
 - [ ] `cd backend && npm run lint` and `cd frontend && npm run lint && npm run build` clean
 - [ ] `npm run db:reset -- --yes` run on the demo database
 - [ ] App starts, `/api/health` returns `ok`, and you can log in

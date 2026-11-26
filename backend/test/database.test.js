@@ -41,7 +41,7 @@ test('seed is repeatable and demo lead scores come from the scoring model', asyn
   await seed({ adminPassword: 'test-password-1' }); // second run on an already-seeded DB
   const counts = await query(`SELECT (SELECT COUNT(*)::int FROM tenants) t, (SELECT COUNT(*)::int FROM users) u,
                                      (SELECT COUNT(*)::int FROM knowledge_documents) d, (SELECT COUNT(*)::int FROM leads WHERE is_demo) l`);
-  assert.deepEqual(counts.rows[0], { t: 1, u: 1, d: 10, l: 4 });
+  assert.deepEqual(counts.rows[0], { t: 1, u: 1, d: 18, l: 4 });
   const { rows } = await query('SELECT full_name, profile, score, score_breakdown FROM leads WHERE is_demo ORDER BY score DESC');
   for (const l of rows) {
     const expected = scoreLead(l.profile, { catalog: demoTenantSettings.catalog, scoring: demoTenantSettings.scoring });
@@ -49,4 +49,13 @@ test('seed is repeatable and demo lead scores come from the scoring model', asyn
     assert.equal(l.score_breakdown.factors.length, 5);
   }
   assert.deepEqual(rows.map((r) => r.score), [77, 60, 34, 9]);
+});
+
+test('PII masking hides phone numbers but never corrupts UUIDs (regression)', async () => {
+  const { maskPII } = await import('../src/lib/privacy.js');
+  assert.equal(maskPII('bc2a1234-5678-9012-a3b4-1234567890ab'), 'bc2a1234-5678-9012-a3b4-1234567890ab');
+  assert.equal(maskPII('call 98450 12345'), 'call ******45');
+  assert.equal(maskPII('{"phone":"+919811177788"}'), '{"phone":"******88"}');
+  assert.equal(maskPII('number is 98765-43210.'), 'number is ******10.');
+  assert.equal(maskPII('mail asha@example.com'), 'mail ***@example.com');
 });
