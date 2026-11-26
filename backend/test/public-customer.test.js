@@ -139,7 +139,7 @@ test('full public customer journey persists to PostgreSQL and is visible in Busi
   const okContact = await req(
     'POST',
     `/public/abc-developers/conversations/${convId}/contact`,
-    { fullName: 'Priya Nair', phone: '+919876501234', consent: true },
+    { fullName: 'Priya Nair', phone: '+919876501234', email: 'priya.nair@example.com', consent: true },
     sessionHdr,
   );
   assert.equal(okContact.status, 200);
@@ -173,6 +173,7 @@ test('full public customer journey persists to PostgreSQL and is visible in Busi
   const adminConv = await req('GET', `/conversations/${convId}`, null, adminHdr);
   assert.equal(adminConv.status, 200);
   assert.equal(adminConv.body.data.lead.full_name, 'Priya Nair');
+  assert.equal(adminConv.body.data.lead.email, 'priya.nair@example.com');
   assert.equal(adminConv.body.data.lead.status, 'visit_scheduled');
   assert.ok(adminConv.body.data.lead.score > 0);
   assert.ok(adminConv.body.data.summary, 'admin panel must see generated call summary');

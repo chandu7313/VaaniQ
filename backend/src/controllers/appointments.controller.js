@@ -1,5 +1,5 @@
 import { getTenant } from '../services/tenants.js';
-import { listAppointments, getAvailableSlots, setAppointmentStatus, rescheduleAppointment, getAppointment, deleteAppointment } from '../services/appointments.js';
+import { listAppointments, getAvailableSlots, setAppointmentStatus, confirmAppointment, rescheduleAppointment, getAppointment, deleteAppointment } from '../services/appointments.js';
 import { runStaffTool } from './toolContext.js';
 
 const bookingPolicy = async (tenantId) => (await getTenant(tenantId)).settings.booking;
@@ -11,11 +11,19 @@ export async function availability(req, res) {
 }
 
 // Manual booking by a signed-in staff member (the staff member is the human confirming it),
-// through the same bookAppointment tool, transaction and unique-slot constraint as the agent.
+// through the same bookAppointment tool, transaction and unique-slot constraint as the agent,
+// followed by admin confirmation & customer email notification.
 export async function create(req, res) {
   const { leadId, startsAt, notes } = req.valid.body;
-  res.status(201).json({ data: await runStaffTool(req, 'bookAppointment', { startsAt, ...(notes ? { notes } : {}) }, { leadId }) });
+  const record = await runStaffTool(req, 'bookAppointment', { startsAt, ...(notes ? { notes } : {}) }, { leadId });
+  if (record.ok && record.result?.id) {
+    const confirmed = await confirmAppointment(req.user.tenantId, record.result.id);
+    record.result = { ...record.result, ...confirmed };
+  }
+  res.status(201).json({ data: record });
 }
+
+export const confirm = async (req, res) => res.json({ data: await confirmAppointment(req.user.tenantId, req.valid.params.id) });
 
 export const detail = async (req, res) => res.json({ data: await getAppointment(req.user.tenantId, req.valid.params.id) });
 

@@ -45,6 +45,7 @@ const slotBody = z.object({
 const contactBody = z.object({
   fullName: z.string().trim().min(1, 'Please enter your name').max(80),
   phone,
+  email: z.string().trim().email('Please enter a valid email address').max(120).optional(),
   consent: z.literal(true, { errorMap: () => ({ message: 'Consent is required before saving contact details' }) }),
   language: lang.optional(),
 });

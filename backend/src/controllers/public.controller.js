@@ -377,7 +377,7 @@ export async function selectPublicSlot(req, res) {
 export async function savePublicContact(req, res) {
   const tenant = req.publicTenant;
   const { conversationId } = req.customerSession;
-  const { fullName, phone, language } = req.valid.body;
+  const { fullName, phone, email, language } = req.valid.body;
   const now = new Date();
   const { conversation } = await loadSession(tenant.id, conversationId);
   if (conversation.status === 'ended') {
@@ -396,7 +396,7 @@ export async function savePublicContact(req, res) {
   const upd = await executeTool(
     ctx,
     'updateLead',
-    { fullName, phone },
+    { fullName, phone, ...(email ? { email } : {}) },
     'Customer consented to save contact details for site visit coordination',
   );
   if (!upd.ok) throw new AppError(400, upd.error.code, upd.error.message);
@@ -406,6 +406,26 @@ export async function savePublicContact(req, res) {
   const state = structuredClone(conversation.state || {});
   let pendingConfirmation = null;
   let reply;
+
+  const upcoming = await getUpcomingAppointment(tenant.id, lead.id, now);
+  if (upcoming) {
+    const iso = upcoming.starts_at.toISOString?.() ?? upcoming.starts_at;
+    delete state.desiredSlot;
+    delete state.pendingProposal;
+    await saveConversation(tenant.id, conversationId, { state, leadId: lead.id, language: lang });
+    const reply = t(lang, 'already_booked', { slot: slotLabel(iso, lang) });
+    const msg = await addMessage(tenant.id, conversationId, { role: 'agent', content: reply });
+    return res.json({
+      data: {
+        messageId: msg.id,
+        reply,
+        pendingConfirmation: null,
+        needsContact: false,
+        contactSaved: true,
+        appointment: { reference: upcoming.id.slice(0, 8).toUpperCase(), startsAt: iso, label: slotLabel(iso, lang) },
+      },
+    });
+  }
 
   if (state.desiredSlot) {
     const slot = state.desiredSlot;

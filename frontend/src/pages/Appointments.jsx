@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CalendarDays, Clock, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
+import { CalendarDays, Clock, CheckCircle2, XCircle, AlertCircle, Mail } from 'lucide-react';
 import { api } from '../lib/api';
 import { useApi } from '../hooks/useApi';
 import { useToast } from '../hooks/useToast';
@@ -172,6 +172,23 @@ export default function Appointments() {
     }
   };
 
+  const confirmAndEmail = async (a) => {
+    setBusy(`${a.id}confirm`);
+    try {
+      const res = await api(`/appointments/${a.id}/confirm`, { method: 'POST' });
+      const info = res.emailNotification;
+      if (info?.sent) notify(`Visit confirmed — confirmation email sent to ${info.to}`);
+      else if (info?.skipped) notify(`Visit confirmed (${info.reason})`, 'warn');
+      else notify(`Visit confirmed, but email failed: ${info?.error || 'unknown error'}`, 'error');
+      state.reload();
+      availability.reload();
+    } catch (err) {
+      notify(err.message, 'error');
+    } finally {
+      setBusy(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -232,12 +249,18 @@ export default function Appointments() {
 
                       <Link
                         to={`/leads/${a.lead_id}`}
-                        className="flex min-w-48 flex-1 items-center gap-2 text-[15px] font-medium text-ink hover:text-brand"
+                        className="flex min-w-48 flex-1 flex-col gap-0.5 text-[15px] font-medium text-ink hover:text-brand"
                       >
-                        <span>{a.full_name || 'Unnamed'}</span>
-                        {a.is_demo && <DemoTag />}
-                        <span className="font-mono text-[13px] font-normal text-ink-muted">
-                          score {a.score}
+                        <span className="flex flex-wrap items-center gap-2">
+                          <span>{a.full_name || 'Unnamed'}</span>
+                          {a.is_demo && <DemoTag />}
+                          <span className="font-mono text-[13px] font-normal text-ink-muted">
+                            score {a.score}
+                          </span>
+                        </span>
+                        <span className="font-mono text-xs font-normal text-ink-muted">
+                          {a.email ? a.email : 'No email on lead'}
+                          {a.confirmation_email_sent_at ? ` · Confirmation emailed` : ''}
                         </span>
                       </Link>
 
@@ -250,6 +273,15 @@ export default function Appointments() {
 
                       {a.status === 'confirmed' && (
                         <div className="flex flex-wrap gap-2">
+                          <Button
+                            size="sm"
+                            variant={a.confirmation_email_sent_at ? 'secondary' : 'primary'}
+                            loading={busy === `${a.id}confirm`}
+                            onClick={() => confirmAndEmail(a)}
+                          >
+                            <Mail className="size-3.5" />
+                            {a.confirmation_email_sent_at ? 'Resend Email' : 'Confirm & Email'}
+                          </Button>
                           <Button
                             size="sm"
                             variant="secondary"

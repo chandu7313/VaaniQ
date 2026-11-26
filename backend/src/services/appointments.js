@@ -1,6 +1,7 @@
 import { query, withTransaction } from '../db/pool.js';
 import { AppError, conflict, notFound, badRequest } from '../lib/errors.js';
 import { istParts, istDate, formatSlot } from '../lib/time.js';
+import { sendAppointmentConfirmationEmail } from './email.js';
 
 const DAYPARTS = { morning: [10, 12], afternoon: [12, 16], evening: [16, 18] };
 
@@ -93,7 +94,8 @@ export async function listAppointments(tenantId, { from, status } = {}) {
   if (status) { params.push(status); where += ` AND a.status = $${params.length}`; }
   const { rows } = await query(
     `SELECT a.id, a.starts_at, a.ends_at, a.status, a.notes, a.created_at, a.conversation_id,
-            l.id AS lead_id, l.full_name, l.phone, l.score, l.is_demo
+            a.confirmed_by_admin, a.confirmation_email_sent_at, a.confirmation_email_recipient,
+            l.id AS lead_id, l.full_name, l.phone, l.email, l.score, l.is_demo
        FROM appointments a JOIN leads l ON l.id = a.lead_id
       WHERE ${where} ORDER BY a.starts_at ASC LIMIT 500`,
     params,
@@ -102,12 +104,72 @@ export async function listAppointments(tenantId, { from, status } = {}) {
 }
 
 export async function setAppointmentStatus(tenantId, id, status) {
+  if (status === 'confirmed') return confirmAppointment(tenantId, id);
   const { rows } = await query(
     `UPDATE appointments SET status=$3 WHERE tenant_id=$1 AND id=$2 RETURNING id, lead_id, starts_at, status`,
     [tenantId, id, status],
   );
   if (!rows[0]) throw notFound('Appointment');
   return rows[0];
+}
+
+/**
+ * Admin confirmation: ensures the appointment is marked confirmed_by_admin and sends the
+ * confirmation email to the customer's email address if available.
+ */
+export async function confirmAppointment(tenantId, id) {
+  const { rows } = await query(
+    `SELECT a.id, a.lead_id, a.starts_at, a.ends_at, a.status, a.notes,
+            a.confirmed_by_admin, a.confirmation_email_sent_at, a.confirmation_email_recipient,
+            l.full_name, l.phone, l.email, t.settings->'catalog' AS catalog
+       FROM appointments a
+       JOIN leads l ON l.id = a.lead_id
+       JOIN tenants t ON t.id = a.tenant_id
+      WHERE a.tenant_id = $1 AND a.id = $2`,
+    [tenantId, id],
+  );
+  if (!rows[0]) throw notFound('Appointment');
+  const row = rows[0];
+  if (row.status === 'cancelled') {
+    throw new AppError(409, 'APPOINTMENT_CANCELLED', 'Cancelled appointments cannot be confirmed');
+  }
+
+  await query(
+    `UPDATE appointments SET status = 'confirmed', confirmed_by_admin = true WHERE tenant_id = $1 AND id = $2`,
+    [tenantId, id],
+  );
+  await query(
+    `UPDATE leads SET status = 'visit_scheduled', updated_at = now() WHERE tenant_id = $1 AND id = $2`,
+    [tenantId, row.lead_id],
+  );
+
+  const emailNotification = await sendAppointmentConfirmationEmail({
+    to: row.email,
+    customerName: row.full_name,
+    projectName: row.catalog?.project,
+    location: row.catalog?.location,
+    slotLabel: formatSlot(new Date(row.starts_at)),
+    reference: row.id.slice(0, 8).toUpperCase(),
+    notes: row.notes,
+  });
+
+  let updated;
+  if (emailNotification.sent) {
+    updated = (await query(
+      `UPDATE appointments
+          SET confirmation_email_sent_at = now(), confirmation_email_recipient = $3
+        WHERE tenant_id = $1 AND id = $2
+        RETURNING id, lead_id, starts_at, ends_at, status, confirmed_by_admin, confirmation_email_sent_at, confirmation_email_recipient`,
+      [tenantId, id, row.email],
+    )).rows[0];
+  } else {
+    updated = (await query(
+      `SELECT id, lead_id, starts_at, ends_at, status, confirmed_by_admin, confirmation_email_sent_at, confirmation_email_recipient
+         FROM appointments WHERE tenant_id = $1 AND id = $2`,
+      [tenantId, id],
+    )).rows[0];
+  }
+  return { ...updated, emailNotification };
 }
 
 export async function rescheduleAppointment(tenantId, booking, id, startsAt, now = new Date()) {
@@ -137,7 +199,9 @@ export async function getUpcomingAppointment(tenantId, leadId, now = new Date())
 
 export async function getAppointment(tenantId, id) {
   const { rows } = await query(
-    `SELECT a.id, a.starts_at, a.ends_at, a.status, a.notes, a.created_at, a.conversation_id, l.id AS lead_id, l.full_name, l.phone, l.score, l.is_demo
+    `SELECT a.id, a.starts_at, a.ends_at, a.status, a.notes, a.created_at, a.conversation_id,
+            a.confirmed_by_admin, a.confirmation_email_sent_at, a.confirmation_email_recipient,
+            l.id AS lead_id, l.full_name, l.phone, l.email, l.score, l.is_demo
        FROM appointments a JOIN leads l ON l.id = a.lead_id WHERE a.tenant_id=$1 AND a.id=$2`,
     [tenantId, id],
   );

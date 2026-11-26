@@ -315,6 +315,7 @@ export function InlineBookingCard({
 
   const [fullName, setFullName] = useState('');
   const [phoneInput, setPhoneInput] = useState('');
+  const [emailInput, setEmailInput] = useState('');
   const [consent, setConsent] = useState(false);
   const [contactError, setContactError] = useState(null);
 
@@ -322,6 +323,7 @@ export function InlineBookingCard({
     e.preventDefault();
     setContactError(null);
     const digits = phoneInput.replace(/\D/g, '').slice(-10);
+    const email = emailInput.trim();
     if (!fullName.trim()) {
       setContactError('Please enter your name.');
       return;
@@ -330,12 +332,16 @@ export function InlineBookingCard({
       setContactError('Please enter a valid 10-digit Indian mobile number.');
       return;
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setContactError('Please enter a valid email address for your visit confirmation.');
+      return;
+    }
     if (!consent) {
       setContactError('Please confirm consent so we may reserve your site visit.');
       return;
     }
     try {
-      await onSubmitContact({ fullName: fullName.trim(), phone: `+91${digits}`, consent: true });
+      await onSubmitContact({ fullName: fullName.trim(), phone: `+91${digits}`, email, consent: true });
     } catch (err) {
       setContactError(err.message);
     }
@@ -476,6 +482,14 @@ export function InlineBookingCard({
               required
               className="rounded-lg border border-[#CFD3C7] bg-white px-3.5 py-2 text-sm text-[#202922] focus:border-[#244D3C] focus:outline-none"
             />
+            <input
+              type="email"
+              value={emailInput}
+              onChange={(e) => setEmailInput(e.target.value)}
+              placeholder="Email address (for confirmation email)"
+              required
+              className="rounded-lg border border-[#CFD3C7] bg-white px-3.5 py-2 text-sm text-[#202922] focus:border-[#244D3C] focus:outline-none sm:col-span-2"
+            />
             <label className="flex cursor-pointer items-start gap-2 rounded-lg border border-[#E2E4DC] bg-white p-2.5 text-xs text-[#202922] sm:col-span-2">
               <input
                 type="checkbox"
@@ -484,7 +498,7 @@ export function InlineBookingCard({
                 className="mt-0.5 size-4 rounded accent-[#244D3C]"
               />
               <span>
-                I consent to ABC Developers storing my name and mobile number to confirm and coordinate my site visit.
+                I consent to ABC Developers storing my name, mobile number, and email address to confirm and coordinate my site visit.
               </span>
             </label>
             {contactError && <p className="text-xs font-medium text-[#A93B3B] sm:col-span-2">{contactError}</p>}

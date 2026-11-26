@@ -25,7 +25,7 @@ import { STATUS_LABEL, fmtDateTime, fmtRupees, fmtSlot, scoreClass, humanize } f
 
 /** Manual lead entry by staff (goes through the saveLead tool: validated, deduplicated by phone, scored). */
 function NewLeadForm({ onCreated, onCancel, notify }) {
-  const [f, setF] = useState({ fullName: '', phone: '', bedrooms: '', budgetLakh: '', timelineMonths: '' });
+  const [f, setF] = useState({ fullName: '', phone: '', email: '', bedrooms: '', budgetLakh: '', timelineMonths: '' });
   const [saving, setSaving] = useState(false);
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
 
@@ -44,6 +44,7 @@ function NewLeadForm({ onCreated, onCancel, notify }) {
         body: {
           ...(f.fullName.trim() ? { fullName: f.fullName.trim() } : {}),
           ...(digits ? { phone: `+91${digits}` } : {}),
+          ...(f.email.trim() ? { email: f.email.trim() } : {}),
           profile,
         },
       });
@@ -72,6 +73,9 @@ function NewLeadForm({ onCreated, onCancel, notify }) {
         </Field>
         <Field label="Mobile (10 digits)">
           <input className={inputCls} value={f.phone} onChange={set('phone')} inputMode="tel" />
+        </Field>
+        <Field label="Email">
+          <input className={inputCls} type="email" value={f.email} onChange={set('email')} placeholder="customer@example.com" />
         </Field>
         <Field label="BHK">
           <select className={inputCls} value={f.bedrooms} onChange={set('bedrooms')}>
@@ -113,10 +117,71 @@ function NewLeadForm({ onCreated, onCancel, notify }) {
   );
 }
 
+function ScheduleVisitPicker({ lead, onBooked, notify }) {
+  const slots = useApi('/appointments/availability?limit=18');
+  const [busy, setBusy] = useState(null);
+
+  if (!lead.full_name || !lead.phone) {
+    return (
+      <p className="mt-3 rounded-lg border border-warn-border bg-warn-soft px-3 py-2 text-xs text-warn">
+        Name and mobile number are required before a site visit slot can be booked.
+      </p>
+    );
+  }
+
+  const pick = async (startsAt) => {
+    setBusy(startsAt);
+    try {
+      const res = await api('/appointments', { method: 'POST', body: { leadId: lead.id, startsAt } });
+      const info = res.result?.emailNotification;
+      if (info?.sent) notify(`Visit scheduled & confirmation email sent to ${info.to}`);
+      else if (info?.skipped) notify(`Visit scheduled for ${fmtSlot(startsAt)} (${info.reason})`);
+      else notify(`Visit scheduled for ${fmtSlot(startsAt)}`);
+      onBooked();
+    } catch (err) {
+      notify(err.details?.[0]?.message || err.message, 'error');
+      slots.reload();
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <div className="mt-3 rounded-lg border border-line bg-canvas p-3.5">
+      <div className="mb-2 text-xs font-medium text-ink-2">
+        Select an open slot to book &amp; show on the Appointments page:
+      </div>
+      <Async state={slots}>
+        {(list) =>
+          !list.length ? (
+            <p className="text-xs text-ink-muted">No open slots in the booking window.</p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {list.map((s) => (
+                <Button
+                  key={s.startsAt}
+                  size="sm"
+                  variant="secondary"
+                  loading={busy === s.startsAt}
+                  onClick={() => pick(s.startsAt)}
+                >
+                  {fmtSlot(s.startsAt)}
+                </Button>
+              ))}
+            </div>
+          )
+        }
+      </Async>
+    </div>
+  );
+}
+
 function LeadDetail({ id, onClose, onChanged, notify }) {
   const state = useApi(`/leads/${id}`);
   const { user } = useAuth();
   const [saving, setSaving] = useState(false);
+  const [showScheduler, setShowScheduler] = useState(false);
+  const [emailDraft, setEmailDraft] = useState(null);
 
   const remove = async (l) => {
     if (
@@ -135,11 +200,17 @@ function LeadDetail({ id, onClose, onChanged, notify }) {
     }
   };
 
-  const setStatus = async (status) => {
+  const setStatus = async (status, currentLead) => {
     setSaving(true);
     try {
       await api(`/leads/${id}`, { method: 'PATCH', body: { status } });
-      notify('Lead status updated');
+      const hasConfirmed = currentLead?.appointments?.some((a) => a.status === 'confirmed');
+      if (status === 'visit_scheduled' && !hasConfirmed) {
+        setShowScheduler(true);
+        notify('Stage set to Visit scheduled — pick a slot below to add it to Appointments');
+      } else {
+        notify('Lead status updated');
+      }
       state.reload();
       onChanged();
     } catch (err) {
@@ -171,7 +242,39 @@ function LeadDetail({ id, onClose, onChanged, notify }) {
                 {l.is_demo && <DemoTag />}
               </div>
               <div className="mt-1.5 font-mono text-[13px] text-ink-2">
-                {l.phone || 'No phone yet'} · created {fmtDateTime(l.created_at)}
+                {l.phone || 'No phone yet'} · {l.email || 'No email yet'} · created {fmtDateTime(l.created_at)}
+              </div>
+
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <input
+                  type="email"
+                  value={emailDraft ?? l.email ?? ''}
+                  onChange={(e) => setEmailDraft(e.target.value)}
+                  placeholder="Customer email (for visit confirmation)"
+                  className={`${inputCls} max-w-xs py-1.5 text-sm`}
+                />
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  loading={saving}
+                  disabled={!((emailDraft ?? '').trim()) || (emailDraft ?? '').trim() === (l.email || '')}
+                  onClick={async () => {
+                    setSaving(true);
+                    try {
+                      await api(`/leads/${id}`, { method: 'PATCH', body: { email: emailDraft.trim() } });
+                      setEmailDraft(null);
+                      notify('Customer email updated');
+                      state.reload();
+                      onChanged();
+                    } catch (err) {
+                      notify(err.details?.[0]?.message || err.message, 'error');
+                    } finally {
+                      setSaving(false);
+                    }
+                  }}
+                >
+                  Save email
+                </Button>
               </div>
 
               <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
@@ -181,7 +284,7 @@ function LeadDetail({ id, onClose, onChanged, notify }) {
                     className={`${inputCls} w-48 py-1.5 text-sm`}
                     value={l.status}
                     disabled={saving}
-                    onChange={(e) => setStatus(e.target.value)}
+                    onChange={(e) => setStatus(e.target.value, l)}
                   >
                     {Object.entries(STATUS_LABEL).map(([k, v]) => (
                       <option key={k} value={k}>
@@ -227,9 +330,20 @@ function LeadDetail({ id, onClose, onChanged, notify }) {
               <ScoreBreakdown score={l.score_breakdown?.factors ? l.score_breakdown : null} />
             </Card>
 
-            <Card title={`Appointments (${l.appointments.length})`}>
+            <Card
+              title={`Appointments (${l.appointments.length})`}
+              actions={
+                <Button size="sm" variant="secondary" onClick={() => setShowScheduler((v) => !v)}>
+                  {showScheduler ? 'Close slots' : 'Schedule visit'}
+                </Button>
+              }
+            >
               {!l.appointments.length ? (
-                <p className="text-sm text-ink-muted">No scheduled visits.</p>
+                <p className="text-sm text-ink-muted">
+                  {l.status === 'visit_scheduled'
+                    ? 'Stage is "Visit scheduled", but no slot is booked yet. Click "Schedule visit" or pick a slot below so it appears on the Appointments page.'
+                    : 'No scheduled visits.'}
+                </p>
               ) : (
                 <ul className="divide-y divide-line">
                   {l.appointments.map((a) => (
@@ -239,6 +353,17 @@ function LeadDetail({ id, onClose, onChanged, notify }) {
                     </li>
                   ))}
                 </ul>
+              )}
+              {(showScheduler || (l.status === 'visit_scheduled' && !l.appointments.some((a) => a.status === 'confirmed'))) && (
+                <ScheduleVisitPicker
+                  lead={l}
+                  notify={notify}
+                  onBooked={() => {
+                    setShowScheduler(false);
+                    state.reload();
+                    onChanged();
+                  }}
+                />
               )}
             </Card>
 

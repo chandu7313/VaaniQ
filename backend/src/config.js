@@ -20,6 +20,13 @@ const schema = z.object({
   AGENT_RATE_LIMIT_MAX: z.coerce.number().default(60),
   LOGIN_RATE_LIMIT_MAX: z.coerce.number().default(20),
   PUBLIC_TENANT_SLUGS: z.string().default('abc-developers'),
+  EMAIL_HOST: z.string().optional().default(''),
+  EMAIL_PORT: z.coerce.number().default(587),
+  EMAIL_USER: z.string().optional().default(''),
+  EMAIL_PASS: z.string().optional().default(''),
+  EMAIL_FROM: z.string().optional().default(''),
+  ADMIN_EMAIL: z.string().optional().default(''),
+  BREVO_API_KEY: z.string().optional().default(''),
 });
 
 const parsed = schema.safeParse(process.env);
@@ -52,4 +59,13 @@ export const config = {
   agentRateLimitMax: env.AGENT_RATE_LIMIT_MAX,
   loginRateLimitMax: env.LOGIN_RATE_LIMIT_MAX,
   publicTenantSlugs: env.PUBLIC_TENANT_SLUGS.split(',').map((s) => s.trim()).filter(Boolean),
+  email: {
+    host: env.EMAIL_HOST.trim() === 'smtp-brevo.com' ? 'smtp-relay.brevo.com' : env.EMAIL_HOST.trim(),
+    port: env.EMAIL_PORT,
+    user: env.EMAIL_USER.trim().replace(/^["']|["']$/g, ''),
+    pass: env.EMAIL_PASS.trim().replace(/^["']|["']$/g, ''),
+    from: env.EMAIL_FROM.trim().replace(/^["']|["']$/g, ''),
+    adminEmail: env.ADMIN_EMAIL.trim().replace(/^["']|["']$/g, ''),
+    brevoApiKey: env.BREVO_API_KEY.trim() || (env.EMAIL_PASS.startsWith('xkeysib-') ? env.EMAIL_PASS.trim() : ''),
+  },
 };

@@ -234,7 +234,7 @@ export default function CustomerExperience() {
     }
   };
 
-  const handleSubmitContact = async ({ fullName, phone, consent }) => {
+  const handleSubmitContact = async ({ fullName, phone, email, consent }) => {
     if (!session) return;
     setSavingContact(true);
     setError(null);
@@ -242,7 +242,7 @@ export default function CustomerExperience() {
       const r = await publicApi(slug, `/conversations/${session.conversationId}/contact`, {
         method: 'POST',
         sessionToken: session.sessionToken,
-        body: { fullName, phone, consent, language: lang },
+        body: { fullName, phone, ...(email ? { email } : {}), consent, language: lang },
       });
       setMessages((m) => [...m, { id: r.messageId, role: 'agent', content: r.reply }]);
       setContactSaved(true);

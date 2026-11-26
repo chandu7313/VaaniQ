@@ -222,6 +222,12 @@ async function runTurn({ tenantId, conversationId, text, language, now = new Dat
       reply.push(t(lang, 'slot_taken'));
       if (!(await offerSlots({}, false))) reply.push(t(lang, 'no_slots'));
       outcome = 'booking_conflict';
+    } else if (rec.error.code === 'LEAD_ALREADY_BOOKED') {
+      const existing = await getUpcomingAppointment(tenantId, lead.id, ctx.now);
+      const iso = existing?.starts_at?.toISOString?.() ?? existing?.starts_at;
+      reply.push(t(lang, 'already_booked', { slot: iso ? slotLabel(iso, lang) : 'an upcoming time' }));
+      outcome = 'booking_conflict';
+      asksQuestion = true;
     } else {
       reply.push(t(lang, 'booking_error', { reason: rec.error.message }));
       outcome = 'booking_failed';
